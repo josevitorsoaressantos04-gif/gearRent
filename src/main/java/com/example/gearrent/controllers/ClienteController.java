@@ -36,7 +36,7 @@ public class ClienteController {
 
     @GetMapping("/PJ/{clientePjId}")
     public String consultaClientesPJID(@PathVariable Long clientePjId) {
-        return "Clientes PJ +" + clientePjId;
+        return "Clientes PJ" + clientePjId;
     }
 
 
