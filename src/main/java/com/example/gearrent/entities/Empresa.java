@@ -2,17 +2,15 @@ package com.example.gearrent.entities;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import java.util.Random;
 import lombok.NoArgsConstructor;
 
-@Data
 @AllArgsConstructor
-public class Usuario {
+@Data
+public class Empresa {
     private long id;
     private String nome;
-    private String cpf;
-    private String dataNascimento;
-    private String email;
-    private String senha;
+    private String cnpj;
     private String telefone;
+    private String email;
+    private boolean status;
 }

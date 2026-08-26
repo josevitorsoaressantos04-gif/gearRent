@@ -1,44 +1,23 @@
 package com.example.gearrent.controllers;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.example.gearrent.entities.Cliente;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import java.util.Collections;
 
 @RestController
-@RequestMapping("/Clientes")
+@RequestMapping("/clientes")
 public class ClienteController {
 
     @GetMapping
-    public String consultaTodosClientes() {
-        return "Todos os Clientes";
+    public ResponseEntity<List<Cliente>> listarClientes() {
+        // Retorno mockado simulando uma lista
+        return ResponseEntity.ok(Collections.emptyList());
     }
 
-    @GetMapping("/{id}")
-    public String consultaClientePorID(@PathVariable Long id) {
-        return "Clientes ID: " + id;
+    @PostMapping
+    public ResponseEntity<Cliente> criarCliente(@RequestBody Cliente cliente) {
+        return ResponseEntity.ok(cliente);
     }
-
-    @GetMapping("/PF")
-    public String consultaClientesPF() {
-        return "Usuarios PF";
-    }
-
-    @GetMapping("/PF/{clientePfId}")
-    public String consultaClientesPFID(@PathVariable Long clientePfId) {
-        return "Cliente PF ID: " + clientePfId;
-    }
-
-    @GetMapping("/PJ")
-    public String consultaClientesPJ() {
-        return "Clientes PJ";
-    }
-
-    @GetMapping("/PJ/{clientePjId}")
-    public String consultaClientesPJID(@PathVariable Long clientePjId) {
-        return "Clientes PJ" + clientePjId;
-    }
-
-
-
 }
