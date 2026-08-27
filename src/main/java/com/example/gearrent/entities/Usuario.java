@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Usuario {
     private long id;
+    private Boolean ativo;
     private String nome;
     private String cpf;
     private String dataNascimento;
