@@ -10,6 +10,6 @@ public class Equipamento {
     private String nome;
     private String numeroPatrimonio;
     private String modelo;
-    private String versão;
+    private String versao;
     private double valorDiariaBase;
 }
