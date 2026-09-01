@@ -19,4 +19,14 @@ public class ContratoController {
     public ResponseEntity<Contrato> criarContrato(@RequestBody Contrato contrato) {
         return ResponseEntity.ok(contrato);
     }
+
+    @PutMapping
+    public ResponseEntity<Contrato> atualizarContrato(@RequestBody Contrato contrato) {
+        return ResponseEntity.ok(contrato);
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deletarContrato(@RequestBody Contrato contrato) {
+        return ResponseEntity.ok().build();
+    }
 }

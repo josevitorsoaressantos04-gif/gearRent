@@ -19,4 +19,15 @@ public class EmpresaController {
     public ResponseEntity<Empresa> criarEmpresa(@RequestBody Empresa empresa) {
         return ResponseEntity.ok(empresa);
     }
+
+    @PutMapping
+    public ResponseEntity<Empresa> atualizarEmpresa(@RequestBody Empresa empresa) {
+        return ResponseEntity.ok(empresa);
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deletarEmpresa(@RequestBody Empresa empresa) {
+        return ResponseEntity.ok().build();
+    }
+
 }

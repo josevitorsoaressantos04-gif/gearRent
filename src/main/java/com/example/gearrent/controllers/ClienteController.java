@@ -20,4 +20,14 @@ public class ClienteController {
     public ResponseEntity<Cliente> criarCliente(@RequestBody Cliente cliente) {
         return ResponseEntity.ok(cliente);
     }
+
+    @DeleteMapping
+    public ResponseEntity<Cliente> deletarCliente(@RequestBody Cliente cliente) {
+        return ResponseEntity.ok(cliente);
+    }
+
+    @PutMapping
+    public ResponseEntity<Cliente> atualizarCliente(@RequestBody Cliente cliente) {
+        return ResponseEntity.ok(cliente);
+    }
 }

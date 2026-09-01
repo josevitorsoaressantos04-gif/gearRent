@@ -19,4 +19,14 @@ public class EquipamentoController {
     public ResponseEntity<Equipamento> criarEquipamento(@RequestBody Equipamento equipamento) {
         return ResponseEntity.ok(equipamento);
     }
+
+    @PutMapping
+    public ResponseEntity<Void> atualizarEquipamento(@RequestBody Equipamento equipamento) {
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deletarEquipamento(@RequestBody Equipamento equipamento) {
+        return ResponseEntity.ok().build();
+    }
 }
