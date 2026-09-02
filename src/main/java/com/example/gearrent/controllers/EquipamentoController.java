@@ -29,4 +29,16 @@ public class EquipamentoController {
         // TODO: Chamar o EquipamentoService para inativar o registro na base de dados
         return ResponseEntity.ok(new EquipamentoResponse(id, "Equipamento inativado com sucesso"));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<EquipamentoResponse> atualizarEquipamento(
+            @PathVariable Long id,
+            @RequestBody EquipamentoUpdateRequest request) {
+
+        // O EquipamentoService impedirá a mudança do numeroPatrimonio[cite: 2],
+        // mas permitirá alterar o valorDiariaBase (desde que recebido como BigDecimal).
+        // equipamentoService.atualizar(id, request);
+
+        return ResponseEntity.ok(new EquipamentoResponse(id, "Equipamento atualizado com sucesso"));
+    }
 }

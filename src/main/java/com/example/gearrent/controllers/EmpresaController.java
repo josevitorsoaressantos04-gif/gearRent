@@ -19,9 +19,18 @@ public class EmpresaController {
         return ResponseEntity.ok(new EmpresaResponse(1L, "Empresa registrada"));
     }
 
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<EmpresaResponse> atualizarStatusEmpresa(
+            @PathVariable Long id,
+            @RequestBody AtualizarStatusEmpresaRequest request) {
+        // TODO: Delegar para EmpresaService alterar o status ativo/inativo
+        return ResponseEntity.ok(new EmpresaResponse(id, "Status da empresa atualizado com sucesso"));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<EmpresaResponse> excluirEmpresa(@PathVariable Long id) {
         // TODO: Chamar a EmpresaService para alterar o status para inativo
         return ResponseEntity.ok(new EmpresaResponse(id, "Empresa inativada com sucesso"));
     }
+
 }

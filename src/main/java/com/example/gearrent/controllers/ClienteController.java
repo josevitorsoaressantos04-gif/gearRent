@@ -29,4 +29,16 @@ public class ClienteController {
     public ResponseEntity<ClienteResponse> excluirCliente(@PathVariable Long id) {
         return ResponseEntity.ok(new ClienteResponse(id, "Cliente desativado com sucesso"));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ClienteResponse> atualizarCliente(
+            @PathVariable Long id,
+            @RequestBody ClienteUpdateRequest request) {
+
+        // A Controller não valida dados nem altera o banco.
+        // O ClienteService irá buscar o ID, atualizar os campos seguros (como email) e ignorar o CPF[cite: 9].
+        // clienteService.atualizar(id, request);
+
+        return ResponseEntity.ok(new ClienteResponse(id, "Cliente atualizado com sucesso"));
+    }
 }
