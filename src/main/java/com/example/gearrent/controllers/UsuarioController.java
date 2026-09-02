@@ -65,7 +65,7 @@ public class UsuarioController {
     }
 
 
-    @PatchMapping("{/{id}/status")
+    @PatchMapping("{id}/status")
     public ResponseEntity<AtualizarStatusResponse> atualizarStatusUsuario(@RequestBody AtualizarStatusRequest atualizarStatusRequest,
                                                                           @PathVariable Long id) {
         Usuario usuarioBanco = new Usuario();
