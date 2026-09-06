@@ -15,16 +15,21 @@ public class EmpresaController {
     }
 
     @PostMapping
-    public ResponseEntity<EmpresaResponse> criarEmpresa(@RequestBody EmpresaRequest request) {
+    public ResponseEntity<EmpresaResponse> criarEmpresa(@RequestBody EmpresaRequest requestCriar) {
         return ResponseEntity.ok(new EmpresaResponse(1L, "Empresa registrada"));
     }
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<EmpresaResponse> atualizarStatusEmpresa(
             @PathVariable Long id,
-            @RequestBody AtualizarStatusEmpresaRequest request) {
+            @RequestBody AtualizarStatusRequest request) {
         // TODO: Delegar para EmpresaService alterar o status ativo/inativo
         return ResponseEntity.ok(new EmpresaResponse(id, "Status da empresa atualizado com sucesso"));
+    }
+
+    @PutMapping("/{id}/atualizar")
+    public ResponseEntity<EmpresaResponse> atualizarDadosEmpresa(@RequestBody EmpresaRequest requestAtualizar){
+      return ResponseEntity.ok(new EmpresaResponse(1L, "Dados da empresa atualizados com sucesso"));
     }
 
     @DeleteMapping("/{id}")
