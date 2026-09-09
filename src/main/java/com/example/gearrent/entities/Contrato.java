@@ -1,16 +1,16 @@
 package com.example.gearrent.entities;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-
-import java.time.DateTimeException;
-import java.time.LocalDate;
+import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
+
 public class Contrato{
     private long id;
     private Cliente cliente;

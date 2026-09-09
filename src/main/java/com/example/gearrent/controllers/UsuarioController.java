@@ -5,6 +5,7 @@ import com.example.gearrent.DTO.AtualizarStatusResponse;
 import com.example.gearrent.DTO.UsuarioRequest;
 import com.example.gearrent.DTO.UsuarioResponse;
 import com.example.gearrent.entities.Usuario;
+import com.example.gearrent.repository.usuarioRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +27,6 @@ public class UsuarioController {
     public ResponseEntity<UsuarioResponse> criarUsuario(@RequestBody UsuarioRequest usuarioRequest) {
         // TODO: A senha do usuário deve ser "hashada" (ex: BCrypt) antes de salvar no banco
         Usuario usuarioBanco = new Usuario();
-            usuarioBanco.setId(1L);
             usuarioBanco.setAtivo(true);
             usuarioBanco.setNome(usuarioRequest.nome());
             usuarioBanco.setEmail(usuarioRequest.email());
@@ -34,8 +34,6 @@ public class UsuarioController {
             usuarioBanco.setCpf(usuarioRequest.cpf());
             usuarioBanco.setDataCadastro(LocalDateTime.now());
             return ResponseEntity.ok(new UsuarioResponse(usuarioBanco.getId(), "Usuario atualizado com sucesso"));
-
-
     }
 
     @PutMapping("/{id}")

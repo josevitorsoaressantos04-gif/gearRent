@@ -30,15 +30,15 @@ public class EquipamentoController {
         return ResponseEntity.ok(new EquipamentoResponse(id, "Equipamento inativado com sucesso"));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<EquipamentoResponse> atualizarEquipamento(
+    @PatchMapping("/status/{id}")
+    public ResponseEntity<AtualizarStatusResponse> atualizarEquipamentoStatus(
             @PathVariable Long id,
-            @RequestBody EquipamentoUpdateRequest request) {
+            @RequestBody AtualizarStatusRequest request) {
 
         // O EquipamentoService impedirá a mudança do numeroPatrimonio[cite: 2],
         // mas permitirá alterar o valorDiariaBase (desde que recebido como BigDecimal).
         // equipamentoService.atualizar(id, request);
 
-        return ResponseEntity.ok(new EquipamentoResponse(id, "Equipamento atualizado com sucesso"));
+        return ResponseEntity.ok(new AtualizarStatusResponse(id, "Equipamento atualizado com sucesso"));
     }
 }

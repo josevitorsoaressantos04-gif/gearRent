@@ -1,6 +1,5 @@
 package com.example.gearrent.controllers;
 import com.example.gearrent.DTO.*;
-import com.example.gearrent.service.ClienteService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.Collections;
@@ -10,11 +9,6 @@ import java.util.List;
 @RequestMapping("/clientes")
 public class ClienteController {
 
-    private final ClienteRequest ClienteRequest;
-
-    public ClienteController(ClienteRequest ClienteRequest) {
-        this.ClienteRequest = ClienteRequest;
-    }
 
     @GetMapping
     public ResponseEntity<List<ClienteResponse>> listarClientes() {
@@ -24,8 +18,6 @@ public class ClienteController {
     @PostMapping
     public ResponseEntity<ClienteResponse> criarCliente(@RequestBody ClienteRequest request) {
         // TODO: Repassar 'request' para o ClienteService realizar a criação real
-        ClienteService clienteService = new ClienteService();
-        clienteService.verificarCampo(request);
         return ResponseEntity.ok(new ClienteResponse(1L, "Cliente criado com sucesso"));
     }
 
@@ -39,7 +31,7 @@ public class ClienteController {
         return ResponseEntity.ok(new ClienteResponse(id, "Cliente desativado com sucesso"));
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/status/{id}")
     public ResponseEntity<AtualizarStatusResponse> atualizarClienteStatus(
             @PathVariable Long id,
             @RequestBody AtualizarStatusRequest request) {
