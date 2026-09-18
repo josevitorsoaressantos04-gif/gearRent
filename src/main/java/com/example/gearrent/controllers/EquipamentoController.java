@@ -26,7 +26,7 @@ public class EquipamentoController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<EquipamentoResponse> excluirEquipamento(@PathVariable Long id) {
-        // TODO: Chamar o EquipamentoService para inativar o registro na base de dados
+        // TODO: Chamar o EquipamentoService.js para inativar o registro na base de dados
         return ResponseEntity.ok(new EquipamentoResponse(id, "Equipamento inativado com sucesso"));
     }
 
@@ -35,7 +35,7 @@ public class EquipamentoController {
             @PathVariable Long id,
             @RequestBody AtualizarStatusRequest request) {
 
-        // O EquipamentoService impedirá a mudança do numeroPatrimonio[cite: 2],
+        // O EquipamentoService.js impedirá a mudança do numeroPatrimonio[cite: 2],
         // mas permitirá alterar o valorDiariaBase (desde que recebido como BigDecimal).
         // equipamentoService.atualizar(id, request);
 
