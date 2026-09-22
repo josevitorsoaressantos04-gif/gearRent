@@ -1,22 +1,33 @@
-package com.example.gearrent.entities;
+package com.example.gearrent.entities; // <--- Deve ser exatamente este pacote
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-
-import java.time.DateTimeException;
-import java.time.LocalDate;
+import lombok.NoArgsConstructor;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 
 @Data
 @AllArgsConstructor
-public class Contrato{
-    private long id;
+@NoArgsConstructor
+@Entity
+@Table(name = "tb_contrato")
+public class Contrato {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "cliente_id")
     private Cliente cliente;
+
+    @OneToMany
     private List<Equipamento> equipamento;
+
     private LocalDateTime dataRetirada;
     private LocalDateTime dataDevolucaoPrevista;
-    private LocalDateTime dataDevlucaoReal;
-    private double valorAcordado;
+    private LocalDateTime dataDevolucaoReal;
+    private BigDecimal valorAcordado;
 }
