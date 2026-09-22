@@ -63,8 +63,7 @@ public class UsuarioController {
                     usuario.setEmail(usuarioRequest.email());
                     usuario.setSenha(usuarioRequest.senha());
                     usuario.setCpf(usuarioRequest.cpf());
-                    // Geralmente não se altera a data de cadastro no Put, mas mantive conforme seu código
-                    usuario.setDataCadastro(LocalDateTime.now());
+                    usuario.setDataAtualizacao(LocalDateTime.now());
 
                     usuarioRepository.save(usuario);
                     return ResponseEntity.ok(new UsuarioResponse(usuario.getId(), "Usuário atualizado com sucesso"));
