@@ -1,35 +1,48 @@
 package com.example.gearrent.controllers;
+
 import com.example.gearrent.DTO.*;
+import com.example.gearrent.entities.Empresa;
+import com.example.gearrent.repository.EmpresaRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Collections;
+
 import java.util.List;
 
 @RestController
 @RequestMapping("/empresas")
 public class EmpresaController {
+    @Autowired
+    private EmpresaRepository empresaRepository;
 
     @GetMapping
-    public ResponseEntity<List<EmpresaResponse>> listarEmpresas() {
-        return ResponseEntity.ok(Collections.emptyList());
+    public ResponseEntity<List<Empresa>> listarEmpresas() {
+        return ResponseEntity.ok(empresaRepository.findAll());
     }
 
     @PostMapping
-    public ResponseEntity<EmpresaResponse> criarEmpresa(@RequestBody EmpresaRequest requestCriar) {
-        return ResponseEntity.ok(new EmpresaResponse(1L, "Empresa registrada"));
+    public ResponseEntity<EmpresaResponse> criarEmpresa(@RequestBody EmpresaRequest request) {
+        Empresa empresa = new Empresa();
+        empresa.setNome(request.nome());
+        empresa.setCnpj(request.cnpj());
+        empresa.setEmail(request.email());
+        empresa.setTelefone(request.telefone());
+        empresa.setStatus(true);
+        empresaRepository.save(empresa);
+
+        return ResponseEntity.ok(new EmpresaResponse(empresa.getId(), "Empresa cadastrada com sucesso"));
     }
 
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<EmpresaResponse> atualizarStatusEmpresa(
-            @PathVariable Long id,
-            @RequestBody AtualizarStatusRequest request) {
-        // TODO: Delegar para EmpresaService alterar o status ativo/inativo
-        return ResponseEntity.ok(new EmpresaResponse(id, "Status da empresa atualizado com sucesso"));
-    }
 
     @PutMapping("/{id}/atualizar")
-    public ResponseEntity<EmpresaResponse> atualizarDadosEmpresa(@RequestBody EmpresaRequest requestAtualizar){
-      return ResponseEntity.ok(new EmpresaResponse(1L, "Dados da empresa atualizados com sucesso"));
+    public ResponseEntity<EmpresaResponse> atualizarDadosEmpresa(@PathVariable String cnpj, @RequestBody EmpresaRequest request) {
+        return empresaRepository.findByCnpj(cnpj).map(empresa ->  {
+            empresa.setNome(request.nome());
+            empresa.setCnpj(request.cnpj());
+            empresa.setEmail(request.email());
+            empresa.setTelefone(request.telefone());
+            empresaRepository.save(empresa);
+        });
     }
 
     @DeleteMapping("/{id}")

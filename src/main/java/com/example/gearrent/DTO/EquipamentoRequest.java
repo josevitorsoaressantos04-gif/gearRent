@@ -16,5 +16,5 @@ public record EquipamentoRequest(
 
         @NotNull(message = "O valor da diária base é obrigatório")
         @Positive(message = "O valor da diária deve ser maior que zero")
-        BigDecimal valorDiariaBase
+        double valorDiariaBase
 ) {}

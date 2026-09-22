@@ -1,22 +1,37 @@
 package com.example.gearrent.controllers;
+
 import com.example.gearrent.DTO.*;
+import com.example.gearrent.entities.Equipamento;
+import com.example.gearrent.repository.EquipamentoRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Collections;
 import java.util.List;
 
 @RestController
 @RequestMapping("/equipamentos")
 public class EquipamentoController {
+    @Autowired
+    private EquipamentoRepository equipamentoRepository;
 
     @GetMapping
-    public ResponseEntity<List<EquipamentoResponse>> listarEquipamentos() {
-        return ResponseEntity.ok(Collections.emptyList());
+    public ResponseEntity<List<Equipamento>> listarEquipamentos() {
+        return ResponseEntity.ok(equipamentoRepository.findAll());
     }
 
     @PostMapping
-    public ResponseEntity<EquipamentoResponse> criarEquipamento(@RequestBody EquipamentoRequest request) {
-        return ResponseEntity.ok(new EquipamentoResponse(1L, "Equipamento cadastrado"));
+    public ResponseEntity<EquipamentoResponse> criarEquipamento(@RequestBody EquipamentoRequest request, HttpEntity<Object> httpEntity) {
+        Equipamento equipamento = new Equipamento();
+        equipamento.setNome(request.nome());
+        equipamento.setModelo(request.modelo());
+        equipamento.setNumeroPatrimonio(request.numeroPatrimonio());
+        equipamento.setValorDiariaBase(request.valorDiariaBase());
+        equipamentoRepository.save(equipamento);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new EquipamentoResponse(equipamento.getId(), "Equipamento criado com sucesso"));
     }
 
     @PutMapping("/{id}")

@@ -1,45 +1,67 @@
 package com.example.gearrent.controllers;
+
 import com.example.gearrent.DTO.*;
+import com.example.gearrent.entities.Cliente;
+import com.example.gearrent.repository.ClienteRepository;
+import com.example.gearrent.repository.EnderecoRepository;
+import com.example.gearrent.service.ClienteService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
 @RestController
 @RequestMapping("/clientes")
 public class ClienteController {
+    @Autowired
+    private ClienteRepository clienteRepository;
 
+    @Autowired
+    private ClienteService clienteService;
 
     @GetMapping
-    public ResponseEntity<List<ClienteResponse>> listarClientes() {
-        return ResponseEntity.ok(Collections.emptyList());
+    public ResponseEntity<List<Cliente>> listarClientes() {
+        return ResponseEntity.ok(clienteRepository.findAll());
     }
 
     @PostMapping
     public ResponseEntity<ClienteResponse> criarCliente(@RequestBody ClienteRequest request) {
         // TODO: Repassar 'request' para o ClienteService realizar a criação real
-        return ResponseEntity.ok(new ClienteResponse(1L, "Cliente criado com sucesso"));
+        Cliente cliente = new Cliente();
+        cliente.setNome(request.nome());
+        cliente.setEmail(request.email());
+        cliente.setCpf(request.cpf());
+        cliente.setAtivo(true);
+        cliente.setDataAtualizacao(LocalDateTime.now());
+        clienteRepository.save(cliente);
+        return ResponseEntity.ok(new ClienteResponse(cliente.getId(), "Cliente criado com sucesso"));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ClienteResponse> atualizarCliente(@PathVariable Long id, @RequestBody ClienteRequest request) {
-        return ResponseEntity.ok(new ClienteResponse(id, "Cliente atualizado com sucesso"));
+        return clienteRepository.findById(id)
+                .map(cliente -> {
+                    cliente.setNome(request.nome());
+                    cliente.setEmail(request.email());
+                    cliente.setCpf(request.cpf());
+                    cliente.setDataAtualizacao(LocalDateTime.now());
+
+                    clienteRepository.save(cliente);
+                    return ResponseEntity.ok(new ClienteResponse(cliente.getId(), "Usuário atualizado com sucesso"));
+                })
+                .orElse(ResponseEntity.notFound().build()); // Se não encontrar o ID, já manda o 404
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ClienteResponse> excluirCliente(@PathVariable Long id) {
-        return ResponseEntity.ok(new ClienteResponse(id, "Cliente desativado com sucesso"));
-    }
-
-    @PatchMapping("/status/{id}")
-    public ResponseEntity<AtualizarStatusResponse> atualizarClienteStatus(
-            @PathVariable Long id,
-            @RequestBody AtualizarStatusRequest request) {
-
-        // A Controller não valida dados nem altera o banco.
-        // O ClienteService irá buscar o ID, atualizar os campos seguros (como email) e ignorar o CPF[cite: 9].
-        // clienteService.atualizar(id, request);
-
-        return ResponseEntity.ok(new AtualizarStatusResponse(id, "Cliente atualizado com sucesso"));
+        if (clienteRepository.findById(id).isPresent()) {
+            clienteService.deleteLogico(id);
+            return ResponseEntity.ok(new ClienteResponse(id, "Cliente desativado com sucesso"));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }
