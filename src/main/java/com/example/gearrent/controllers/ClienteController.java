@@ -50,7 +50,7 @@ public class ClienteController {
                     cliente.setDataAtualizacao(LocalDateTime.now());
 
                     clienteRepository.save(cliente);
-                    return ResponseEntity.ok(new ClienteResponse(cliente.getId(), "Usuário atualizado com sucesso"));
+                    return ResponseEntity.ok(new ClienteResponse(cliente.getId(), "Cliente atualizado com sucesso"));
                 })
                 .orElse(ResponseEntity.notFound().build()); // Se não encontrar o ID, já manda o 404
     }

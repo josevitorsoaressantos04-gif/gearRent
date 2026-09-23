@@ -4,6 +4,7 @@ import com.example.gearrent.DTO.*;
 import com.example.gearrent.entities.Equipamento;
 import com.example.gearrent.repository.EquipamentoRepository;
 import com.example.gearrent.service.EquipamentoService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
@@ -39,8 +40,11 @@ public class EquipamentoController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<EquipamentoResponse> atualizarEquipamento(@PathVariable Long id, @RequestBody EquipamentoRequest request) {
-        return ResponseEntity.ok(new EquipamentoResponse(id, "Equipamento atualizado"));
+    public ResponseEntity<AtualizarStatusResponse> atualizarEquipamento(
+            @PathVariable Long id,
+            @Valid @RequestBody EquipamentoRequest request) {
+        equipamentoService.atualizarEquipamento(id, request);
+        return ResponseEntity.ok(new AtualizarStatusResponse(id, "Equipamento atualizado com sucesso."));
     }
 
     @DeleteMapping("/{id}")

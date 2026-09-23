@@ -2,6 +2,7 @@ package com.example.gearrent.service;
 
 
 
+import com.example.gearrent.DTO.EquipamentoRequest;
 import com.example.gearrent.entities.Equipamento;
 import com.example.gearrent.repository.EquipamentoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,26 @@ public class EquipamentoService {
         }
 
         equipamento.setStatus(false);
+        equipamentoRepository.save(equipamento);
+    }
+
+    @Transactional
+    public void atualizarEquipamento(Long id, EquipamentoRequest request) {
+        Equipamento equipamento = equipamentoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Equipamento não encontrado com o ID: " + id));
+
+        // Valida se o equipamento não está inativo
+        if (!Boolean.TRUE.equals(equipamento.getStatus())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Não é possível atualizar um equipamento inativo.");
+        }
+
+        // Atualiza os campos permitidos
+        equipamento.setNome(request.nome());
+        equipamento.setModelo(request.modelo());
+        equipamento.setValorDiariaBase(request.valorDiariaBase());
+
         equipamentoRepository.save(equipamento);
     }
 }
