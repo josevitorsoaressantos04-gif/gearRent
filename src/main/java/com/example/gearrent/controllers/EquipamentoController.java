@@ -2,6 +2,7 @@ package com.example.gearrent.controllers;
 
 import com.example.gearrent.DTO.*;
 import com.example.gearrent.entities.Equipamento;
+import com.example.gearrent.entities.Usuario;
 import com.example.gearrent.repository.EquipamentoRepository;
 import com.example.gearrent.service.EquipamentoService;
 import jakarta.validation.Valid;
@@ -26,6 +27,14 @@ public class EquipamentoController {
     @GetMapping
     public ResponseEntity<List<Equipamento>> listarEquipamentos() {
         return ResponseEntity.ok(equipamentoRepository.findAll());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Equipamento> listarUsuariosPorId(@PathVariable Long id) {
+        // Se achar, retorna 200 OK com o usuário direto. Se não achar, retorna 404 Not Found.
+        return equipamentoRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
