@@ -50,9 +50,9 @@ public class EmpresaController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<EmpresaResponse> excluirEmpresa(@PathVariable Long id) {
+    public ResponseEntity<AtualizarStatusResponse> excluirEmpresa(@PathVariable Long id) {
         empresaService.deleteLogico(id);
-        return ResponseEntity.ok(new EmpresaResponse(id, "Empresa inativada com sucesso"));
+        return ResponseEntity.ok(new AtualizarStatusResponse(id, "Empresa desativada com sucesso."));
     }
 
 }

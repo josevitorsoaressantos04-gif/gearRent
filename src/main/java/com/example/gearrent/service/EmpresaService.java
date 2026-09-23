@@ -4,8 +4,12 @@ import com.example.gearrent.DTO.EmpresaRequest;
 import com.example.gearrent.DTO.EmpresaResponse;
 import com.example.gearrent.entities.Empresa;
 import com.example.gearrent.repository.EmpresaRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.util.Optional;
 
 @Service
@@ -31,8 +35,17 @@ public class EmpresaService {
         });
     }
 
-    public void deleteLogico(Long id){
-        Empresa empresa = empresaRepository.findById(id).orElse(ResponseEntity.notFound().build());
+    @Transactional
+    public void deleteLogico(Long id) {
+        Empresa empresa = empresaRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Empresa não encontrada com o ID: " + id));
+
+        if (!Boolean.TRUE.equals(empresa.getStatus())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Esta empresa já está desativada.");
+        }
+
         empresa.setStatus(false);
         empresaRepository.save(empresa);
     }

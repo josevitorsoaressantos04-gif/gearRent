@@ -30,5 +30,5 @@ public class Contrato {
     private LocalDateTime dataDevolucaoPrevista;
     private LocalDateTime dataDevolucaoReal;
     private double valorAcordado;
-    private boolean statusContrato;
+    private Boolean statusContrato;
 }

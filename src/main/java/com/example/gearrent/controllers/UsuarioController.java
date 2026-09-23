@@ -1,5 +1,6 @@
 package com.example.gearrent.controllers;
 
+import com.example.gearrent.DTO.AtualizarStatusResponse;
 import com.example.gearrent.DTO.UsuarioRequest;
 import com.example.gearrent.DTO.UsuarioResponse;
 import com.example.gearrent.entities.Usuario;
@@ -44,6 +45,7 @@ public class UsuarioController {
         usuarioBanco.setNome(usuarioRequest.nome());
         usuarioBanco.setEmail(usuarioRequest.email());
         usuarioBanco.setSenha(usuarioRequest.senha());
+        usuarioBanco.setLogin(usuarioRequest.login());
         usuarioBanco.setCpf(usuarioRequest.cpf());
         usuarioBanco.setDataCadastro(LocalDateTime.now());
 
@@ -72,13 +74,8 @@ public class UsuarioController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<UsuarioResponse> excluirUsuario(@PathVariable Long id) {
-        // Faz a checagem uma única vez de forma elegante
-        return usuarioRepository.findById(id)
-                .map(usuario -> {
-                    usuarioService.deleteLogico(id);
-                    return ResponseEntity.ok(new UsuarioResponse(usuario.getId(), "Usuário deletado com sucesso"));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<AtualizarStatusResponse> excluirUsuario(@PathVariable Long id) {
+        usuarioService.deleteLogico(id);
+        return ResponseEntity.ok(new AtualizarStatusResponse(id, "Registro desativado com sucesso."));
     }
 }

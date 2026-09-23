@@ -44,20 +44,13 @@ public class EquipamentoController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<EquipamentoResponse> excluirEquipamento(@PathVariable Long id) {
-        equipamentoService.deleteLogico(id);
-        return ResponseEntity.ok(new EquipamentoResponse(id, "Equipamento inativado com sucesso"));
+    public ResponseEntity<AtualizarStatusResponse> excluirEquipamento(@PathVariable Long id) {
+        return equipamentoRepository.findById(id)
+                .map(equipamento -> {
+                    equipamentoService.deleteLogico(id);
+                    return ResponseEntity.ok(new AtualizarStatusResponse(id, "Equipamento desativado com sucesso"));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    @PatchMapping("/status/{id}")
-    public ResponseEntity<AtualizarStatusResponse> atualizarEquipamentoStatus(
-            @PathVariable Long id,
-            @RequestBody AtualizarStatusRequest request) {
-
-        // O EquipamentoService.js impedirá a mudança do numeroPatrimonio[cite: 2],
-        // mas permitirá alterar o valorDiariaBase (desde que recebido como BigDecimal).
-        // equipamentoService.atualizar(id, request);
-
-        return ResponseEntity.ok(new AtualizarStatusResponse(id, "Equipamento atualizado com sucesso"));
-    }
 }

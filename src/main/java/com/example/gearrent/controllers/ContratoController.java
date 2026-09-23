@@ -4,6 +4,7 @@ import com.example.gearrent.DTO.*;
 import com.example.gearrent.entities.Contrato;
 import com.example.gearrent.entities.Equipamento;
 import com.example.gearrent.repository.ContratoRepository;
+import com.example.gearrent.service.ContratoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.core.support.RepositoryMethodInvocationListener;
 import org.springframework.http.ResponseEntity;
@@ -18,14 +19,17 @@ public class ContratoController {
     @Autowired
     private ContratoRepository contratoRepository;
 
+    @Autowired
+    private ContratoService contratoService;
+
     @GetMapping
     public ResponseEntity<List<Contrato>> listarContratos() {
         return ResponseEntity.ok(contratoRepository.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Optional<Contrato>> BuscarContratoId(@PathVariable Long id){
-            return ResponseEntity.ok(contratoRepository.findById(id));
+    public ResponseEntity<Optional<Contrato>> BuscarContratoId(@PathVariable Long id) {
+        return ResponseEntity.ok(contratoRepository.findById(id));
     }
 
     @PostMapping
@@ -42,12 +46,9 @@ public class ContratoController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ContratoResponse> cancelarContrato(@PathVariable Long id) {
-        // TODO: Chamar o ContratoService para cancelar o contrato e liberar o equipamento no estoque
-        return contratoRepository.findById(id).map(contrato -> {
-            contrato.setStatusContrato(false);
-            contratoRepository.save(contrato);
-            return ResponseEntity.ok(new ContratoResponse(contrato.getId(), "Contrato Cancelado"));
-        }).orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<AtualizarStatusResponse> cancelarContrato(@PathVariable Long id) {
+        contratoService.deleteLogico(id);
+        return ResponseEntity.ok(new AtualizarStatusResponse(id, "Contrato cancelado com sucesso"));
+
     }
 }

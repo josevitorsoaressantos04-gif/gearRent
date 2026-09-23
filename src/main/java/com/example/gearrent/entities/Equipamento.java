@@ -21,5 +21,5 @@ public class Equipamento {
     private String modelo;
     private String versao;
     private double valorDiariaBase;
-    private boolean status;
+    private Boolean status;
 }
