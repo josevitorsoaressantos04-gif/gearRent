@@ -28,7 +28,7 @@ public class EquipamentoController {
     }
 
     @PostMapping
-    public ResponseEntity<EquipamentoResponse> criarEquipamento(@RequestBody EquipamentoRequest request, HttpEntity<Object> httpEntity) {
+    public ResponseEntity<EquipamentoResponse> criarEquipamento(@RequestBody EquipamentoRequest request) {
         Equipamento equipamento = new Equipamento();
         equipamento.setNome(request.nome());
         equipamento.setModelo(request.modelo());
