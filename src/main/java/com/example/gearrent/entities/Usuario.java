@@ -21,6 +21,7 @@ public class Usuario {
     private String cpf;
     private String dataNascimento;
     private String email;
+    private String login;
     private String senha;
     private String telefone;
     private LocalDateTime dataCadastro;

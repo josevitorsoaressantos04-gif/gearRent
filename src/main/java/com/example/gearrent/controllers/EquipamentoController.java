@@ -3,6 +3,7 @@ package com.example.gearrent.controllers;
 import com.example.gearrent.DTO.*;
 import com.example.gearrent.entities.Equipamento;
 import com.example.gearrent.repository.EquipamentoRepository;
+import com.example.gearrent.service.EquipamentoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,9 @@ import java.util.List;
 public class EquipamentoController {
     @Autowired
     private EquipamentoRepository equipamentoRepository;
+
+    @Autowired
+    EquipamentoService equipamentoService;
 
     @GetMapping
     public ResponseEntity<List<Equipamento>> listarEquipamentos() {
@@ -41,7 +45,7 @@ public class EquipamentoController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<EquipamentoResponse> excluirEquipamento(@PathVariable Long id) {
-        // TODO: Chamar o EquipamentoService.js para inativar o registro na base de dados
+        equipamentoService.deleteLogico(id);
         return ResponseEntity.ok(new EquipamentoResponse(id, "Equipamento inativado com sucesso"));
     }
 

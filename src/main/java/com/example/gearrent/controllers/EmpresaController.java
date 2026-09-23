@@ -3,6 +3,7 @@ package com.example.gearrent.controllers;
 import com.example.gearrent.DTO.*;
 import com.example.gearrent.entities.Empresa;
 import com.example.gearrent.repository.EmpresaRepository;
+import com.example.gearrent.service.EmpresaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,9 @@ import java.util.List;
 public class EmpresaController {
     @Autowired
     private EmpresaRepository empresaRepository;
+
+    @Autowired
+    private EmpresaService empresaService;
 
     @GetMapping
     public ResponseEntity<List<Empresa>> listarEmpresas() {
@@ -34,20 +38,20 @@ public class EmpresaController {
     }
 
 
-    @PutMapping("/{id}/atualizar")
-    public ResponseEntity<EmpresaResponse> atualizarDadosEmpresa(@PathVariable String cnpj, @RequestBody EmpresaRequest request) {
-        return empresaRepository.findByCnpj(cnpj).map(empresa ->  {
-            empresa.setNome(request.nome());
-            empresa.setCnpj(request.cnpj());
-            empresa.setEmail(request.email());
-            empresa.setTelefone(request.telefone());
-            empresaRepository.save(empresa);
-        });
+    @PutMapping("/{cnpj}/atualizar")
+    public ResponseEntity<EmpresaResponse> atualizarDadosEmpresa(
+            @PathVariable String cnpj,
+            @RequestBody EmpresaRequest request) {
+
+        // A Service devolve um Optional. O map() converte para 200 OK se existir, o orElse manda 404 se não achar.
+        return empresaService.atualizarPorCnpj(cnpj, request)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<EmpresaResponse> excluirEmpresa(@PathVariable Long id) {
-        // TODO: Chamar a EmpresaService para alterar o status para inativo
+        empresaService.deleteLogico(id);
         return ResponseEntity.ok(new EmpresaResponse(id, "Empresa inativada com sucesso"));
     }
 

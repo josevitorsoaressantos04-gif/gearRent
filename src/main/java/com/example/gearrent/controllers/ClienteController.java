@@ -57,11 +57,7 @@ public class ClienteController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ClienteResponse> excluirCliente(@PathVariable Long id) {
-        if (clienteRepository.findById(id).isPresent()) {
-            clienteService.deleteLogico(id);
-            return ResponseEntity.ok(new ClienteResponse(id, "Cliente desativado com sucesso"));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        clienteService.deleteLogico(id);
+        return ResponseEntity.ok(new ClienteResponse(id, "Cliente desativado com sucesso"));
     }
 }
