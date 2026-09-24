@@ -24,7 +24,7 @@ public class EmpresaService {
 
     public Optional<EmpresaResponse> atualizarPorCnpj(String cnpj, EmpresaRequest request) {
         return empresaRepository.findByCnpj(cnpj).map(empresa -> {
-            empresa.setNome(request.nome());
+            empresa.setRazaoSocial(request.nome());
             empresa.setCnpj(request.cnpj());
             empresa.setEmail(request.email());
             empresa.setTelefone(request.telefone());

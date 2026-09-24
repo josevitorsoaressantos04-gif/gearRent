@@ -27,7 +27,7 @@ public class EmpresaController {
     @PostMapping
     public ResponseEntity<EmpresaResponse> criarEmpresa(@RequestBody EmpresaRequest request) {
         Empresa empresa = new Empresa();
-        empresa.setNome(request.nome());
+        empresa.setNomeFantasia(request.nome());
         empresa.setCnpj(request.cnpj());
         empresa.setEmail(request.email());
         empresa.setTelefone(request.telefone());

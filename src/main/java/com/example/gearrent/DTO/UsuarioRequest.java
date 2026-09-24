@@ -21,6 +21,6 @@ public record UsuarioRequest(
 
         @NotBlank (message = "Campo Obrigatório")
         String senha,
-
+        Long empresa_id,
         String telefone) {
 }

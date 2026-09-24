@@ -3,16 +3,20 @@ package com.example.gearrent.controllers;
 import com.example.gearrent.DTO.AtualizarStatusResponse;
 import com.example.gearrent.DTO.UsuarioRequest;
 import com.example.gearrent.DTO.UsuarioResponse;
+import com.example.gearrent.entities.Empresa;
 import com.example.gearrent.entities.Usuario;
+import com.example.gearrent.repository.EmpresaRepository;
 import com.example.gearrent.repository.UsuarioRepository;
 import com.example.gearrent.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
 @CrossOrigin(origins = {"http://localhost:63342"})
 @RestController
 @RequestMapping("/usuarios")
@@ -20,6 +24,9 @@ public class UsuarioController {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private EmpresaRepository empresaRepository;
 
     @Autowired
     private UsuarioService usuarioService;
@@ -39,6 +46,11 @@ public class UsuarioController {
 
     @PostMapping
     public ResponseEntity<UsuarioResponse> criarUsuario(@RequestBody UsuarioRequest usuarioRequest) {
+        var empresaBanco = empresaRepository.findById(usuarioRequest.empresa_id()).orElse(null);
+        if(empresaBanco == null) {
+            return ResponseEntity.notFound().build();
+        }
+
         // TODO: Mover essa lógica de conversão/hash de senha para dentro do UsuarioService
         Usuario usuarioBanco = new Usuario();
         usuarioBanco.setAtivo(true);
@@ -46,6 +58,7 @@ public class UsuarioController {
         usuarioBanco.setEmail(usuarioRequest.email());
         usuarioBanco.setSenha(usuarioRequest.senha());
         usuarioBanco.setLogin(usuarioRequest.login());
+        usuarioBanco.setEmpresa(empresaBanco);
         usuarioBanco.setCpf(usuarioRequest.cpf());
         usuarioBanco.setDataCadastro(LocalDateTime.now());
 
