@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.NoArgsConstructor;
 @Entity
@@ -19,8 +20,9 @@ public class Usuario {
     private Boolean ativo;
     private String nome;
     private String cpf;
-    private String dataNascimento;
+    private LocalDate dataNascimento;
     private String email;
+    private String login;
     private String senha;
     private String telefone;
     private LocalDateTime dataCadastro;

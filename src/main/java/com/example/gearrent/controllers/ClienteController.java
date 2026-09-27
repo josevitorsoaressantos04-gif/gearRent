@@ -1,45 +1,54 @@
 package com.example.gearrent.controllers;
-import com.example.gearrent.DTO.*;
+
+import com.example.gearrent.DTO.ClienteRequest;
+import com.example.gearrent.DTO.ClienteResponse;
+import com.example.gearrent.DTO.MensagemResponse;
+import com.example.gearrent.service.ClienteService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Collections;
+
 import java.util.List;
 
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"})
 @RestController
 @RequestMapping("/clientes")
 public class ClienteController {
 
+    private final ClienteService clienteService;
+
+    public ClienteController(ClienteService clienteService) {
+        this.clienteService = clienteService;
+    }
 
     @GetMapping
     public ResponseEntity<List<ClienteResponse>> listarClientes() {
-        return ResponseEntity.ok(Collections.emptyList());
+        return ResponseEntity.ok(clienteService.listarTodos());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ClienteResponse> buscarClientePorId(@PathVariable Long id) {
+        return ResponseEntity.ok(clienteService.buscarPorId(id));
     }
 
     @PostMapping
-    public ResponseEntity<ClienteResponse> criarCliente(@RequestBody ClienteRequest request) {
-        // TODO: Repassar 'request' para o ClienteService realizar a criação real
-        return ResponseEntity.ok(new ClienteResponse(1L, "Cliente criado com sucesso"));
+    public ResponseEntity<MensagemResponse> criarCliente(@Valid @RequestBody ClienteRequest request) {
+        MensagemResponse response = clienteService.criarCliente(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ClienteResponse> atualizarCliente(@PathVariable Long id, @RequestBody ClienteRequest request) {
-        return ResponseEntity.ok(new ClienteResponse(id, "Cliente atualizado com sucesso"));
+    public ResponseEntity<MensagemResponse> atualizarCliente(
+            @PathVariable Long id,
+            @Valid @RequestBody ClienteRequest request) {
+        MensagemResponse response = clienteService.atualizarCliente(id, request);
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ClienteResponse> excluirCliente(@PathVariable Long id) {
-        return ResponseEntity.ok(new ClienteResponse(id, "Cliente desativado com sucesso"));
-    }
-
-    @PatchMapping("/status/{id}")
-    public ResponseEntity<AtualizarStatusResponse> atualizarClienteStatus(
-            @PathVariable Long id,
-            @RequestBody AtualizarStatusRequest request) {
-
-        // A Controller não valida dados nem altera o banco.
-        // O ClienteService irá buscar o ID, atualizar os campos seguros (como email) e ignorar o CPF[cite: 9].
-        // clienteService.atualizar(id, request);
-
-        return ResponseEntity.ok(new AtualizarStatusResponse(id, "Cliente atualizado com sucesso"));
+    public ResponseEntity<MensagemResponse> excluirCliente(@PathVariable Long id) {
+        clienteService.inativarCliente(id);
+        return ResponseEntity.ok(new MensagemResponse(id, "Cliente desativado com sucesso."));
     }
 }

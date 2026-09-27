@@ -1,4 +1,11 @@
 package com.example.gearrent.DTO;
 
-public record LoginRequest(String login , String senha) {
+import jakarta.validation.constraints.NotBlank;
+
+public record LoginRequest(
+        @NotBlank (message = "Campo Obrigatório")
+        String login ,
+
+        @NotBlank (message = "Campo Obrigatório")
+        String senha) {
 }

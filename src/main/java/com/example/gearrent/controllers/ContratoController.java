@@ -1,27 +1,55 @@
 package com.example.gearrent.controllers;
-import com.example.gearrent.DTO.*;
+
+import com.example.gearrent.DTO.ContratoPutRequest;
+import com.example.gearrent.DTO.ContratoRequest;
+import com.example.gearrent.DTO.ContratoResponse;
+import com.example.gearrent.DTO.MensagemResponse;
+import com.example.gearrent.service.ContratoService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Collections;
+
 import java.util.List;
 
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"})
 @RestController
 @RequestMapping("/contratos")
 public class ContratoController {
 
+    private final ContratoService contratoService;
+
+    public ContratoController(ContratoService contratoService) {
+        this.contratoService = contratoService;
+    }
+
     @GetMapping
     public ResponseEntity<List<ContratoResponse>> listarContratos() {
-        return ResponseEntity.ok(Collections.emptyList());
+        return ResponseEntity.ok(contratoService.listarTodos());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ContratoResponse> buscarContratoPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(contratoService.buscarPorId(id));
     }
 
     @PostMapping
-    public ResponseEntity<ContratoResponse> criarContrato(@RequestBody ContratoRequest request) {
-        return ResponseEntity.ok(new ContratoResponse(1L, "Contrato gerado com sucesso"));
+    public ResponseEntity<MensagemResponse> criarContrato(@Valid @RequestBody ContratoRequest request) {
+        MensagemResponse response = contratoService.criarContrato(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<MensagemResponse> atualizarContrato(
+            @PathVariable Long id,
+            @Valid @RequestBody ContratoPutRequest request) {
+        MensagemResponse response = contratoService.atualizarContrato(id, request);
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ContratoResponse> cancelarContrato(@PathVariable Long id) {
-        // TODO: Chamar o ContratoService para cancelar o contrato e liberar o equipamento no estoque
-        return ResponseEntity.ok(new ContratoResponse(id, "Contrato cancelado com sucesso"));
+    public ResponseEntity<MensagemResponse> cancelarContrato(@PathVariable Long id) {
+        contratoService.deleteLogico(id);
+        return ResponseEntity.ok(new MensagemResponse(id, "Contrato cancelado com sucesso."));
     }
 }

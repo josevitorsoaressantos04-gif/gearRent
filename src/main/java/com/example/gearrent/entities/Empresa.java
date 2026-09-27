@@ -20,5 +20,5 @@ public class Empresa {
     private String cnpj;
     private String telefone;
     private String email;
-    private boolean status;
+    private Boolean status;
 }

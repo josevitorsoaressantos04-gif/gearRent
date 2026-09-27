@@ -1,2 +1,10 @@
 package com.example.gearrent.DTO;
-public record EmpresaResponse(Long id, String mensagem) {}
+// DTO para Saída de Dados (GET)
+public record EmpresaResponse(
+        Long id,
+        String nome,
+        String cnpj,
+        String telefone,
+        String email,
+        Boolean ativo
+) {}
