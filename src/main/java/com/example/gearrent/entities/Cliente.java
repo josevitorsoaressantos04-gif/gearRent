@@ -22,6 +22,7 @@ public class Cliente {
     private String email;
     private String cpf;
     private Boolean ativo;
+    private String telefone;
     private LocalDateTime dataAtualizacao;
 }
 

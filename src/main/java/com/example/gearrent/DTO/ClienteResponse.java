@@ -1,5 +1,10 @@
 package com.example.gearrent.DTO;
 
 public record ClienteResponse(
-        Long id, String mensagem
+        Long id,
+        String nome,
+        String cpf,
+        String email,
+        String telefone,
+        Boolean ativo
 ) {}

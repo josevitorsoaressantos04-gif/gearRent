@@ -20,4 +20,10 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByEmail(String email);
 
    Optional<Usuario> findByLogin(@NotBlank(message = "Campo Obrigatório") String login);
+
+   Optional<Usuario> findByCpf(@NotBlank(message = "Campo Obrigatório")String cpf);
+
+    boolean existsByCpf(String cpf);
+
+    boolean existsByEmail(String email);
 }
