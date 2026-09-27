@@ -16,9 +16,7 @@ public class Empresa {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    private String nomeFantasia;
-    private String razaoSocial;
-    private String inscricaoEstadual;
+    private String nome;
     private String cnpj;
     private String telefone;
     private String email;

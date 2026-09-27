@@ -29,14 +29,6 @@ public class EquipamentoController {
         return ResponseEntity.ok(equipamentoService.buscarPorId(id));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Equipamento> listarUsuariosPorId(@PathVariable Long id) {
-        // Se achar, retorna 200 OK com o usuário direto. Se não achar, retorna 404 Not Found.
-        return equipamentoRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
     @PostMapping
     public ResponseEntity<MensagemResponse> criarEquipamento(@Valid @RequestBody EquipamentoRequest request) {
         MensagemResponse response = equipamentoService.criarEquipamento(request);
