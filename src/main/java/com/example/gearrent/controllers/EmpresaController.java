@@ -4,6 +4,7 @@ import com.example.gearrent.DTO.EmpresaPutRequest;
 import com.example.gearrent.DTO.EmpresaRequest;
 import com.example.gearrent.DTO.EmpresaResponse;
 import com.example.gearrent.DTO.MensagemResponse;
+import com.example.gearrent.entities.Empresa;
 import com.example.gearrent.service.EmpresaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ public class EmpresaController {
 
     private final EmpresaService empresaService;
 
+    // Injeção de dependência via construtor
     public EmpresaController(EmpresaService empresaService) {
         this.empresaService = empresaService;
     }
@@ -31,6 +33,11 @@ public class EmpresaController {
     @GetMapping("/{id}")
     public ResponseEntity<EmpresaResponse> buscarEmpresaPorId(@PathVariable Long id) {
         return ResponseEntity.ok(empresaService.buscarPorId(id));
+    }
+
+    @GetMapping("/cnpj/{cnpj}")
+    public ResponseEntity<UsuarioConsultaResponse> buscarUsuarioEmpresaPorCpnj(@PathVariable String cnpj) {
+        return ResponseEntity.ok(empresaService.buscarPorCnpj(cnpj));
     }
 
     @PostMapping

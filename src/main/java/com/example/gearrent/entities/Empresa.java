@@ -1,12 +1,11 @@
 package com.example.gearrent.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -16,9 +15,20 @@ public class Empresa {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    private String nome;
+    private String nomeFantasia;
+    private String razaoSocial;
+    private String inscricaoEstadual;
+
+
+    @Column(unique = true)
     private String cnpj;
     private String telefone;
     private String email;
     private Boolean status;
+
+    // o campo que está em string tem que estar na enitite que você está relacionando
+    @OneToMany(mappedBy = "empresa")
+    private List<Usuario> usuarios;
+
+
 }

@@ -1,5 +1,6 @@
 package com.example.gearrent.DTO;
 
+import com.example.gearrent.entities.Empresa;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
 import org.hibernate.validator.constraints.br.CPF;
@@ -40,7 +41,9 @@ public record UsuarioRequest(
                 regexp = "^\\(?([1-9]{2})\\)?[-. ]?([2-9][0-9]{3,4})[-. ]?([0-9]{4})$",
                 message = "Telefone inválido. Formato esperado: (00)000000000 ou (00)00000000"
         )
-        String telefone
+        String telefone,
+
+        Long empresa_id
 ) {
         // Sanitização: limpa caracteres especiais e força e-mail/login em minúsculo
         public String cpf() {

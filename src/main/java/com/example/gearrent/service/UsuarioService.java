@@ -1,10 +1,13 @@
 package com.example.gearrent.service;
 
 import com.example.gearrent.DTO.MensagemResponse;
+import com.example.gearrent.DTO.UsuarioConsultaResponse;
 import com.example.gearrent.DTO.UsuarioRequest;
 import com.example.gearrent.DTO.UsuarioResponse;
+import com.example.gearrent.entities.Empresa;
 import com.example.gearrent.entities.Usuario;
 import com.example.gearrent.exception.RegraNegocioException;
+import com.example.gearrent.repository.EmpresaRepository;
 import com.example.gearrent.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,29 +19,32 @@ import java.util.List;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final EmpresaRepository empresaRepository;
 
-    public UsuarioService(UsuarioRepository usuarioRepository) {
+    public UsuarioService(UsuarioRepository usuarioRepository, EmpresaRepository empresaRepository) {
         this.usuarioRepository = usuarioRepository;
+        this.empresaRepository = empresaRepository;
     }
 
-    // GET: Retorna a lista completa com todas as informações do usuário
+    // GET: Retorna a lista completa convertida para UsuarioResponse
     @Transactional(readOnly = true)
-    public List<UsuarioResponse> listarTodos() {
+    public List<UsuarioConsultaResponse> listarTodos() {
         return usuarioRepository.findAll().stream()
-                .map(this::mapearParaResponse)
+                .map(UsuarioConsultaResponse::new)
                 .toList();
     }
 
     // GET: Retorna um usuário específico
     @Transactional(readOnly = true)
-    public UsuarioResponse buscarPorId(Long id) {
+    public UsuarioConsultaResponse buscarPorId(Long id) {
         Usuario usuario = buscarEntidadePorId(id);
-        return mapearParaResponse(usuario);
+        return new UsuarioConsultaResponse(usuario);
     }
 
-    // POST: Cria o usuário e garante o salvamento da dataNascimento
+    // POST: Cria o usuário e vincula à Empresa cadastrada
     @Transactional
     public MensagemResponse criarUsuario(UsuarioRequest request) {
+
         if (usuarioRepository.existsByEmail(request.email())) {
             throw new RegraNegocioException("O e-mail/login informado já está cadastrado.");
         }
@@ -47,21 +53,25 @@ public class UsuarioService {
             throw new RegraNegocioException("O CPF informado já está cadastrado.");
         }
 
+        Empresa empresaBanco = empresaRepository.findById(request.empresa_id())
+                .orElseThrow(() -> new RegraNegocioException("A empresa informada não está cadastrada no sistema."));
+
         Usuario usuario = new Usuario();
         usuario.setNome(request.nome());
         usuario.setCpf(request.cpf()); // Sanitizado sem pontos e traços
         usuario.setEmail(request.email());
         usuario.setSenha(request.senha()); // TODO: Criptografia BCrypt
         usuario.setTelefone(request.telefone());
-        usuario.setDataNascimento(request.dataNascimento()); // Garante o preenchimento da data!
+        usuario.setDataNascimento(request.dataNascimento());
         usuario.setAtivo(true);
+        usuario.setEmpresa(empresaBanco);
         usuario.setDataCadastro(LocalDateTime.now());
 
         usuarioRepository.save(usuario);
         return new MensagemResponse(usuario.getId(), "Usuário cadastrado com sucesso.");
     }
 
-    // PUT: Atualiza as informações do usuário
+    // PUT: Atualiza os dados do usuário com validações de unicidade
     @Transactional
     public MensagemResponse atualizarUsuario(Long id, UsuarioRequest request) {
         Usuario usuario = buscarEntidadePorId(id);
@@ -71,12 +81,12 @@ public class UsuarioService {
         }
 
         if (!usuario.getCpf().equals(request.cpf()) && usuarioRepository.existsByCpf(request.cpf())) {
-            throw new RegraNegocioException("O CPF informado já está cadastrado.");
+            throw new RegraNegocioException("O CPF informado já está cadastrado no sistema.");
         }
 
         usuario.setNome(request.nome());
         usuario.setEmail(request.email());
-        usuario.setSenha(request.senha());
+        usuario.setSenha(request.senha()); // TODO: Criptografia BCrypt
         usuario.setCpf(request.cpf());
         usuario.setTelefone(request.telefone());
         usuario.setDataNascimento(request.dataNascimento());
@@ -86,7 +96,7 @@ public class UsuarioService {
         return new MensagemResponse(usuario.getId(), "Usuário atualizado com sucesso.");
     }
 
-    // DELETE: Inativação lógica (Soft Delete)
+    // DELETE: Soft Delete com validação do estado ativo
     @Transactional
     public void inativarUsuario(Long id) {
         Usuario usuario = buscarEntidadePorId(id);
@@ -99,21 +109,9 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
 
+    // Método auxiliar privado para buscar entidade
     private Usuario buscarEntidadePorId(Long id) {
         return usuarioRepository.findById(id)
-                .orElseThrow(() -> new RegraNegocioException("Usuário não encontrado com o ID: " + id));
-    }
-
-    // Mapeamento correto para a consulta GET
-    private UsuarioResponse mapearParaResponse(Usuario usuario) {
-        return new UsuarioResponse(
-                usuario.getId(),
-                usuario.getNome(),
-                usuario.getCpf(),
-                usuario.getDataNascimento(), // Mapeia a data sem null
-                usuario.getEmail(),
-                usuario.getTelefone(),
-                usuario.getAtivo()
-        );
+                .orElseThrow(() -> new RegraNegocioException("Não existe usuário cadastrado com o ID: " + id));
     }
 }

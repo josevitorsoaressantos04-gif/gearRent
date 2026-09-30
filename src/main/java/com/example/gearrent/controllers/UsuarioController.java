@@ -1,6 +1,7 @@
 package com.example.gearrent.controllers;
 
 import com.example.gearrent.DTO.MensagemResponse;
+import com.example.gearrent.DTO.UsuarioConsultaResponse;
 import com.example.gearrent.DTO.UsuarioRequest;
 import com.example.gearrent.DTO.UsuarioResponse;
 import com.example.gearrent.service.UsuarioService;
@@ -23,12 +24,12 @@ public class UsuarioController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UsuarioResponse>> listarUsuarios() {
+    public ResponseEntity<List<UsuarioConsultaResponse>> listarUsuarios() {
         return ResponseEntity.ok(usuarioService.listarTodos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UsuarioResponse> listarUsuariosPorId(@PathVariable Long id) {
+    public ResponseEntity<UsuarioConsultaResponse> listarUsuariosPorId(@PathVariable Long id) {
         return ResponseEntity.ok(usuarioService.buscarPorId(id));
     }
 
