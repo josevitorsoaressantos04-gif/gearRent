@@ -4,27 +4,40 @@ import com.example.gearrent.entities.Usuario;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public record UsuarioConsultaResponse(
-        Long empresa_id,
-        String razaoSocial,
         Long id,
+        Boolean ativo,
         String nome,
-        String login,
         String cpf,
         @JsonFormat(pattern = "dd/MM/yyyy")
-        LocalDate dataNascimento
+        LocalDate dataNascimento,
+        String email,
+        String login,
+        String telefone,
+        Long empresaId,
+        String empresaRazaoSocial,
+        @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
+        LocalDateTime dataCadastro,
+        @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
+        LocalDateTime dataAtualizacao
 ) {
     // Construtor auxiliar para conversão da Entidade -> DTO
     public UsuarioConsultaResponse(Usuario usuario) {
         this(
-                usuario.getEmpresa() != null ? usuario.getEmpresa().getId() : null,
-                usuario.getEmpresa() != null ? usuario.getEmpresa().getNomeFantasia() : null,
                 usuario.getId(),
+                usuario.getAtivo(),
                 usuario.getNome(),
-                usuario.getLogin(),
                 usuario.getCpf(),
-                usuario.getDataNascimento()
+                usuario.getDataNascimento(),
+                usuario.getEmail(),
+                usuario.getLogin(),
+                usuario.getTelefone(),
+                usuario.getEmpresa() != null ? usuario.getEmpresa().getId() : null,
+                usuario.getEmpresa() != null ? usuario.getEmpresa().getRazaoSocial() : null,
+                usuario.getDataCadastro(),
+                usuario.getDataAtualizacao()
         );
     }
 }

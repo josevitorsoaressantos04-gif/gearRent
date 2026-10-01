@@ -19,17 +19,30 @@ public class EmpresaService {
     }
 
     @Transactional(readOnly = true)
-    public List<EmpresaResponse> listarTodas() {
+    public List<EmpresaConsultaResponse> listarTodas() {
         return empresaRepository.findAll().stream()
-                .map(this::mapearParaResponse)
+                .map(EmpresaConsultaResponse::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public EmpresaResponse buscarPorId(Long id) {
+    public EmpresaConsultaResponse buscarPorId(Long id) {
         Empresa empresa = buscarEntidadePorId(id);
-        return mapearParaResponse(empresa);
+        return new EmpresaConsultaResponse(empresa);
     }
+
+    @Transactional(readOnly = true)
+    public EmpresaConsultaResponse buscarPorCnpjComUsuarios(String cnpj) {
+        Empresa empresa = empresaRepository.findByCnpj(cnpj)
+                .orElseThrow(() -> new RegraNegocioException("Empresa não encontrada para o CNPJ informado."));
+
+        if (Boolean.FALSE.equals(empresa.getStatus())) {
+            throw new RegraNegocioException("Esta empresa encontra-se desativada no sistema.");
+        }
+
+        return new EmpresaConsultaResponse(empresa);
+    }
+
 
     @Transactional
     public MensagemResponse criarEmpresa(EmpresaRequest request) {
@@ -43,7 +56,7 @@ public class EmpresaService {
         Empresa empresa = new Empresa();
         empresa.setNomeFantasia(request.nome());
         empresa.setRazaoSocial(request.razaoSocial());
-        empresa.setCnpj(request.cnpjLimpo()); // Salva apenas os 14 números lógicos
+        empresa.setCnpj(request.cnpjLimpo());
         empresa.setEmail(request.email().toLowerCase().trim());
         empresa.setTelefone(request.telefoneLimpo());
         empresa.setStatus(true);
@@ -67,7 +80,6 @@ public class EmpresaService {
         empresa.setNomeFantasia(request.nome());
         empresa.setEmail(request.email().toLowerCase().trim());
         empresa.setTelefone(request.telefoneLimpo());
-        // O CNPJ permanece blindado, não sendo atualizado aqui
 
         empresaRepository.save(empresa);
         return new MensagemResponse(empresa.getId(), "Cadastro corporativo atualizado com sucesso.");
@@ -85,42 +97,8 @@ public class EmpresaService {
         empresaRepository.save(empresa);
     }
 
-    @Transactional(readOnly = true)
-    public Empresa buscarPorCnpj(String cnpj) {
-        return empresaRepository.findByCnpj(cnpj)
-                .orElseThrow(() -> new RegraNegocioException("Esta empresa não existe no sistema."));
-    }
-
-    @Transactional(readOnly = true)
-    public List<UsuarioConsultaResponse> buscarUsuariosPorCnpjEmpresa(String cnpj) {
-        Empresa empresa = empresaRepository.findByCnpj(cnpj)
-                .orElseThrow(() -> new RegraNegocioException("Empresa não encontrada para o CNPJ informado."));
-
-        if (Boolean.FALSE.equals(empresa.getStatus())) {
-            throw new RegraNegocioException("Esta empresa encontra-se desativada no sistema.");
-        }
-
-        if (!empresaRepository.existsByCnpj(cnpj)) {
-            throw new RegraNegocioException("Esta empresa não existe no sistema.");
-        }
-
-        return empresa.getUsuarios().stream().map(UsuarioConsultaResponse :: new ).toList();
-    }
-
     private Empresa buscarEntidadePorId(Long id) {
         return empresaRepository.findById(id)
                 .orElseThrow(() -> new RegraNegocioException("Empresa não encontrada com o ID: " + id));
-    }
-
-    private EmpresaResponse mapearParaResponse(Empresa empresa) {
-        return new EmpresaResponse(
-                empresa.getId(),
-                empresa.getNomeFantasia(),
-                empresa.getCnpj(),
-                empresa.getTelefone(),
-                empresa.getEmail(),
-                empresa.getStatus(),
-                empresa.getUsuarios()
-        );
     }
 }
