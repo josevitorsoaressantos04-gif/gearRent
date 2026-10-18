@@ -1,0 +1,327 @@
+:root {
+    color-scheme: light;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18px;
+    line-height: 1.55;
+    color: #172b3a;
+    background: #f4f7f9;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+}
+
+a {
+    color: #064f7d;
+}
+
+a:focus-visible,
+button:focus-visible {
+    outline: 4px solid #f2b705;
+    outline-offset: 3px;
+}
+
+.container {
+    width: min(100% - 2rem, 1120px);
+    margin-inline: auto;
+}
+
+.skip-link {
+    position: absolute;
+    z-index: 1;
+    top: 0.75rem;
+    left: 0.75rem;
+    padding: 0.75rem 1rem;
+    transform: translateY(-180%);
+    border-radius: 0.35rem;
+    color: #fff;
+    background: #12304a;
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+}
+
+.site-header {
+    color: #fff;
+    background: #12304a;
+}
+
+.header-content {
+    display: flex;
+    min-height: 76px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.brand {
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.header-message {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.intro {
+    padding-block: clamp(2rem, 6vw, 4rem) 2rem;
+}
+
+.eyebrow {
+    margin: 0 0 0.5rem;
+    color: #064f7d;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+h1,
+h2,
+h3,
+p {
+    overflow-wrap: anywhere;
+}
+
+h1 {
+    max-width: 760px;
+    margin: 0;
+    color: #12304a;
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    line-height: 1.2;
+}
+
+.intro-copy {
+    margin: 1rem 0 0;
+    font-size: 1.125rem;
+}
+
+.equipment-section {
+    padding-bottom: 3.5rem;
+}
+
+.section-heading {
+    margin-bottom: 1rem;
+}
+
+h2 {
+    margin: 0;
+    color: #12304a;
+    font-size: 1.5rem;
+    line-height: 1.3;
+}
+
+.status-message {
+    margin: 0 0 1rem;
+    padding: 0.9rem 1rem;
+    border-left: 5px solid #064f7d;
+    background: #e6eef3;
+}
+
+.equipment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    gap: 1rem;
+}
+
+.equipment-card {
+    min-height: 210px;
+    padding: 1.25rem;
+    border: 1px solid #aebdc8;
+    border-radius: 0.5rem;
+    background: #fff;
+    box-shadow: 0 2px 8px rgb(18 48 74 / 8%);
+}
+
+.equipment-category {
+    display: inline-block;
+    margin: 0 0 0.75rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    color: #12304a;
+    background: #e6eef3;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.equipment-name {
+    margin: 0;
+    color: #12304a;
+    font-size: 1.3rem;
+    line-height: 1.3;
+}
+
+.equipment-model {
+    margin: 0.5rem 0 0;
+    color: #344b5b;
+}
+
+.equipment-price {
+    margin: 1rem 0 0;
+    color: #153f22;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.error-message {
+    margin-bottom: 1.25rem;
+    padding: 1rem;
+    border: 2px solid #9b2020;
+    border-radius: 0.4rem;
+    color: #681616;
+    background: #fff2f0;
+}
+
+.error-message p {
+    margin: 0 0 0.5rem;
+}
+
+.button {
+    min-height: 52px;
+    padding: 0.7rem 1.2rem;
+    border: 2px solid transparent;
+    border-radius: 0.4rem;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.button-secondary {
+    margin-top: 0.5rem;
+    border-color: #12304a;
+    color: #fff;
+    background: #12304a;
+}
+
+.button-secondary:hover {
+    background: #1e4a6c;
+}
+
+.site-footer {
+    padding-block: 1.25rem;
+    color: #fff;
+    background: #12304a;
+}
+
+.site-footer p {
+    margin: 0;
+}
+
+.prototype-navbar {
+    padding-block: 0.75rem;
+    color: #fff;
+    background: #12304a;
+}
+
+.prototype-navbar .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.prototype-navbar .navbar-brand,
+.prototype-navbar .nav-link {
+    color: #fff;
+}
+
+.prototype-navbar .navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.prototype-navbar .nav-link {
+    min-height: 48px;
+    padding: 0.65rem 0.8rem;
+    border-radius: 0.35rem;
+    font-weight: 700;
+}
+
+.prototype-navbar .nav-link:hover,
+.prototype-navbar .nav-link.active {
+    color: #fff;
+    background: #1e4a6c;
+}
+
+.page-shell {
+    min-height: calc(100vh - 80px);
+    padding-block: clamp(2rem, 5vw, 3.5rem);
+}
+
+.page-shell .card {
+    border-color: #aebdc8;
+    box-shadow: 0 2px 8px rgb(18 48 74 / 8%);
+}
+
+.page-shell .form-label {
+    font-weight: 700;
+}
+
+.page-shell .form-control {
+    min-height: 56px;
+}
+
+.page-shell .btn {
+    min-height: 52px;
+    font-weight: 700;
+}
+
+.page-shell .btn-primary {
+    border-color: #12304a;
+    background-color: #12304a;
+}
+
+.page-shell .btn-primary:hover,
+.page-shell .btn-primary:focus {
+    border-color: #1e4a6c;
+    background-color: #1e4a6c;
+}
+
+.page-shell .table {
+    --bs-table-color: #172b3a;
+}
+
+.page-shell .table th,
+.page-shell .table td {
+    padding: 0.9rem 0.75rem;
+}
+
+.page-shell .equipment-price {
+    color: #153f22;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 560px) {
+    .container {
+        width: min(100% - 1.25rem, 1120px);
+    }
+
+    .header-content {
+        align-items: flex-start;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.1rem;
+        padding-block: 0.65rem;
+    }
+
+    .prototype-navbar .container {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Vitrine fictícia de equipamentos para alugar na GearRent.">
+    <title>Equipamentos | GearRent</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+</head>
+<body>
+    <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+    <header>
+        <nav class="navbar prototype-navbar" aria-label="Navegação principal">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">GearRent</a>
+                <div class="navbar-nav flex-row flex-wrap gap-2">
+                    <a class="nav-link" href="index.html">Início</a>
+                    <a class="nav-link" href="clientes.html">Clientes</a>
+                    <a class="nav-link active" href="equipamentos.html" aria-current="page">Equipamentos</a>
+                    <a class="nav-link" href="locacoes.html">Locações</a>
+                    <a class="nav-link" href="login.html">Sair</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main id="conteudo" class="container page-shell">
+        <div class="mb-4">
+            <p class="eyebrow mb-2">Vitrine</p>
+            <h1 class="display-5 fw-bold">Equipamentos</h1>
+            <p class="lead mb-0">Veja o que está disponível para alugar.</p>
+        </div>
+
+        <section aria-labelledby="disponiveis-titulo">
+            <h2 id="disponiveis-titulo" class="h3 mb-3">Disponíveis para alugar</h2>
+            <div class="row g-4">
+                <div class="col-12 col-md-6 col-lg-4">
+                    <article class="card h-100">
+                        <div class="card-body d-flex flex-column">
+                            <span class="badge text-bg-success align-self-start mb-3">Disponível</span>
+                            <h3 class="h4 card-title">Betoneira</h3>
+                            <p class="mb-1">Modelo: 400 litros</p>
+                            <p class="equipment-price mt-3">R$ 85,00 por dia</p>
+                            <button class="btn btn-primary btn-lg p-3 w-100 mt-auto" type="button"
+                                    data-bs-toggle="modal" data-bs-target="#modal-locacao">
+                                Alugar
+                            </button>
+                        </div>
+                    </article>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <article class="card h-100">
+                        <div class="card-body d-flex flex-column">
+                            <span class="badge text-bg-success align-self-start mb-3">Disponível</span>
+                            <h3 class="h4 card-title">Andaime tubular</h3>
+                            <p class="mb-1">Altura: 1,5 metro</p>
+                            <p class="equipment-price mt-3">R$ 35,00 por dia</p>
+                            <button class="btn btn-primary btn-lg p-3 w-100 mt-auto" type="button"
+                                    data-bs-toggle="modal" data-bs-target="#modal-locacao">
+                                Alugar
+                            </button>
+                        </div>
+                    </article>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <article class="card h-100">
+                        <div class="card-body d-flex flex-column">
+                            <span class="badge text-bg-success align-self-start mb-3">Disponível</span>
+                            <h3 class="h4 card-title">Compactadora de solo</h3>
+                            <p class="mb-1">Modelo: placa vibratória</p>
+                            <p class="equipment-price mt-3">R$ 120,00 por dia</p>
+                            <button class="btn btn-primary btn-lg p-3 w-100 mt-auto" type="button"
+                                    data-bs-toggle="modal" data-bs-target="#modal-locacao">
+                                Alugar
+                            </button>
+                        </div>
+                    </article>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <article class="card h-100">
+                        <div class="card-body d-flex flex-column">
+                            <span class="badge text-bg-success align-self-start mb-3">Disponível</span>
+                            <h3 class="h4 card-title">Furadeira de impacto</h3>
+                            <p class="mb-1">Modelo: uso profissional</p>
+                            <p class="equipment-price mt-3">R$ 28,00 por dia</p>
+                            <button class="btn btn-primary btn-lg p-3 w-100 mt-auto" type="button"
+                                    data-bs-toggle="modal" data-bs-target="#modal-locacao">
+                                Alugar
+                            </button>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal fade" id="modal-locacao" tabindex="-1" aria-labelledby="modal-locacao-titulo" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h3" id="modal-locacao-titulo">Iniciar locação</h2>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Para registrar uma locação, serão necessários:</p>
+                    <ul class="mb-0">
+                        <li>Equipamento escolhido</li>
+                        <li>Cliente</li>
+                        <li>Data de início e previsão de devolução</li>
+                        <li>Valor da diária e valor total</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary btn-lg" type="button" data-bs-dismiss="modal">Fechar</button>
+                    <a class="btn btn-primary btn-lg" href="locacoes.html">Ver locações</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
