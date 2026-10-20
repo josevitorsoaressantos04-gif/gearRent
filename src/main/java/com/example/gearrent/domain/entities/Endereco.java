@@ -31,6 +31,7 @@ a arquitetura suportaria esse aninhamento perfeitamente.
  */
 @Embeddable
 public class Endereco {
+
     private String logradouro;
     private String numero;
     private String complemento;
