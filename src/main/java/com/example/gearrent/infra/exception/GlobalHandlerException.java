@@ -56,4 +56,10 @@ public class GlobalHandlerException {
                 .body(ApiErroResposta.de(HttpStatus.INTERNAL_SERVER_ERROR,
                         "Algo deu errado do nosso lado. Tente novamente em instantes."));
     }
+
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    public ResponseEntity<ApiErroResposta> tratarCredenciais(CredenciaisInvalidasException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiErroResposta.de(HttpStatus.UNAUTHORIZED, ex.getMessage()));
+    }
 }

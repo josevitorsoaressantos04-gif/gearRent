@@ -10,17 +10,14 @@ import java.time.LocalDate;
 
 public record UsuarioAtualizacaoRequest(
 
-        @NotNull(message = "Não foi possível identificar a locadora.")
-        Long locadoraId,
-
         @NotBlank(message = "O nome é obrigatório.")
         String nome,
 
         @NotBlank(message = "O sobrenome é obrigatório.")
         String sobrenome,
 
-        @NotNull(message = "O CPF é obrigatório")
-        @CPF
+        @NotBlank(message = "O CPF é obrigatório.")
+        @CPF(message = "O CPF informado não parece correto. Confira os números.")
         String cpf,
 
         @NotNull(message = "A data de nascimento é obrigatória.")
