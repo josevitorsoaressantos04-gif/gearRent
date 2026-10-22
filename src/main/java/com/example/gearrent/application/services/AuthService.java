@@ -17,8 +17,10 @@ public class AuthService {
 
     @Autowired
     private final UsuarioRepository usuarioRepository;
+
     @Autowired
     private final PasswordEncoder passwordEncoder;
+
     @Autowired
     private final TokenService tokenService;
 
