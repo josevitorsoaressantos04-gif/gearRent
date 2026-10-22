@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import com.example.gearrent.domain.enums.CategoriaEquipamento;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -29,7 +30,7 @@ public class Equipamento {
     @Enumerated(EnumType.STRING)
     private CategoriaEquipamento categoria;
     private StatusEquipamento status;
-    private double valorDiaria;
+    private BigDecimal valorDiaria;
     private LocalDateTime dataCadastro;
     private LocalDateTime dataAtualizacao;
 
