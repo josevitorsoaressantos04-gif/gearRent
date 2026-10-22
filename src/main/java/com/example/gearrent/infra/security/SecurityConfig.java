@@ -19,18 +19,20 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, TokenService tokenService) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .formLogin(form -> form.disable())      // remove a tela de login padrão
+                .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/login", "/api/usuario/cadastro").permitAll()
+                        // ÚNICO lugar com a lista de rotas públicas
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/**", "/api/usuarios/cadastro").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
                                 "/webjars/**", "/swagger-resources/**").permitAll()
                         .anyRequest().authenticated())
-                .exceptionHandling(e -> e
+                .exceptionHandling(erro -> erro
                         .authenticationEntryPoint((req, res, ex) -> {
                             res.setStatus(401);
                             res.setContentType("application/json;charset=UTF-8");
@@ -41,7 +43,7 @@ public class SecurityConfig {
                             res.setContentType("application/json;charset=UTF-8");
                             res.getWriter().write("{\"status\":403,\"mensagens\":[\"Você não tem permissão para fazer isso.\"]}");
                         }))
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtFilter(tokenService), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
