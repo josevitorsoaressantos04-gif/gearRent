@@ -19,7 +19,7 @@ public class Equipamento {
     private Long id;
 
     @Column(unique = true)
-    private int CodigoSequencial;
+    private int codigoSequencial;
     private String nome;
     private String modelo;
 

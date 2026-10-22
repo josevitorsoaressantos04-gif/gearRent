@@ -1,7 +1,6 @@
 package com.example.gearrent.domain.repository;
 
 import com.example.gearrent.domain.entities.Cliente;
-import com.example.gearrent.domain.entities.Locadora;
 import com.example.gearrent.domain.enums.StatusCadastro;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -11,13 +10,11 @@ import java.util.Optional;
 
 @Repository
 public interface ClienteRepository extends JpaRepository<Cliente, Long> {
-    // Regra de prevenção de duplicidade restrita à mesma empresa
-    boolean existsByDocumentoAndLocadora(String documento, Locadora locadora);
 
-    // Busca exata e segura dentro da mesma empresa
-    Optional<Cliente> findByDocumentoAndLocadora(String documento, Locadora locadora);
+    Optional<Cliente> findByIdAndLocadoraId(Long id, Long locadoraId);
 
-    List<Cliente> findByLocadoraAndNome(Locadora locadora, String nome);
+    boolean existsByLocadoraIdAndDocumento(Long locadoraId, String documento);
 
-    List<Cliente> findByLocadoraAndStatus(Locadora locadora, StatusCadastro status);
+    List<Cliente> findByLocadoraIdAndStatusNotAndNomeContainingIgnoreCaseOrderByNomeAsc(
+            Long locadoraId, StatusCadastro status, String nome);
 }

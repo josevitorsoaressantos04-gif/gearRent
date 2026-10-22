@@ -1,22 +1,25 @@
 package com.example.gearrent.infra.exception;
 
+import com.example.gearrent.domain.exceptions.ConflitoException;
 import com.example.gearrent.domain.exceptions.RecursoNaoEncontradoException;
 import com.example.gearrent.domain.exceptions.RegraDeNegocioException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
 
 @RestControllerAdvice
 public class GlobalHandlerException {
 
-    private static final Logger log = LoggerFactory.getLogger( GlobalHandlerException.class);
+    private static final Logger log = LoggerFactory.getLogger(GlobalHandlerException.class);
 
     // Erros de validação (@NotBlank, @Email, @CPF...) quando o controller usa @Valid
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -61,5 +64,26 @@ public class GlobalHandlerException {
     public ResponseEntity<ApiErroResposta> tratarCredenciais(CredenciaisInvalidasException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ApiErroResposta.de(HttpStatus.UNAUTHORIZED, ex.getMessage()));
+    }
+
+    @ExceptionHandler(ConflitoException.class)
+    public ResponseEntity<ApiErroResposta> tratarConflito(ConflitoException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiErroResposta.de(HttpStatus.CONFLICT, ex.getMessage()));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiErroResposta> tratarIntegridade(DataIntegrityViolationException ex) {
+        log.warn("Violação de integridade", ex);
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiErroResposta.de(HttpStatus.CONFLICT,
+                        "Já existe um registro com estes dados. Confira as informações e tente novamente."));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiErroResposta> tratarTipoInvalido(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.badRequest()
+                .body(ApiErroResposta.de(HttpStatus.BAD_REQUEST,
+                        "Um dos valores informados não é válido. Confira e tente novamente."));
     }
 }
