@@ -8,22 +8,28 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "token_recuperacao_senha")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Sessao {
+public class TokenRecuperacaoSenha {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 64)
+    @Column(name = "token_hash", nullable = false, unique = true, length = 64)
     private String tokenHash;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "usuario_id")
+    @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
-    private LocalDateTime criadaEm;
+    @Column(nullable = false)
+    private LocalDateTime criadoEm;
+
+    @Column(nullable = false)
     private LocalDateTime expiraEm;
+
+    private LocalDateTime usadoEm;
 }

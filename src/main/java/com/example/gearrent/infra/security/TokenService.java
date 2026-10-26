@@ -15,10 +15,11 @@ import java.util.Optional;
 @Service
 public class TokenService {
 
-    private static final String EMISSOR = "gearrent";
-
     @Value("${jwt.secret}")
     private String secret;
+
+    @Value("${jwt.emissor}")
+    private String emissor;
 
     @Value("${jwt.expiracao-minutos}")
     private long expiracaoMinutos;
@@ -26,7 +27,7 @@ public class TokenService {
     public String gerarToken(Usuario usuario) {
         Instant agora = Instant.now();
         return JWT.create()
-                .withIssuer(EMISSOR)
+                .withIssuer(emissor)
                 .withSubject(usuario.getId().toString())
                 .withClaim("locadoraId", usuario.getLocadora().getId())
                 .withIssuedAt(agora)
@@ -37,7 +38,7 @@ public class TokenService {
     public Optional<UsuarioAutenticado> validar(String token) {
         try {
             DecodedJWT jwt = JWT.require(Algorithm.HMAC256(secret))
-                    .withIssuer(EMISSOR)
+                    .withIssuer(emissor)
                     .build()
                     .verify(token);
 
@@ -45,7 +46,6 @@ public class TokenService {
             if (locadoraId == null) {
                 return Optional.empty();
             }
-
             return Optional.of(new UsuarioAutenticado(Long.valueOf(jwt.getSubject()), locadoraId));
 
         } catch (JWTVerificationException | NumberFormatException e) {

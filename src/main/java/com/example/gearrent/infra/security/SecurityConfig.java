@@ -26,12 +26,13 @@ public class SecurityConfig {
                 .httpBasic(basic -> basic.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // ÚNICO lugar com a lista de rotas públicas
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/**", "/api/usuarios/cadastro").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
                                 "/webjars/**", "/swagger-resources/**").permitAll()
                         .anyRequest().authenticated())
-                .exceptionHandling(e -> e
+                .exceptionHandling(erro -> erro
                         .authenticationEntryPoint((req, res, ex) -> {
                             res.setStatus(401);
                             res.setContentType("application/json;charset=UTF-8");
