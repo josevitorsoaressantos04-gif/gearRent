@@ -6,14 +6,13 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.gearrent.domain.entities.Usuario;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
-@Component
+@Service
 public class TokenService {
 
     private static final String EMISSOR = "gearrent";
@@ -35,13 +34,21 @@ public class TokenService {
                 .sign(Algorithm.HMAC256(secret));
     }
 
-    public Optional<DecodedJWT> validar(String token) {
+    public Optional<UsuarioAutenticado> validar(String token) {
         try {
-            return Optional.of(JWT.require(Algorithm.HMAC256(secret))
+            DecodedJWT jwt = JWT.require(Algorithm.HMAC256(secret))
                     .withIssuer(EMISSOR)
                     .build()
-                    .verify(token));
-        } catch (JWTVerificationException e) {
+                    .verify(token);
+
+            Long locadoraId = jwt.getClaim("locadoraId").asLong();
+            if (locadoraId == null) {
+                return Optional.empty();
+            }
+
+            return Optional.of(new UsuarioAutenticado(Long.valueOf(jwt.getSubject()), locadoraId));
+
+        } catch (JWTVerificationException | NumberFormatException e) {
             return Optional.empty();
         }
     }
