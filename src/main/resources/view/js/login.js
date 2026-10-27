@@ -49,11 +49,13 @@ function realizarLogin() {
       const token = response.data.token;
       const mensagem = response.data.mensagem || 'Login efetuado com sucesso!';
 
-      localStorage.setItem('gearrent_token', token);
-      document.getElementById('tokenResultado').textContent = token;
-
-      mostrarMensagem('sucesso', mensagem + ' Token salvo com sucesso.');
+      sessionStorage.setItem('gearrent_token', token);
+      mostrarMensagem('sucesso', mensagem);
       document.getElementById('loginForm').reset();
+
+      setTimeout(() => {
+        window.location.href = 'visao-geral.html';
+      }, 600);
     })
     .catch((erro) => {
       const mensagens = erro?.response?.data?.mensagens;
@@ -63,8 +65,6 @@ function realizarLogin() {
       } else {
         mostrarMensagem('erro', 'Não foi possível entrar no sistema. Tente novamente.');
       }
-
-      document.getElementById('tokenResultado').textContent = 'Não disponível.';
     });
 }
 

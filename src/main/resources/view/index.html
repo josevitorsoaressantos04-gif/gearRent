@@ -3,109 +3,131 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GearRent | Login</title>
+    <title>GearRent | Locação Inteligente de Equipamentos</title>
     <meta
       name="description"
-      content="Tela de login do sistema GearRent para acesso ao sistema de locação de equipamentos."
+      content="GearRent oferece uma plataforma inteligente para locação de equipamentos, trazendo agilidade, controle e eficiência para empresas e projetos."
     />
-    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/layout.css" />
   </head>
   <body>
-    <header class="topbar" aria-label="Cabeçalho do sistema">
+    <header class="topbar" aria-label="Cabeçalho principal">
       <div class="topbar__content">
-        <div class="topbar__brand">GearRent</div>
-        <div class="topbar__actions">
-          <button
-            type="button"
-            class="btn-secondary"
-            onclick="window.location.href='cadastro.html'"
-            aria-label="Ir para tela de cadastro"
-          >
-            Cadastrar-se
-          </button>
-        </div>
+        <a class="brand" href="index.html" aria-label="Página inicial GearRent">
+          <span class="brand__name">GearRent</span>
+          <span class="brand__tagline">Locação Inteligente de Equipamentos</span>
+        </a>
+
+        <nav class="topbar__nav" aria-label="Navegação principal">
+          <a class="btn btn--ghost" href="cadastro.html">Cadastre-se</a>
+          <a class="btn btn--primary" href="login.html">Login</a>
+        </nav>
       </div>
     </header>
 
-    <main class="login-page">
-      <section class="login-card" aria-labelledby="titulo-login">
-        <div class="login-card__header">
-          <p class="eyebrow">Acesso ao sistema</p>
-          <h1 id="titulo-login">Entrar no GearRent</h1>
-        </div>
-
-        <div
-          id="mensagemErro"
-          class="alert-box alert-box--error"
-          role="alert"
-          aria-live="polite"
-          hidden
-        ></div>
-
-        <div
-          id="mensagemSucesso"
-          class="alert-box alert-box--success"
-          role="alert"
-          aria-live="polite"
-          hidden
-        ></div>
-
-        <form id="loginForm" novalidate>
-          <div class="field-group">
-            <label for="email">E-mail</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autocomplete="username"
-              placeholder="seu@email.com"
-              aria-describedby="email-ajuda"
-              required
-            />
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero__inner">
+          <div class="hero__content">
+            <p class="eyebrow">Tecnologia para locação de alta performance</p>
+            <h1 id="hero-title">Alugue o equipamento certo. Transforme a sua entrega.</h1>
+            <p class="hero__subtitle">
+              O parceiro ideal para transformar projetos em realidade sem a complicação
+              de comprar e manter ativos.
+            </p>
+            <p class="hero__text">
+              A GearRent foi criada para simplificar a gestão de locação de equipamentos,
+              unindo praticidade, eficiência e inteligência operacional em uma única
+              plataforma. Com soluções acessíveis e escaláveis, ajudamos empresas,
+              equipes e clientes a alavancar entregas com mais rapidez, reduzindo custos,
+              evitando desperdícios e ampliando a capacidade de operação em qualquer tipo
+              de projeto.
+            </p>
+            <div class="hero__actions" aria-label="Ações principais">
+              <a class="btn btn--primary btn--large" href="cadastro.html">Criar Minha Base</a>
+              <a class="btn btn--secondary btn--large" href="login.html">Acessar Minha Base</a>
+            </div>
           </div>
 
-          <div class="field-group">
-            <label for="senha">Senha</label>
-            <input
-              id="senha"
-              name="senha"
-              type="password"
-              autocomplete="current-password"
-              placeholder="Digite sua senha"
-              required
-            />
-          </div>
+          <aside class="hero__panel" aria-label="Benefícios principais da GearRent">
+            <h2>Mais controle. Menos fricção.</h2>
+            <ul class="hero__list">
+              <li>Disponibilidade prática de ativos para projetos e operações.</li>
+              <li>Acesso rápido a equipamentos com gestão transparente e organizada.</li>
+              <li>Redução de custos com aquisição, manutenção e uso improdutivo.</li>
+              <li>Experiência simples para clientes, equipes e gestores.</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
 
-          <button
-            type="button"
-            class="btn-primary"
-            onclick="realizarLogin()"
-            aria-label="Entrar no sistema"
-          >
-            Entrar
-          </button>
-        </form>
-
-        <div class="link-row">
-          <a href="esqueci-senha.html" class="inline-link">Esqueci minha senha</a>
+      <section class="identity" aria-labelledby="identity-title">
+        <div class="section-heading">
+          <p class="eyebrow eyebrow--dark">Quem somos</p>
+          <h2 id="identity-title">Nossa Identidade</h2>
         </div>
 
-        <div class="token-panel" aria-live="polite">
-          <span class="token-panel__label">Token JWT:</span>
-          <span id="tokenResultado" class="token-panel__value">Ainda não gerado.</span>
+        <div class="identity__grid">
+          <article class="info-card" aria-labelledby="missao-title">
+            <h3 id="missao-title">Missão</h3>
+            <p>
+              Facilitar o acesso a equipamentos de alta performance por meio de um sistema
+              de locação simples, rápido e transparente, impulsionando a eficiência e o
+              crescimento dos nossos clientes.
+            </p>
+          </article>
+
+          <article class="info-card" aria-labelledby="visao-title">
+            <h3 id="visao-title">Visão</h3>
+            <p>
+              Ser a plataforma líder e referência nacional em ecossistemas digitais de
+              locação de equipamentos, reconhecida pela excelência no atendimento,
+              inovação tecnológica e sustentabilidade.
+            </p>
+          </article>
+
+          <article class="info-card" aria-labelledby="valores-title">
+            <h3 id="valores-title">Valores</h3>
+            <ul>
+              <li>Agilidade</li>
+              <li>Confiança &amp; Segurança</li>
+              <li>Sustentabilidade</li>
+              <li>Inovação</li>
+              <li>Foco no Cliente</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="contact-bar" aria-labelledby="contact-title">
+        <div class="contact-bar__header">
+          <p class="eyebrow eyebrow--light">Fale Conosco</p>
+          <h2 id="contact-title">Estamos à disposição para atender você</h2>
+        </div>
+
+        <div class="contact-bar__grid" aria-label="Informações de contato">
+          <div class="contact-item">
+            <span class="contact-item__label">Telefone / WhatsApp</span>
+            <strong>(11) 98765-4321</strong>
+          </div>
+          <div class="contact-item">
+            <span class="contact-item__label">E-mail</span>
+            <strong>contato@gearrent.com.br</strong>
+          </div>
+          <div class="contact-item">
+            <span class="contact-item__label">Endereço</span>
+            <strong>Av. da Inovação, 1000 - Bloco B, Cj. 402 — São Paulo/SP</strong>
+          </div>
+          <div class="contact-item">
+            <span class="contact-item__label">Atendimento</span>
+            <strong>Segunda a Sexta, das 08h às 18h</strong>
+          </div>
         </div>
       </section>
     </main>
 
-    <footer class="footer" aria-label="Rodapé do sistema">
-      <div class="footer__content">
-        <span>© 2026 GearRent</span>
-        <span>Locação de equipamentos para obra</span>
-      </div>
+    <footer class="site-footer" aria-label="Rodapé institucional">
+      <p>© 2026 GearRent. Todos os direitos reservados.</p>
     </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/login.js"></script>
   </body>
 </html>

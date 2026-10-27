@@ -116,7 +116,7 @@ async function redefinirSenha() {
 
       if (segundos <= 0) {
         clearInterval(intervalo);
-        window.location.href = 'index.html';
+        window.location.href = 'login.html';
       }
     }, 1000);
   } catch (erro) {

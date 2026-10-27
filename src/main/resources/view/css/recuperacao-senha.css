@@ -1,50 +1,44 @@
 :root {
-  --bg-page: #f4f7fb;
+  --bg-page: #f5f7fa;
+  --bg-surface: #ffffff;
   --bg-card: #ffffff;
-  --primary: #1d5ea6;
-  --primary-dark: #153f75;
-  --primary-soft: #ebf3ff;
-  --text: #1f2a37;
-  --muted: #52606d;
-  --border: #d9e2ec;
-  --success-bg: #edf9f0;
-  --success-text: #1f6a3f;
-  --success-border: #b7e0c2;
+  --bg-input: #ffffff;
+  --primary: #1f4e79;
+  --primary-dark: #173d5e;
+  --success-bg: #eaf7ee;
+  --success-text: #1f5f3d;
   --error-bg: #fdecec;
-  --error-text: #8d2e2e;
-  --error-border: #efb9b9;
+  --error-text: #8a1f1f;
+  --text-main: #1f2933;
+  --text-soft: #52606d;
+  --border: #d9e2ec;
+  --shadow: rgba(15, 23, 42, 0.12);
 }
 
 * {
   box-sizing: border-box;
 }
 
-html {
-  font-size: 18px;
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-page);
+  color: var(--text-main);
 }
 
 body {
-  margin: 0;
-  min-height: 100vh;
-  font-family: Arial, Helvetica, sans-serif;
-  background: var(--bg-page);
-  color: var(--text);
+  font-size: 18px;
   line-height: 1.5;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
 button,
-input,
-a {
+input {
   font: inherit;
-}
-
-button,
-input,
-a:focus-visible {
-  outline: 3px solid rgba(29, 94, 166, 0.32);
-  outline-offset: 2px;
 }
 
 .topbar {
@@ -52,10 +46,10 @@ a:focus-visible {
   top: 0;
   z-index: 10;
   height: 72px;
-  background: #1f4e79;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #1f4e79;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
@@ -69,7 +63,7 @@ a:focus-visible {
 
 .topbar__brand {
   color: #ffffff;
-  font-size: 2rem;
+  font-size: 2.1rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   line-height: 1;
