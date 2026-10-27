@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GearRent | Login</title>
+    <meta
+      name="description"
+      content="Tela de login do sistema GearRent para acesso ao sistema de locação de equipamentos."
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="topbar" aria-label="Cabeçalho do sistema">
+      <div class="topbar__content">
+        <div class="topbar__brand">GearRent</div>
+        <div class="topbar__actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            onclick="window.location.href='cadastro.html'"
+            aria-label="Ir para tela de cadastro"
+          >
+            Cadastrar-se
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="login-page">
+      <section class="login-card" aria-labelledby="titulo-login">
+        <div class="login-card__header">
+          <p class="eyebrow">Acesso ao sistema</p>
+          <h1 id="titulo-login">Entrar no GearRent</h1>
+        </div>
+
+        <div
+          id="mensagemErro"
+          class="alert-box alert-box--error"
+          role="alert"
+          aria-live="polite"
+          hidden
+        ></div>
+
+        <div
+          id="mensagemSucesso"
+          class="alert-box alert-box--success"
+          role="alert"
+          aria-live="polite"
+          hidden
+        ></div>
+
+        <form id="loginForm" novalidate>
+          <div class="field-group">
+            <label for="email">E-mail</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autocomplete="username"
+              placeholder="seu@email.com"
+              aria-describedby="email-ajuda"
+              required
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="senha">Senha</label>
+            <input
+              id="senha"
+              name="senha"
+              type="password"
+              autocomplete="current-password"
+              placeholder="Digite sua senha"
+              required
+            />
+          </div>
+
+          <button
+            type="button"
+            class="btn-primary"
+            onclick="realizarLogin()"
+            aria-label="Entrar no sistema"
+          >
+            Entrar
+          </button>
+        </form>
+
+        <div class="link-row">
+          <a href="esqueci-senha.html" class="inline-link">Esqueci minha senha</a>
+        </div>
+
+        <div class="token-panel" aria-live="polite">
+          <span class="token-panel__label">Token JWT:</span>
+          <span id="tokenResultado" class="token-panel__value">Ainda não gerado.</span>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer" aria-label="Rodapé do sistema">
+      <div class="footer__content">
+        <span>© 2026 GearRent</span>
+        <span>Locação de equipamentos para obra</span>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/login.js"></script>
+  </body>
+</html>

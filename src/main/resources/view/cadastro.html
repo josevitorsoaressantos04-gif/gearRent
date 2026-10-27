@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GearRent | Cadastro</title>
+    <meta
+      name="description"
+      content="Cadastro inicial do operador no sistema GearRent."
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="topbar" aria-label="Cabeçalho do sistema">
+      <div class="topbar__content">
+        <div class="topbar__brand">GearRent</div>
+        <div class="topbar__actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            onclick="window.location.href='index.html'"
+            aria-label="Ir para tela de login"
+          >
+            Já tenho conta (Login)
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="login-page">
+      <section class="login-card cadastro-card" aria-labelledby="titulo-cadastro">
+        <div class="login-card__header">
+          <p class="eyebrow">Cadastro inicial</p>
+          <h1 id="titulo-cadastro">Criar minha base</h1>
+        </div>
+
+        <div
+          id="mensagemErro"
+          class="alert-box alert-box--error"
+          role="alert"
+          aria-live="polite"
+          hidden
+        ></div>
+
+        <div
+          id="mensagemSucesso"
+          class="alert-box alert-box--success"
+          role="alert"
+          aria-live="polite"
+          hidden
+        ></div>
+
+        <form id="cadastroForm" novalidate>
+          <div class="field-group">
+            <label for="nome">Nome</label>
+            <input
+              id="nome"
+              name="nome"
+              type="text"
+              autocomplete="given-name"
+              placeholder="Digite seu nome"
+              required
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="sobrenome">Sobrenome</label>
+            <input
+              id="sobrenome"
+              name="sobrenome"
+              type="text"
+              autocomplete="family-name"
+              placeholder="Digite seu sobrenome"
+              required
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="dataNascimento">Data de Nascimento</label>
+            <input
+              id="dataNascimento"
+              name="dataNascimento"
+              type="date"
+              autocomplete="bday"
+              required
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="cpf">CPF</label>
+            <input
+              id="cpf"
+              name="cpf"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              placeholder="000.000.000-00"
+              maxlength="14"
+              oninput="mascararCPF(this)"
+              required
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="email">E-mail / Login</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autocomplete="username"
+              placeholder="seu@email.com"
+              required
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="senha">Senha</label>
+            <input
+              id="senha"
+              name="senha"
+              type="password"
+              autocomplete="new-password"
+              placeholder="Crie uma senha com pelo menos 6 caracteres"
+              required
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="confirmarSenha">Confirmação de Senha</label>
+            <input
+              id="confirmarSenha"
+              name="confirmarSenha"
+              type="password"
+              autocomplete="new-password"
+              placeholder="Repita a senha"
+              required
+            />
+          </div>
+
+          <button
+            type="button"
+            class="btn-primary"
+            onclick="realizarCadastro()"
+            aria-label="Cadastrar minha base"
+          >
+            Cadastrar Minha Base
+          </button>
+        </form>
+      </section>
+    </main>
+
+    <footer class="footer" aria-label="Rodapé do sistema">
+      <div class="footer__content">
+        <span>© 2026 GearRent</span>
+        <span>Locação de equipamentos para obra</span>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/cadastro.js"></script>
+  </body>
+</html>

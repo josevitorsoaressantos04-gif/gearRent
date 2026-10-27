@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
+    <title>GearRent | Redefinir senha</title>
+    <meta name="description" content="Redefinição de senha do GearRent" />
+    <link rel="stylesheet" href="css/recuperacao-senha.css" />
+  </head>
+  <body>
+    <header class="topbar" aria-label="Cabeçalho do sistema">
+      <div class="topbar__content">
+        <div class="topbar__brand">GearRent</div>
+        <div class="topbar__actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            onclick="window.location.href='index.html'"
+            aria-label="Ir para tela de login"
+          >
+            Login
+          </button>
+          <button
+            type="button"
+            class="btn-secondary"
+            onclick="window.location.href='cadastro.html'"
+            aria-label="Ir para tela de cadastro"
+          >
+            Cadastrar-se
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="auth-shell">
+      <section class="auth-card" aria-labelledby="titulo-redefinir">
+        <div class="auth-card__header">
+          <p class="eyebrow">Acesso</p>
+          <h1 id="titulo-redefinir">Criar nova senha</h1>
+        </div>
+
+        <div
+          id="mensagemErro"
+          class="message-box message-box--error"
+          role="alert"
+          aria-live="assertive"
+          hidden
+        ></div>
+
+        <div
+          id="mensagemSucesso"
+          class="message-box message-box--success"
+          aria-live="polite"
+          hidden
+        ></div>
+
+        <form id="formRedefinir" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="novaSenha">Nova senha</label>
+              <input
+                id="novaSenha"
+                name="novaSenha"
+                type="password"
+                autocomplete="new-password"
+                placeholder="Digite a nova senha"
+                required
+              />
+            </div>
+
+            <div class="field">
+              <label for="confirmacaoSenha">Confirmar nova senha</label>
+              <input
+                id="confirmacaoSenha"
+                name="confirmacaoSenha"
+                type="password"
+                autocomplete="new-password"
+                placeholder="Repita a nova senha"
+                required
+              />
+            </div>
+
+            <button
+              id="btnMostrarSenha"
+              type="button"
+              class="btn-primary"
+              onclick="alternarVisibilidadeSenha()"
+            >
+              Mostrar senhas
+            </button>
+
+            <p class="help-text">A senha deve ter no mínimo 6 caracteres.</p>
+
+            <button
+              id="btnSalvar"
+              type="button"
+              class="btn-primary"
+              onclick="redefinirSenha()"
+            >
+              Salvar Nova Senha
+            </button>
+
+            <div id="areaLinkNovo" hidden>
+              <a class="inline-link" href="esqueci-senha.html">Pedir um novo link</a>
+            </div>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <footer class="footer" aria-label="Rodapé do sistema">
+      <div class="footer__content">
+        <span>© 2026 GearRent</span>
+        <span>Locação de equipamentos para obra</span>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/redefinir-senha.js"></script>
+  </body>
+</html>
