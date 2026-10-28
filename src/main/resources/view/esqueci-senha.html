@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GearRent | Esqueci minha senha</title>
+    <meta name="description" content="Recuperação de senha do GearRent" />
+    <link rel="stylesheet" href="css/recuperacao-senha.css" />
+  </head>
+  <body>
+    <header class="topbar" aria-label="Cabeçalho do sistema">
+      <div class="topbar__content">
+        <div class="topbar__brand">GearRent</div>
+        <div class="topbar__actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            onclick="window.location.href='login.html'"
+            aria-label="Ir para tela de login"
+          >
+            Login
+          </button>
+          <button
+            type="button"
+            class="btn-secondary"
+            onclick="window.location.href='cadastro.html'"
+            aria-label="Ir para tela de cadastro"
+          >
+            Cadastrar-se
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="auth-shell">
+      <section class="auth-card" aria-labelledby="titulo-recuperacao">
+        <div class="auth-card__header">
+          <p class="eyebrow">Acesso</p>
+          <h1 id="titulo-recuperacao">Esqueci minha senha</h1>
+          <p class="auth-card__subtitle">Digite o seu e-mail e enviaremos as instruções.</p>
+        </div>
+
+        <div
+          id="mensagemErro"
+          class="message-box message-box--error"
+          role="alert"
+          aria-live="assertive"
+          hidden
+        ></div>
+
+        <div
+          id="mensagemSucesso"
+          class="message-box message-box--success"
+          aria-live="polite"
+          hidden
+        ></div>
+
+        <form id="formRecuperacao" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="email">E-mail</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                placeholder="seu@email.com"
+                required
+              />
+            </div>
+
+            <button
+              id="btnEnviar"
+              type="button"
+              class="btn-primary"
+              onclick="solicitarRecuperacao()"
+            >
+              Enviar Instruções
+            </button>
+          </div>
+        </form>
+
+        <div class="link-row">
+          <a class="inline-link" href="login.html">Voltar para o login</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer" aria-label="Rodapé do sistema">
+      <div class="footer__content">
+        <span>© 2026 GearRent</span>
+        <span>Locação de equipamentos para obra</span>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/esqueci-senha.js"></script>
+  </body>
+</html>

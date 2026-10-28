@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GearRent | Clientes</title>
+    <meta
+      name="description"
+      content="Gerenciamento de clientes da base GearRent."
+    />
+    <link rel="stylesheet" href="css/layout.css" />
+  </head>
+  <body class="dashboard-body">
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Menu lateral da base">
+        <div class="sidebar__profile">
+          <div class="avatar avatar--large" aria-label="Avatar do usuário">JS</div>
+          <div class="sidebar__profile-text">
+            <strong>Júlia Silva</strong>
+            <span>Base de Júlia</span>
+          </div>
+        </div>
+
+        <nav class="sidebar__nav" aria-label="Menu principal">
+          <a class="nav-item" href="visao-geral.html">
+            <span class="nav-item__icon" aria-hidden="true">📊</span>
+            <span>Visão Geral</span>
+          </a>
+          <a class="nav-item nav-item--active" href="clientes.html">
+            <span class="nav-item__icon" aria-hidden="true">👥</span>
+            <span>Clientes</span>
+          </a>
+          <a class="nav-item" href="equipamentos.html">
+            <span class="nav-item__icon" aria-hidden="true">🚜</span>
+            <span>Equipamentos</span>
+          </a>
+          <a class="nav-item" href="locacoes.html">
+            <span class="nav-item__icon" aria-hidden="true">📄</span>
+            <span>Locações</span>
+          </a>
+          <a class="nav-item" href="configuracoes.html">
+            <span class="nav-item__icon" aria-hidden="true">⚙️</span>
+            <span>Configurações</span>
+          </a>
+          <button class="nav-item nav-item--logout" id="btnLogout" type="button">
+            <span class="nav-item__icon" aria-hidden="true">🚪</span>
+            <span>Sair</span>
+          </button>
+        </nav>
+      </aside>
+
+      <div class="main-panel">
+        <header class="topbar" aria-label="Barra superior do painel">
+          <div class="topbar__search">
+            <label class="sr-only" for="globalSearch">Busca rápida</label>
+            <input
+              id="globalSearch"
+              type="search"
+              placeholder="Buscar por nome, CPF/CNPJ ou código"
+              aria-label="Buscar por nome, CPF/CNPJ ou código"
+            />
+          </div>
+
+          <div class="topbar__user" aria-label="Perfil do usuário autenticado">
+            <div class="avatar avatar--small" aria-hidden="true">JS</div>
+            <span>Júlia Silva</span>
+          </div>
+        </header>
+
+        <main class="dashboard-content clientes-page">
+          <section class="toolbar toolbar--clients" aria-label="Ações e filtros de clientes">
+            <div class="toolbar__group toolbar__group--wide">
+              <label class="sr-only" for="clienteSearch">Busca de clientes</label>
+              <input
+                id="clienteSearch"
+                class="toolbar__input"
+                type="search"
+                placeholder="Buscar cliente por nome, CPF/CNPJ ou código"
+              />
+            </div>
+
+            <div class="toolbar__filters">
+              <label>
+                <span class="sr-only">Tipo de pessoa</span>
+                <select id="tipoPessoaFilter">
+                  <option value="TODOS">Todos</option>
+                  <option value="PF">Pessoa Física</option>
+                  <option value="PJ">Pessoa Jurídica</option>
+                </select>
+              </label>
+
+              <label>
+                <span class="sr-only">Status do cadastro</span>
+                <select id="statusFilter">
+                  <option value="TODOS">Status: Todos</option>
+                  <option value="ATIVO">Ativo</option>
+                  <option value="INATIVO">Inativo</option>
+                </select>
+              </label>
+            </div>
+
+            <button id="btnNovoCliente" type="button" class="btn btn--primary">
+              Novo Cliente
+            </button>
+          </section>
+
+          <section class="clients-layout">
+            <div class="clients-list-panel">
+              <div class="panel-header">
+                <h2>Clientes cadastrados</h2>
+                <span id="contadorClientes" class="panel-header__counter">0 registros</span>
+              </div>
+
+              <div class="table-wrapper">
+                <table aria-label="Lista de clientes">
+                  <thead>
+                    <tr>
+                      <th scope="col">Código</th>
+                      <th scope="col">Nome / Razão Social</th>
+                      <th scope="col">Tipo</th>
+                      <th scope="col">CPF/CNPJ</th>
+                      <th scope="col">Telefone/WhatsApp</th>
+                      <th scope="col">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="clientesTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <aside class="client-detail-panel" aria-live="polite">
+              <div class="panel-header">
+                <h2>Detalhes do cliente</h2>
+              </div>
+
+              <div class="detail-card">
+                <div class="detail-card__header">
+                  <div class="avatar avatar--large" id="detailAvatar">JS</div>
+                  <div>
+                    <h3 id="detailNome">Selecione um cliente</h3>
+                    <span id="detailCodigo" class="detail-card__meta">Código: -</span>
+                  </div>
+                </div>
+
+                <dl class="detail-list">
+                  <div>
+                    <dt>Tipo</dt>
+                    <dd id="detailTipo">-</dd>
+                  </div>
+                  <div>
+                    <dt>Documento</dt>
+                    <dd id="detailDocumento">-</dd>
+                  </div>
+                  <div>
+                    <dt>E-mail</dt>
+                    <dd id="detailEmail">-</dd>
+                  </div>
+                  <div>
+                    <dt>Endereço</dt>
+                    <dd id="detailEndereco">-</dd>
+                  </div>
+                  <div>
+                    <dt>Status</dt>
+                    <dd id="detailStatus">-</dd>
+                  </div>
+                </dl>
+
+                <div class="metrics-panel">
+                  <h3>Resumo de consumo</h3>
+                  <div class="metrics-grid">
+                    <div class="metric-box">
+                      <span>Total de locações</span>
+                      <strong id="metricTotalLocacoes">0</strong>
+                    </div>
+                    <div class="metric-box">
+                      <span>Em andamento</span>
+                      <strong id="metricLocacoesAndamento">0</strong>
+                    </div>
+                    <div class="metric-box">
+                      <span>Equipamentos em posse</span>
+                      <strong id="metricEquipamentosPosse">0</strong>
+                    </div>
+                    <div class="metric-box metric-box--accent">
+                      <span>Valor em aberto</span>
+                      <strong id="metricValorAberto">R$ 0,00</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="history-panel">
+                  <h3>Histórico recente</h3>
+                  <ul id="historicoLocacoes" class="history-list"></ul>
+                </div>
+
+                <button type="button" class="btn btn--primary btn--full" id="btnNovaLocacao">
+                  Nova Locação para este Cliente
+                </button>
+              </div>
+            </aside>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <div id="clienteModal" class="modal" aria-hidden="true">
+      <div class="modal__backdrop" data-close-modal="true"></div>
+      <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal__header">
+          <h2 id="modalTitle">Novo Cliente</h2>
+          <button type="button" class="modal__close" aria-label="Fechar modal" data-close-modal="true">×</button>
+        </div>
+
+        <form id="clienteForm" novalidate>
+          <div class="form-grid">
+            <div class="field-group field-group--full">
+              <label for="tipoPessoa">Tipo de Pessoa</label>
+              <select id="tipoPessoa" name="tipoPessoa">
+                <option value="PF">Pessoa Física</option>
+                <option value="PJ">Pessoa Jurídica</option>
+              </select>
+            </div>
+
+            <div class="field-group field-group--full">
+              <label id="labelNome" for="nomeCliente">Nome Completo</label>
+              <input id="nomeCliente" name="nome" type="text" placeholder="Digite o nome do cliente" required />
+            </div>
+
+            <div class="field-group field-group--full">
+              <label id="labelDocumento" for="documentoCliente">CPF</label>
+              <input id="documentoCliente" name="documento" type="text" placeholder="000.000.000-00" required />
+            </div>
+
+            <div class="field-group">
+              <label for="telefoneCliente">Telefone/WhatsApp</label>
+              <input id="telefoneCliente" name="telefone" type="tel" placeholder="(11) 91234-5678" required />
+            </div>
+
+            <div class="field-group">
+              <label for="emailCliente">E-mail</label>
+              <input id="emailCliente" name="email" type="email" placeholder="cliente@email.com" required />
+            </div>
+
+            <div class="field-group field-group--full">
+              <label for="enderecoCliente">Endereço</label>
+              <input id="enderecoCliente" name="endereco" type="text" placeholder="Rua, número, bairro, cidade" required />
+            </div>
+          </div>
+
+          <div class="modal__actions">
+            <button type="button" class="btn btn--secondary" data-close-modal="true">Cancelar</button>
+            <button type="submit" class="btn btn--primary">Salvar Cliente</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/clientes.js"></script>
+  </body>
+</html>

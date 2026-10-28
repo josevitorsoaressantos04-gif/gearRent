@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GearRent | Visão Geral</title>
+    <meta
+      name="description"
+      content="Painel geral de visão de locações, clientes e equipamentos da GearRent."
+    />
+    <link rel="stylesheet" href="css/layout.css" />
+  </head>
+  <body class="dashboard-body">
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Menu lateral da base">
+        <div class="sidebar__profile">
+          <div class="avatar avatar--large" aria-label="Avatar do usuário">JS</div>
+          <div class="sidebar__profile-text">
+            <strong>Júlia Silva</strong>
+            <span>Base de Júlia</span>
+          </div>
+        </div>
+
+        <nav class="sidebar__nav" aria-label="Menu principal">
+          <a class="nav-item nav-item--active" href="visao-geral.html">
+            <span class="nav-item__icon" aria-hidden="true">📊</span>
+            <span>Visão Geral</span>
+          </a>
+          <a class="nav-item" href="clientes.html">
+            <span class="nav-item__icon" aria-hidden="true">👥</span>
+            <span>Clientes</span>
+          </a>
+          <a class="nav-item" href="equipamentos.html">
+            <span class="nav-item__icon" aria-hidden="true">🚜</span>
+            <span>Equipamentos</span>
+          </a>
+          <a class="nav-item" href="locacoes.html">
+            <span class="nav-item__icon" aria-hidden="true">📄</span>
+            <span>Locações</span>
+          </a>
+          <a class="nav-item" href="configuracoes.html">
+            <span class="nav-item__icon" aria-hidden="true">⚙️</span>
+            <span>Configurações</span>
+          </a>
+          <button class="nav-item nav-item--logout" id="btnLogout" type="button">
+            <span class="nav-item__icon" aria-hidden="true">🚪</span>
+            <span>Sair</span>
+          </button>
+        </nav>
+      </aside>
+
+      <div class="main-panel">
+        <header class="topbar" aria-label="Barra superior do painel">
+          <div class="topbar__search">
+            <label class="sr-only" for="buscaRapida">Busca rápida</label>
+            <input
+              id="buscaRapida"
+              type="search"
+              name="buscaRapida"
+              placeholder="Buscar cliente, equipamento ou locação"
+              aria-label="Buscar cliente, equipamento ou locação"
+            />
+          </div>
+
+          <div class="topbar__user" aria-label="Perfil do usuário autenticado">
+            <div class="avatar avatar--small" aria-hidden="true">JS</div>
+            <span>Júlia Silva</span>
+          </div>
+        </header>
+
+        <main class="dashboard-content">
+          <section class="toolbar" aria-label="Filtros e pesquisa do painel">
+            <div class="toolbar__group">
+              <label class="sr-only" for="filtroBusca">Pesquisa rápida</label>
+              <input
+                id="filtroBusca"
+                type="search"
+                placeholder="Pesquisar por cliente ou equipamento"
+                class="toolbar__input"
+              />
+            </div>
+
+            <button
+              id="toggleFiltros"
+              type="button"
+              class="btn btn--secondary"
+              aria-expanded="false"
+              aria-controls="filtroAvancado"
+            >
+              Filtros
+            </button>
+          </section>
+
+          <section
+            id="filtroAvancado"
+            class="filter-panel"
+            aria-label="Filtros avançados"
+            hidden
+          >
+            <div class="filter-panel__row">
+              <label>
+                Categoria
+                <select aria-label="Selecionar categoria">
+                  <option value="">Todas</option>
+                  <option value="escavadeira">Escavadeira</option>
+                  <option value="retroescavadeira">Retroescavadeira</option>
+                  <option value="compactador">Compactador</option>
+                </select>
+              </label>
+
+              <label>
+                Modelo
+                <select aria-label="Selecionar modelo">
+                  <option value="">Todos</option>
+                  <option value="cat-320">CAT 320</option>
+                  <option value="komatsu-pc200">Komatsu PC200</option>
+                  <option value="ew-200">EW 200</option>
+                </select>
+              </label>
+
+              <label>
+                Nº de Patrimônio
+                <input type="text" placeholder="Ex.: 48211" aria-label="Número de patrimônio" />
+              </label>
+            </div>
+
+            <div class="filter-panel__row">
+              <label>
+                Status do Equipamento
+                <select aria-label="Selecionar status do equipamento">
+                  <option value="">Todos</option>
+                  <option value="disponivel">Disponível</option>
+                  <option value="em_uso">Em uso</option>
+                  <option value="manutencao">Manutenção</option>
+                </select>
+              </label>
+
+              <label>
+                Status da Locação
+                <select aria-label="Selecionar status da locação">
+                  <option value="">Todos</option>
+                  <option value="EM_ANDAMENTO">EM_ANDAMENTO</option>
+                  <option value="CONCLUIDA">CONCLUIDA</option>
+                  <option value="ATRASADA">ATRASADA</option>
+                  <option value="CANCELADA">CANCELADA</option>
+                </select>
+              </label>
+
+              <label>
+                Cliente
+                <select aria-label="Selecionar cliente">
+                  <option value="">Todos</option>
+                  <option value="maria">Maria da Silva</option>
+                  <option value="joao">João Pereira</option>
+                  <option value="bruno">Bruno Costa</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="filter-panel__row filter-panel__row--dates">
+              <label>
+                Data Início
+                <input type="date" aria-label="Data de início" />
+              </label>
+
+              <label>
+                Data Fim
+                <input type="date" aria-label="Data de fim" />
+              </label>
+
+              <div class="quick-periods" aria-label="Opções de período rápido">
+                <button type="button" class="chip chip--active">Mês Atual</button>
+                <button type="button" class="chip">Mês Anterior</button>
+                <button type="button" class="chip">Este Ano</button>
+                <button type="button" class="chip">Ano Anterior</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="kpis" aria-label="Resumo financeiro e operacional">
+            <article class="kpi-card">
+              <span class="kpi-card__label">Total de Locações no Período</span>
+              <strong class="kpi-card__value">128</strong>
+            </article>
+
+            <article class="kpi-card">
+              <span class="kpi-card__label">Locações Em Andamento</span>
+              <strong class="kpi-card__value">42</strong>
+            </article>
+
+            <article class="kpi-card">
+              <span class="kpi-card__label">Locações Atrasadas</span>
+              <strong class="kpi-card__value">9</strong>
+            </article>
+
+            <article class="kpi-card kpi-card--highlight">
+              <span class="kpi-card__label">Faturamento Total</span>
+              <strong class="kpi-card__value">R$ 184.760,00</strong>
+            </article>
+          </section>
+
+          <section class="table-panel" aria-labelledby="clientes-title">
+            <div class="table-panel__header">
+              <h2 id="clientes-title">Clientes com Locações</h2>
+            </div>
+
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Nome do Cliente</th>
+                    <th scope="col">Código</th>
+                    <th scope="col">Item Alugado</th>
+                    <th scope="col">Valor</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Maria da Silva</td>
+                    <td>CLI-1042</td>
+                    <td>
+                      <div class="cell-with-action">
+                        <span>Retroescavadeira CAT 320</span>
+                        <button type="button" class="icon-button" aria-label="Visualizar itens do cliente">👁️</button>
+                      </div>
+                    </td>
+                    <td>R$ 3.420,00</td>
+                    <td><span class="status status--andamento">EM_ANDAMENTO</span></td>
+                    <td>
+                      <button type="button" class="icon-button" aria-label="Editar locação do cliente">✏️</button>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>João Pereira</td>
+                    <td>CLI-1089</td>
+                    <td>
+                      <div class="cell-with-action">
+                        <span>Compactador PM-500</span>
+                        <button type="button" class="icon-button" aria-label="Visualizar itens do cliente">👁️</button>
+                      </div>
+                    </td>
+                    <td>R$ 1.850,00</td>
+                    <td><span class="status status--concluida">CONCLUIDA</span></td>
+                    <td>
+                      <button type="button" class="icon-button" aria-label="Editar locação do cliente">✏️</button>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>Bruno Costa</td>
+                    <td>CLI-1104</td>
+                    <td>
+                      <div class="cell-with-action">
+                        <span>Escavadeira 320D</span>
+                        <button type="button" class="icon-button" aria-label="Visualizar itens do cliente">👁️</button>
+                      </div>
+                    </td>
+                    <td>R$ 4.270,00</td>
+                    <td><span class="status status--atrasada">ATRASADA</span></td>
+                    <td>
+                      <button type="button" class="icon-button" aria-label="Editar locação do cliente">✏️</button>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>Marina Rocha</td>
+                    <td>CLI-1128</td>
+                    <td>
+                      <div class="cell-with-action">
+                        <span>Trator de pequeno porte</span>
+                        <button type="button" class="icon-button" aria-label="Visualizar itens do cliente">👁️</button>
+                      </div>
+                    </td>
+                    <td>R$ 1.120,00</td>
+                    <td><span class="status status--cancelada">CANCELADA</span></td>
+                    <td>
+                      <button type="button" class="icon-button" aria-label="Editar locação do cliente">✏️</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      const toggleButton = document.getElementById('toggleFiltros');
+      const filterPanel = document.getElementById('filtroAvancado');
+
+      if (toggleButton && filterPanel) {
+        toggleButton.addEventListener('click', () => {
+          const isHidden = filterPanel.hidden;
+          filterPanel.hidden = !isHidden;
+          toggleButton.setAttribute('aria-expanded', String(isHidden));
+        });
+      }
+
+      const logoutButton = document.getElementById('btnLogout');
+
+      if (logoutButton) {
+        logoutButton.addEventListener('click', () => {
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('usuario');
+          window.location.href = 'login.html';
+        });
+      }
+    </script>
+  </body>
+</html>
