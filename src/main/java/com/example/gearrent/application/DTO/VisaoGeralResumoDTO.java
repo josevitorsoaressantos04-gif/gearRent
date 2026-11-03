@@ -1,4 +1,10 @@
 package com.example.gearrent.application.DTO;
 
-public record VisaoGeralResumoDTO() {
-}
+import java.math.BigDecimal;
+
+public record VisaoGeralResumoDTO(
+        long totalLocacoes,
+        long emAndamento,
+        long atrasadas,
+        BigDecimal faturamentoTotal
+) {}

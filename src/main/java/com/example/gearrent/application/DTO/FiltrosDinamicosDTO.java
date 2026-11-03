@@ -1,4 +1,9 @@
 package com.example.gearrent.application.DTO;
 
-public record FiltrosDinamicosDTP() {
-}
+import com.example.gearrent.domain.enums.CategoriaEquipamento;
+import java.util.List;
+
+public record FiltrosDinamicosDTO(
+        List<CategoriaEquipamento> categorias,
+        List<String> modelos
+) {}

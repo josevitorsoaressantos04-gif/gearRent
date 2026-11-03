@@ -5,6 +5,7 @@ import com.example.gearrent.domain.enums.StatusCadastro;
 
 public record ClienteConsultaResponse(
         Long id,
+        Long codigoSequencial,
         String nome,
         String documento,
         String email,
@@ -16,6 +17,7 @@ public record ClienteConsultaResponse(
     public static ClienteConsultaResponse de(Cliente cliente) {
         return new ClienteConsultaResponse(
                 cliente.getId(),
+                cliente.getCodigoSequencial(),
                 cliente.getNome(),
                 cliente.getDocumento(),
                 cliente.getEmail(),

@@ -1,4 +1,9 @@
 package com.example.gearrent.application.DTO;
 
-public record OpcoesFiltrosDTO() {
-}
+import java.util.List;
+
+/** Resposta agregada do endpoint /filtros-opcoes (uma única chamada popula todos os dropdowns). */
+public record OpcoesFiltrosDTO(
+        FiltrosDinamicosDTO filtros,
+        List<ClienteDropdownDTO> clientes
+) {}

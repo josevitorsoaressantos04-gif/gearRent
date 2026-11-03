@@ -1,11 +1,5 @@
-package com.example.gearrent.domain.
+package com.example.gearrent.domain.repository;
 
-import org.hibernate.audit.DefaultChangelog;
-
-interface DefaultChangelogRepository extends Repository<DefaultChangelog, Long> {
-    
-};
-
-import com.gearrent.domain.model.StatusLocacao;
+import com.example.gearrent.domain.enums.StatusLocacao;
 
 public record ContagemPorStatus(StatusLocacao status, Long total) {}

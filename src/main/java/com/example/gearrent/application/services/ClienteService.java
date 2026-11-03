@@ -1,122 +1,170 @@
 package com.example.gearrent.application.services;
 
-import com.example.gearrent.application.DTO.ClienteAtualizacaoRequest;
-import com.example.gearrent.application.DTO.ClienteAtualizacaoResponse;
-import com.example.gearrent.application.DTO.ClienteCadastroRequest;
-import com.example.gearrent.application.DTO.ClienteCadastroResponse;
-import com.example.gearrent.application.DTO.ClienteConsultaResponse;
-import com.example.gearrent.application.DTO.ClienteExclusaoResponse;
-import com.example.gearrent.application.DTO.ClienteListagemResponse;
+import com.example.gearrent.application.DTO.*;
 import com.example.gearrent.domain.entities.Cliente;
+import com.example.gearrent.domain.entities.Endereco;
 import com.example.gearrent.domain.enums.StatusCadastro;
 import com.example.gearrent.domain.enums.StatusLocacao;
 import com.example.gearrent.domain.exceptions.DocumentoDuplicadoException;
-import com.example.gearrent.domain.exceptions.RecursoNaoEncontradoException;
 import com.example.gearrent.domain.exceptions.RegraDeNegocioException;
 import com.example.gearrent.domain.repository.ClienteRepository;
 import com.example.gearrent.domain.repository.LocacaoRepository;
 import com.example.gearrent.domain.repository.LocadoraRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Service
+@RequiredArgsConstructor
 public class ClienteService {
+
+    private static final Set<StatusLocacao> LOCACOES_EM_ABERTO =
+            Set.of(StatusLocacao.EM_ANDAMENTO, StatusLocacao.ATRASADA);
 
     private final ClienteRepository clienteRepository;
     private final LocadoraRepository locadoraRepository;
     private final LocacaoRepository locacaoRepository;
 
-    public ClienteService(ClienteRepository clienteRepository,
-                          LocadoraRepository locadoraRepository,
-                          LocacaoRepository locacaoRepository) {
-        this.clienteRepository = clienteRepository;
-        this.locadoraRepository = locadoraRepository;
-        this.locacaoRepository = locacaoRepository;
+    // ---------------------------------------------------------------
+    // CADASTRAR (Estratégia 1: reativação automática)
+    // ---------------------------------------------------------------
+    @Transactional
+    public ClienteCadastroResponse cadastrar(ClienteCadastroRequest request, Long locadoraId) {
+        String documento = limparDocumento(request.documento());
+
+        // Busca SEM olhar o status: ativo, inativo ou cancelado
+        return clienteRepository.findByLocadoraIdAndDocumento(locadoraId, documento)
+                .map(existente -> reativar(existente, request))
+                .orElseGet(() -> criar(request, locadoraId, documento));
     }
 
-    @Transactional
-    public ClienteCadastroResponse cadastrar(Long locadoraId, ClienteCadastroRequest request) {
-        String documento = request.documento().replaceAll("\\D", "");
-
-        if (clienteRepository.existsByLocadoraIdAndDocumento(locadoraId, documento)) {
+    private ClienteCadastroResponse reativar(Cliente existente, ClienteCadastroRequest request) {
+        if (existente.getStatus() == StatusCadastro.ATIVO) {
             throw new DocumentoDuplicadoException(
-                    "Já existe um cliente cadastrado com este CPF ou CNPJ.");
+                    "Já existe um cliente ativo com este CPF ou CNPJ (cliente nº "
+                            + existente.getCodigoSequencial() + ").");
         }
+        // Mesmo id e mesmo codigoSequencial; só os dados e o status mudam
+        preencherDados(existente, request.nome(), request.email(), request.celular(),
+                request.telefone(), request.endereco());
+        existente.setStatus(StatusCadastro.ATIVO);
+        Cliente salvo = clienteRepository.save(existente);
 
+        return new ClienteCadastroResponse(salvo.getId(), salvo.getCodigoSequencial(), salvo.getNome(),
+                "O cadastro de " + salvo.getNome() + " já existia e foi reativado com os dados novos.");
+    }
+
+    private ClienteCadastroResponse criar(ClienteCadastroRequest request, Long locadoraId, String documento) {
         Cliente cliente = new Cliente();
-        cliente.setNome(request.nome().trim());
         cliente.setDocumento(documento);
-        cliente.setEmail(limpar(request.email()));
-        cliente.setCelular(limpar(request.celular()));
-        cliente.setTelefone(limpar(request.telefone()));
-        cliente.setEnderecoResidencial(request.endereco() == null ? null : request.endereco().paraEntidade());
-        cliente.setStatus(StatusCadastro.ATIVO);
-        cliente.setDataCadastro(LocalDateTime.now());
         cliente.setLocadora(locadoraRepository.getReferenceById(locadoraId));
+        cliente.setStatus(StatusCadastro.ATIVO);
+        preencherDados(cliente, request.nome(), request.email(), request.celular(),
+                request.telefone(), request.endereco());
+
+        // Número sequencial só para cliente NOVO, logo antes do save
+        cliente.setCodigoSequencial(locadoraRepository.proximoCodigoCliente(locadoraId));
 
         Cliente salvo = clienteRepository.save(cliente);
-
-        return new ClienteCadastroResponse(salvo.getId(), salvo.getNome(), "Cliente cadastrado com sucesso!");
+        return new ClienteCadastroResponse(salvo.getId(), salvo.getCodigoSequencial(), salvo.getNome(),
+                "Cliente " + salvo.getNome() + " cadastrado com sucesso!");
     }
 
+    // ---------------------------------------------------------------
+    // LISTAR / CONSULTAR
+    // ---------------------------------------------------------------
     @Transactional(readOnly = true)
     public List<ClienteListagemResponse> listar(Long locadoraId, String nome) {
-        String termo = nome == null ? "" : nome.trim();
+        String filtro = nome == null ? "" : nome.trim();
         return clienteRepository
-                .findByLocadoraIdAndStatusNotAndNomeContainingIgnoreCaseOrderByNomeAsc(
-                        locadoraId, StatusCadastro.CANCELADO, termo)
+                .findByLocadoraIdAndStatusNotAndNomeContainingIgnoreCaseOrderByNome(
+                        locadoraId, StatusCadastro.CANCELADO, filtro)
                 .stream()
                 .map(ClienteListagemResponse::de)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public ClienteConsultaResponse buscarPorId(Long locadoraId, Long id) {
-        return ClienteConsultaResponse.de(buscarEntidade(locadoraId, id));
+    public ClienteConsultaResponse consultar(Long locadoraId, Long id) {
+        return ClienteConsultaResponse.de(buscarVisivel(locadoraId, id));
     }
 
+    // ---------------------------------------------------------------
+    // ATUALIZAR (o documento não muda: o request não o recebe)
+    // ---------------------------------------------------------------
     @Transactional
     public ClienteAtualizacaoResponse atualizar(Long locadoraId, Long id, ClienteAtualizacaoRequest request) {
-        Cliente cliente = buscarEntidade(locadoraId, id);
+        Cliente cliente = buscarVisivel(locadoraId, id);
+        preencherDados(cliente, request.nome(), request.email(), request.celular(),
+                request.telefone(), request.endereco());
+        clienteRepository.save(cliente);
 
-        cliente.setNome(request.nome().trim());
-        cliente.setEmail(limpar(request.email()));
-        cliente.setCelular(limpar(request.celular()));
-        cliente.setTelefone(limpar(request.telefone()));
-        cliente.setEnderecoResidencial(request.endereco() == null ? null : request.endereco().paraEntidade());
-        cliente.setDataAtualizacao(LocalDateTime.now());
-
-        return new ClienteAtualizacaoResponse(cliente.getId(), cliente.getNome(), "Cliente atualizado com sucesso!");
+        return new ClienteAtualizacaoResponse(cliente.getId(), cliente.getNome(),
+                "Dados de " + cliente.getNome() + " atualizados com sucesso!");
     }
 
+    // ---------------------------------------------------------------
+    // EXCLUIR (exclusão LÓGICA, bloqueada se houver locação em aberto)
+    // ---------------------------------------------------------------
     @Transactional
     public ClienteExclusaoResponse excluir(Long locadoraId, Long id) {
-        Cliente cliente = buscarEntidade(locadoraId, id);
+        Cliente cliente = buscarVisivel(locadoraId, id);
 
-        boolean temLocacaoAberta = locacaoRepository.existsByClienteIdAndLocadoraIdAndStatusIn(
-                id, locadoraId, List.of(StatusLocacao.EM_ANDAMENTO, StatusLocacao.ATRASADA));
-        if (temLocacaoAberta) {
+        boolean temLocacaoEmAberto = locacaoRepository
+                .existsByClienteIdAndLocadoraIdAndStatusIn(id, locadoraId, LOCACOES_EM_ABERTO);
+        if (temLocacaoEmAberto) {
             throw new RegraDeNegocioException(
-                    "Este cliente possui uma locação em andamento. Registre a devolução antes de excluí-lo.");
+                    "Este cliente tem locações em andamento ou atrasadas. "
+                            + "Finalize essas locações antes de remover o cadastro.");
         }
 
-        cliente.setStatus(StatusCadastro.CANCELADO);
-        cliente.setDataAtualizacao(LocalDateTime.now());
-
-        return new ClienteExclusaoResponse(cliente.getId(), "Cliente excluído com sucesso!");
+        cliente.setStatus(StatusCadastro.CANCELADO); // nada é apagado do banco
+        return new ClienteExclusaoResponse(cliente.getId(),
+                "Cliente " + cliente.getNome() + " removido. O histórico de locações foi preservado.");
     }
 
-    private Cliente buscarEntidade(Long locadoraId, Long id) {
-        return clienteRepository.findByIdAndLocadoraId(id, locadoraId)
-                .filter(c -> c.getStatus() != StatusCadastro.CANCELADO)
-                .orElseThrow(() -> new RecursoNaoEncontradoException(
-                        "Não encontramos este cliente. Confira os dados e tente novamente."));
+    // ---------------------------------------------------------------
+    // Auxiliares
+    // ---------------------------------------------------------------
+    // Cliente da locadora logada que ainda não foi cancelado
+    private Cliente buscarVisivel(Long locadoraId, Long id) {
+        Cliente cliente = clienteRepository.findByIdAndLocadoraId(id, locadoraId)
+                .orElseThrow(() -> new RegraDeNegocioException("Cliente não encontrado."));
+        if (cliente.getStatus() == StatusCadastro.CANCELADO) {
+            throw new RegraDeNegocioException("Cliente não encontrado.");
+        }
+        return cliente;
     }
 
-    private String limpar(String texto) {
-        return (texto == null || texto.isBlank()) ? null : texto.trim();
+    private void preencherDados(Cliente c, String nome, String email, String celular,
+                                String telefone, EnderecoDTO endereco) {
+        c.setNome(nome);
+        c.setEmail(email);
+        c.setCelular(celular);
+        c.setTelefone(telefone);
+        if (endereco != null) {
+            c.setEnderecoResidencial(paraEndereco(endereco));
+        }
+    }
+
+    // ⚠️ Ajuste aos nomes reais dos campos de Endereco/EnderecoDTO
+    // (se o EnderecoDTO já tiver um método de conversão, use-o e apague este)
+    private Endereco paraEndereco(EnderecoDTO dto) {
+        Endereco e = new Endereco();
+        e.setCep(dto.cep());
+        e.setLogradouro(dto.logradouro());
+        e.setNumero(dto.numero());
+        e.setComplemento(dto.complemento());
+        e.setBairro(dto.bairro());
+        e.setCidade(dto.cidade());
+        e.setEstado(dto.estado());
+        return e;
+    }
+
+    private String limparDocumento(String documento) {
+        return documento == null ? null : documento.replaceAll("\\D", "");
     }
 }

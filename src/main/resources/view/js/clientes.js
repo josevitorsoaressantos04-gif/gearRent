@@ -1,438 +1,737 @@
-const clientesMock = [
-  {
-    id: 1,
-    codigo: 'CLI-1001',
-    nome: 'Maria da Silva',
-    tipoPessoa: 'PF',
-    documento: '123.456.789-09',
-    telefone: '(11) 98765-4321',
-    email: 'maria@email.com',
-    endereco: 'Avenida Brasil, 1200, Centro, São Paulo/SP',
-    status: 'ATIVO',
-    totalLocacoes: 8,
-    locacoesEmAndamento: 2,
-    equipamentosEmPosse: 3,
-    valorAberto: 3420,
-    historico: [
-      { equipamento: 'Retroescavadeira CAT 320', data: '15/09/2026', status: 'EM_ANDAMENTO' },
-      { equipamento: 'Compactador CS-410', data: '02/08/2026', status: 'CONCLUIDA' },
-      { equipamento: 'Trator Mini 240', data: '10/07/2026', status: 'ATRASADA' },
-    ],
-  },
-  {
-    id: 2,
-    codigo: 'CLI-1002',
-    nome: 'José Pereira Construções',
-    tipoPessoa: 'PJ',
-    documento: '42.346.468/0001-22',
-    telefone: '(11) 98888-1212',
-    email: 'contato@josepereira.com.br',
-    endereco: 'Rua das Flores, 300, Jardim Paulista, São Paulo/SP',
-    status: 'ATIVO',
-    totalLocacoes: 16,
-    locacoesEmAndamento: 4,
-    equipamentosEmPosse: 5,
-    valorAberto: 8420,
-    historico: [
-      { equipamento: 'Escavadeira 320D', data: '22/09/2026', status: 'EM_ANDAMENTO' },
-      { equipamento: 'Caminhão Munck', data: '03/09/2026', status: 'CONCLUIDA' },
-      { equipamento: 'Guindaste Portátil', data: '18/08/2026', status: 'CANCELADA' },
-    ],
-  },
-  {
-    id: 3,
-    codigo: 'CLI-1003',
-    nome: 'Ana Costa',
-    tipoPessoa: 'PF',
-    documento: '315.982.430-18',
-    telefone: '(21) 99774-1020',
-    email: 'ana.costa@gmail.com',
-    endereco: 'Estrada do Mar, 900, Copacabana, Rio de Janeiro/RJ',
-    status: 'INATIVO',
-    totalLocacoes: 3,
-    locacoesEmAndamento: 0,
-    equipamentosEmPosse: 0,
-    valorAberto: 0,
-    historico: [
-      { equipamento: 'Mini Escavadeira', data: '04/06/2026', status: 'CONCLUIDA' },
-      { equipamento: 'Plataforma de Trabalho', data: '08/05/2026', status: 'CANCELADA' },
-    ],
-  },
-];
-
-const estado = {
-  clientes: [...clientesMock],
-  clienteSelecionado: clientesMock[0],
-  tipoPessoaFiltro: 'TODOS',
-  statusFiltro: 'TODOS',
-  termoBusca: '',
-  editandoClienteId: null,
-};
-
-const refs = {
-  tabela: document.getElementById('clientesTableBody'),
-  contador: document.getElementById('contadorClientes'),
-  busca: document.getElementById('clienteSearch'),
-  tipoPessoaFilter: document.getElementById('tipoPessoaFilter'),
-  statusFilter: document.getElementById('statusFilter'),
-  modal: document.getElementById('clienteModal'),
-  form: document.getElementById('clienteForm'),
-  modalTitle: document.getElementById('modalTitle'),
-  tipoPessoa: document.getElementById('tipoPessoa'),
-  labelNome: document.getElementById('labelNome'),
-  labelDocumento: document.getElementById('labelDocumento'),
-  nomeCliente: document.getElementById('nomeCliente'),
-  documentoCliente: document.getElementById('documentoCliente'),
-  telefoneCliente: document.getElementById('telefoneCliente'),
-  emailCliente: document.getElementById('emailCliente'),
-  enderecoCliente: document.getElementById('enderecoCliente'),
-  detailNome: document.getElementById('detailNome'),
-  detailCodigo: document.getElementById('detailCodigo'),
-  detailTipo: document.getElementById('detailTipo'),
-  detailDocumento: document.getElementById('detailDocumento'),
-  detailEmail: document.getElementById('detailEmail'),
-  detailEndereco: document.getElementById('detailEndereco'),
-  detailStatus: document.getElementById('detailStatus'),
-  metricTotalLocacoes: document.getElementById('metricTotalLocacoes'),
-  metricLocacoesAndamento: document.getElementById('metricLocacoesAndamento'),
-  metricEquipamentosPosse: document.getElementById('metricEquipamentosPosse'),
-  metricValorAberto: document.getElementById('metricValorAberto'),
-  historicoLocacoes: document.getElementById('historicoLocacoes'),
-  btnNovoCliente: document.getElementById('btnNovoCliente'),
-  btnNovaLocacao: document.getElementById('btnNovaLocacao'),
-};
-
-function formatarMoeda(valor) {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(Number(valor || 0));
-}
-
-function mascararDocumento(valor) {
-  const digits = valor.replace(/\D/g, '').slice(0, 14);
-
-  if (refs.tipoPessoa.value === 'PJ') {
-    return digits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
-  }
-
-  return digits.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
-}
-
-function atualizarTipoDocumentoVisual() {
-  const tipo = refs.tipoPessoa.value;
-  refs.labelNome.textContent = tipo === 'PJ' ? 'Razão Social / Nome Fantasia' : 'Nome Completo';
-  refs.labelDocumento.textContent = tipo === 'PJ' ? 'CNPJ' : 'CPF';
-  refs.documentoCliente.placeholder = tipo === 'PJ' ? '00.000.000/0000-00' : '000.000.000-00';
-  refs.documentoCliente.value = mascararDocumento(refs.documentoCliente.value || '');
-}
-
-function aplicarFiltros() {
-  const termo = estado.termoBusca.trim().toLowerCase();
-  const clientesFiltrados = estado.clientes.filter((cliente) => {
-    const concat = [
-      cliente.nome,
-      cliente.codigo,
-      cliente.documento,
-      cliente.tipoPessoa,
-      cliente.status,
-    ]
-      .join(' ')
-      .toLowerCase();
-
-    const atendeBusca = !termo || concat.includes(termo);
-    const atendeTipo = estado.tipoPessoaFiltro === 'TODOS' || cliente.tipoPessoa === estado.tipoPessoaFiltro;
-    const atendeStatus = estado.statusFiltro === 'TODOS' || cliente.status === estado.statusFiltro;
-
-    return atendeBusca && atendeTipo && atendeStatus;
-  });
-
-  renderTabela(clientesFiltrados);
-  refs.contador.textContent = `${clientesFiltrados.length} registro${clientesFiltrados.length === 1 ? '' : 's'}`;
-
-  if (!clientesFiltrados.length) {
-    estado.clienteSelecionado = null;
-    renderDetalhesVazio();
+(() => {
+  const tokenKey = 'gearrent_token';
+  const token = sessionStorage.getItem(tokenKey);
+  if (!token) {
+    window.location.replace('login.html');
     return;
   }
+  if (localStorage.getItem('gearRentTheme') === 'dark') document.body.dataset.theme = 'dark';
 
-  const selecionadoExiste = clientesFiltrados.some((cliente) => cliente.id === estado.clienteSelecionado?.id);
-  if (!selecionadoExiste) {
-    estado.clienteSelecionado = clientesFiltrados[0];
+  window.GR = window.GR || {};
+  window.GR.api = window.GR.api || {};
+  window.GR.api.clientes = {
+    listar: () => window.apiClient.get('/clientes'),
+    buscarPorId: (id) => window.apiClient.get(`/clientes/${encodeURIComponent(id)}`),
+    cadastrar: (payload) => window.apiClient.post('/clientes', payload),
+    atualizar: (id, payload) => window.apiClient.put(`/clientes/${encodeURIComponent(id)}`, payload),
+    excluir: (id) => window.apiClient.delete(`/clientes/${encodeURIComponent(id)}`),
+  };
+  window.GR.auth = window.GR.auth || {};
+  if (typeof window.GR.auth.sair !== 'function') {
+    window.GR.auth.sair = () => {
+      sessionStorage.removeItem(tokenKey);
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('usuario');
+      window.location.replace('login.html');
+    };
   }
 
-  renderDetalhes(estado.clienteSelecionado);
-}
-
-function renderTabela(clientes) {
-  refs.tabela.innerHTML = clientes
-    .map(
-      (cliente) => `
-        <tr data-cliente-id="${cliente.id}" tabindex="0" role="button" aria-label="Selecionar cliente ${cliente.nome}">
-          <td>${cliente.codigo}</td>
-          <td>${cliente.nome}</td>
-          <td><span class="badge ${cliente.tipoPessoa === 'PF' ? 'badge--pf' : 'badge--pj'}">${cliente.tipoPessoa}</span></td>
-          <td>${cliente.documento}</td>
-          <td>${cliente.telefone}</td>
-          <td>
-            <div class="table-actions">
-              <button type="button" class="icon-button icon-button--edit" data-action="editar" data-id="${cliente.id}" aria-label="Editar cliente ${cliente.nome}">✏️</button>
-              <button type="button" class="icon-button icon-button--delete" data-action="inativar" data-id="${cliente.id}" aria-label="Inativar cliente ${cliente.nome}">🗑️</button>
-            </div>
-          </td>
-        </tr>
-      `
-    )
-    .join('');
-
-  refs.tabela.querySelectorAll('tr[data-cliente-id]').forEach((linha) => {
-    linha.addEventListener('click', (event) => {
-      if (event.target.closest('button')) return;
-      const id = Number(linha.dataset.clienteId);
-      const cliente = estado.clientes.find((item) => item.id === id);
-      if (cliente) {
-        estado.clienteSelecionado = cliente;
-        renderDetalhes(cliente);
-      }
-    });
-  });
-
-  refs.tabela.querySelectorAll('[data-action]').forEach((botao) => {
-    botao.addEventListener('click', (event) => {
-      event.stopPropagation();
-      const action = botao.dataset.action;
-      const id = Number(botao.dataset.id);
-      if (action === 'editar') {
-        abrirModalEdicao(id);
-      }
-      if (action === 'inativar') {
-        confirmarInativacao(id);
-      }
-    });
-  });
-}
-
-function renderDetalhesVazio() {
-  refs.detailNome.textContent = 'Nenhum cliente encontrado';
-  refs.detailCodigo.textContent = 'Código: -';
-  refs.detailTipo.textContent = '-';
-  refs.detailDocumento.textContent = '-';
-  refs.detailEmail.textContent = '-';
-  refs.detailEndereco.textContent = '-';
-  refs.detailStatus.textContent = '-';
-  refs.metricTotalLocacoes.textContent = '0';
-  refs.metricLocacoesAndamento.textContent = '0';
-  refs.metricEquipamentosPosse.textContent = '0';
-  refs.metricValorAberto.textContent = 'R$ 0,00';
-  refs.historicoLocacoes.innerHTML = '<li>Nenhum histórico disponível.</li>';
-}
-
-function renderDetalhes(cliente) {
-  if (!cliente) {
-    renderDetalhesVazio();
-    return;
-  }
-
-  refs.detailNome.textContent = cliente.nome;
-  refs.detailCodigo.textContent = `Código: ${cliente.codigo}`;
-  refs.detailTipo.textContent = cliente.tipoPessoa === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica';
-  refs.detailDocumento.textContent = cliente.documento;
-  refs.detailEmail.textContent = cliente.email || '-';
-  refs.detailEndereco.textContent = cliente.endereco || '-';
-  refs.detailStatus.textContent = cliente.status;
-
-  refs.metricTotalLocacoes.textContent = cliente.totalLocacoes ?? 0;
-  refs.metricLocacoesAndamento.textContent = cliente.locacoesEmAndamento ?? 0;
-  refs.metricEquipamentosPosse.textContent = cliente.equipamentosEmPosse ?? 0;
-  refs.metricValorAberto.textContent = formatarMoeda(cliente.valorAberto ?? 0);
-
-  refs.historicoLocacoes.innerHTML = (cliente.historico || [])
-    .map(
-      (item) => `
-        <li class="history-item">
-          <div>
-            <strong>${item.equipamento}</strong>
-            <span>${item.data}</span>
-          </div>
-          <span class="badge ${statusClass(item.status)}">${item.status}</span>
-        </li>
-      `
-    )
-    .join('') || '<li>Nenhum histórico disponível.</li>';
-}
-
-function statusClass(status) {
-  const classes = {
-    EM_ANDAMENTO: 'badge--andamento',
-    CONCLUIDA: 'badge--concluida',
-    ATRASADA: 'badge--atrasada',
-    CANCELADA: 'badge--cancelada',
+  const state = {
+    clientes: [],
+    selectedId: null,
+    editingId: null,
+    pendingDeleteId: null,
+    search: '',
+    typeFilter: 'TODOS',
+    statusFilter: 'TODOS',
+    detailRequest: 0,
+    lastFocusedElement: null,
   };
 
-  return classes[status] || 'badge--default';
-}
-
-function abrirModalEdicao(id) {
-  const cliente = estado.clientes.find((item) => item.id === id);
-  if (!cliente) return;
-
-  estado.editandoClienteId = id;
-  refs.modalTitle.textContent = 'Editar Cliente';
-  refs.form.reset();
-  refs.tipoPessoa.value = cliente.tipoPessoa;
-  refs.nomeCliente.value = cliente.nome;
-  refs.documentoCliente.value = cliente.documento;
-  refs.telefoneCliente.value = cliente.telefone;
-  refs.emailCliente.value = cliente.email;
-  refs.enderecoCliente.value = cliente.endereco;
-  atualizarTipoDocumentoVisual();
-  abrirModal();
-}
-
-function abrirModalCadastro() {
-  estado.editandoClienteId = null;
-  refs.modalTitle.textContent = 'Novo Cliente';
-  refs.form.reset();
-  refs.tipoPessoa.value = 'PF';
-  atualizarTipoDocumentoVisual();
-  abrirModal();
-}
-
-function abrirModal() {
-  refs.modal.classList.add('is-open');
-  refs.modal.setAttribute('aria-hidden', 'false');
-}
-
-function fecharModal() {
-  refs.modal.classList.remove('is-open');
-  refs.modal.setAttribute('aria-hidden', 'true');
-}
-
-function confirmarInativacao(id) {
-  const cliente = estado.clientes.find((item) => item.id === id);
-  if (!cliente) return;
-
-  const confirmar = window.confirm(`Deseja realmente inativar o cliente ${cliente.nome}?`);
-  if (!confirmar) return;
-
-  cliente.status = 'INATIVO';
-  aplicarFiltros();
-}
-
-function validarFormulario() {
-  const nome = refs.nomeCliente.value.trim();
-  const documento = refs.documentoCliente.value.replace(/\D/g, '');
-  const telefone = refs.telefoneCliente.value.trim();
-  const email = refs.emailCliente.value.trim();
-  const endereco = refs.enderecoCliente.value.trim();
-
-  if (!nome || !documento || !telefone || !email || !endereco) {
-    return 'Preencha todos os campos do cliente.';
-  }
-
-  if (refs.tipoPessoa.value === 'PF' && documento.length !== 11) {
-    return 'CPF inválido. Informe 11 números.';
-  }
-
-  if (refs.tipoPessoa.value === 'PJ' && documento.length !== 14) {
-    return 'CNPJ inválido. Informe 14 números.';
-  }
-
-  return null;
-}
-
-function montarClientePayload() {
-  return {
-    id: estado.editandoClienteId ?? Date.now(),
-    codigo: estado.editandoClienteId ? estado.clientes.find((item) => item.id === estado.editandoClienteId)?.codigo : `CLI-${Date.now().toString().slice(-4)}`,
-    nome: refs.nomeCliente.value.trim(),
-    tipoPessoa: refs.tipoPessoa.value,
-    documento: refs.documentoCliente.value,
-    telefone: refs.telefoneCliente.value.trim(),
-    email: refs.emailCliente.value.trim(),
-    endereco: refs.enderecoCliente.value.trim(),
-    status: 'ATIVO',
-    totalLocacoes: 0,
-    locacoesEmAndamento: 0,
-    equipamentosEmPosse: 0,
-    valorAberto: 0,
-    historico: [],
+  const refs = {
+    table: document.getElementById('clientesTableBody'),
+    counter: document.getElementById('contadorClientes'),
+    search: document.getElementById('clienteSearch'),
+    typeFilter: document.getElementById('tipoPessoaFilter'),
+    statusFilter: document.getElementById('statusFilter'),
+    message: document.getElementById('mensagemClientes'),
+    error: document.getElementById('erroClientes'),
+    history: document.getElementById('historicoLocacoes'),
+    formError: document.getElementById('erroFormulario'),
+    form: document.getElementById('clienteForm'),
+    modal: document.getElementById('clienteModal'),
+    modalTitle: document.getElementById('modalTitle'),
+    saveButton: document.getElementById('salvarCliente'),
+    editNotice: document.getElementById('avisoDocumentoEdicao'),
+    type: document.getElementById('tipoPessoa'),
+    nameLabel: document.getElementById('labelNome'),
+    documentLabel: document.getElementById('labelDocumento'),
+    document: document.getElementById('documentoCliente'),
+    name: document.getElementById('nomeCliente'),
+    phone: document.getElementById('telefoneCliente'),
+    email: document.getElementById('emailCliente'),
+    street: document.getElementById('logradouroCliente'),
+    number: document.getElementById('numeroCliente'),
+    complement: document.getElementById('complementoCliente'),
+    neighborhood: document.getElementById('bairroCliente'),
+    city: document.getElementById('cidadeCliente'),
+    state: document.getElementById('estadoCliente'),
+    postalCode: document.getElementById('cepCliente'),
+    confirmDialog: document.getElementById('confirmarInativacao'),
+    confirmMessage: document.getElementById('confirmMessage'),
+    confirmButton: document.getElementById('confirmarAcaoInativar'),
   };
-}
 
-function salvarCliente(event) {
-  event.preventDefault();
-  const erro = validarFormulario();
-  if (erro) {
-    window.alert(erro);
-    return;
+  function setError(message) {
+    refs.error.textContent = message;
+    refs.error.hidden = !message;
   }
 
-  const payload = montarClientePayload();
-
-  if (estado.editandoClienteId) {
-    estado.clientes = estado.clientes.map((cliente) =>
-      cliente.id === estado.editandoClienteId ? { ...cliente, ...payload } : cliente
-    );
-  } else {
-    estado.clientes = [payload, ...estado.clientes];
+  function showFormError(message) {
+    refs.formError.textContent = message;
+    refs.formError.hidden = !message;
   }
 
-  estado.clienteSelecionado = estado.clientes.find((cliente) => cliente.id === payload.id) || estado.clientes[0];
-  fecharModal();
-  aplicarFiltros();
-}
+  function showMessage(message) {
+    refs.message.textContent = message;
+    refs.message.hidden = !message;
+  }
 
-function inicializarEventos() {
-  refs.busca.addEventListener('input', (event) => {
-    estado.termoBusca = event.target.value;
-    aplicarFiltros();
-  });
-
-  refs.clienteSearch.addEventListener('input', (event) => {
-    estado.termoBusca = event.target.value;
-    aplicarFiltros();
-  });
-
-  refs.tipoPessoaFilter.addEventListener('change', (event) => {
-    estado.tipoPessoaFiltro = event.target.value;
-    aplicarFiltros();
-  });
-
-  refs.statusFilter.addEventListener('change', (event) => {
-    estado.statusFiltro = event.target.value;
-    aplicarFiltros();
-  });
-
-  refs.tipoPessoa.addEventListener('change', atualizarTipoDocumentoVisual);
-  refs.documentoCliente.addEventListener('input', () => {
-    refs.documentoCliente.value = mascararDocumento(refs.documentoCliente.value);
-  });
-
-  refs.btnNovoCliente.addEventListener('click', abrirModalCadastro);
-  refs.btnNovaLocacao.addEventListener('click', () => {
-    if (estado.clienteSelecionado) {
-      window.alert(`Fluxo de nova locação para ${estado.clienteSelecionado.nome} em desenvolvimento.`);
+  function getErrorMessage(error) {
+    if (error.response?.status === 401) {
+      window.GR.auth.sair();
+      return 'Sua sessão expirou. Entre novamente.';
     }
-  });
 
-  refs.form.addEventListener('submit', salvarCliente);
+    const apiMessages = error.response?.data?.mensagens;
+    if (Array.isArray(apiMessages) && apiMessages.length) return apiMessages.join(' ');
+    if (error.response?.data?.message) return error.response.data.message;
+    if (error.response) return `A solicitação falhou (HTTP ${error.response.status}).`;
+    return 'Não foi possível conectar à API. Verifique a conexão e tente novamente.';
+  }
 
-  document.querySelectorAll('[data-close-modal]').forEach((element) => {
-    element.addEventListener('click', fecharModal);
-  });
+  function digits(value) {
+    return String(value || '').replace(/\D/g, '');
+  }
 
-  document.getElementById('btnLogout').addEventListener('click', () => {
-    sessionStorage.removeItem('gearrent_token');
-    window.location.href = 'login.html';
-  });
-}
+  function inferPersonType(documentValue) {
+    const length = digits(documentValue).length;
+    return length === 14 ? 'PJ' : length === 11 ? 'PF' : null;
+  }
 
-function init() {
-  inicializarEventos();
-  aplicarFiltros();
-  atualizarTipoDocumentoVisual();
-  renderDetalhes(estado.clienteSelecionado);
-}
+  function normalizePersonType(type, documentValue) {
+    if (type === 'PF' || type === 'FISICA') return 'PF';
+    if (type === 'PJ' || type === 'JURIDICA') return 'PJ';
+    return inferPersonType(documentValue);
+  }
 
-init();
+  function normalizeClient(raw) {
+    const documentValue = raw.documento || '';
+    return {
+      ...raw,
+      id: raw.id,
+      codigoSequencial: raw.codigoSequencial ?? raw.codigo ?? null,
+      tipoPessoa: normalizePersonType(raw.tipoPessoa, documentValue),
+      telefone: raw.celular || raw.telefone || '',
+      endereco: raw.endereco || raw.enderecoResidencial || null,
+    };
+  }
+
+  function initials(name) {
+    return String(name || '?')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toLocaleUpperCase('pt-BR'))
+      .join('') || '?';
+  }
+
+  function getTokenSubject() {
+    try {
+      const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(window.atob(payload)).sub;
+    } catch {
+      return null;
+    }
+  }
+
+  async function loadProfile() {
+    try {
+      const response = await window.apiClient.get('/usuarios');
+      if (!Array.isArray(response.data)) throw new Error('Formato inesperado ao carregar o perfil.');
+      const subject = getTokenSubject();
+      const currentUser = response.data.find((user) => String(user.id) === String(subject));
+      if (!currentUser?.nome) throw new Error('Não foi possível identificar o usuário autenticado.');
+
+      document.getElementById('userNameSidebar').textContent = currentUser.nome;
+      document.getElementById('userNameTopbar').textContent = currentUser.nome;
+      document.getElementById('baseNameSidebar').textContent = `Base de ${currentUser.nome}`;
+      document.getElementById('avatarSidebar').textContent = initials(currentUser.nome);
+      document.getElementById('avatarTopbar').textContent = initials(currentUser.nome);
+    } catch (error) {
+      if (error.response?.status === 401) {
+        window.GR.auth.sair();
+        return;
+      }
+      setError(`${getErrorMessage(error)} O perfil não pôde ser carregado.`);
+    }
+  }
+
+  function codeLabel(client) {
+    if (client.codigoSequencial == null) return '—';
+    return `CLI-${String(client.codigoSequencial).padStart(4, '0')}`;
+  }
+
+  function filteredClients() {
+    const term = state.search.trim().toLocaleLowerCase('pt-BR');
+    return state.clientes.filter((client) => {
+      const searchable = [
+        client.nome,
+        client.documento,
+        client.codigoSequencial,
+        client.id,
+      ].filter((value) => value != null).join(' ').toLocaleLowerCase('pt-BR');
+      const matchesTerm = !term || searchable.includes(term);
+      const matchesType = state.typeFilter === 'TODOS' || client.tipoPessoa === state.typeFilter;
+      const matchesStatus = state.statusFilter === 'TODOS' || client.status === state.statusFilter;
+      return matchesTerm && matchesType && matchesStatus;
+    });
+  }
+
+  function createCell(text, className = '') {
+    const cell = document.createElement('td');
+    cell.textContent = text || '—';
+    if (className) cell.className = className;
+    return cell;
+  }
+
+  function createAction(label, icon, action, client) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `icon-button ${action === 'editar' ? 'icon-button--edit' : 'icon-button--delete'}`;
+    button.dataset.action = action;
+    button.dataset.clientId = String(client.id);
+    button.setAttribute('aria-label', `${label} ${client.nome}`);
+    button.title = `${label} ${client.nome}`;
+    button.textContent = icon;
+    return button;
+  }
+
+  function renderTable() {
+    const clients = filteredClients();
+    refs.table.replaceChildren();
+
+    if (!clients.length) {
+      const row = document.createElement('tr');
+      const cell = createCell(
+        state.clientes.length ? 'Nenhum cliente corresponde aos filtros.' : 'Nenhum cliente cadastrado nesta base.',
+        'table-state',
+      );
+      cell.colSpan = 6;
+      row.append(cell);
+      refs.table.append(row);
+    } else {
+      clients.forEach((client) => {
+        const row = document.createElement('tr');
+        row.dataset.clientId = String(client.id);
+        row.tabIndex = 0;
+        row.setAttribute('aria-selected', String(String(client.id) === String(state.selectedId)));
+        row.setAttribute('aria-label', `Selecionar cliente ${client.nome}`);
+
+        const typeCell = document.createElement('td');
+        const typeBadge = document.createElement('span');
+        typeBadge.className = `badge ${client.tipoPessoa === 'PJ' ? 'badge--pj' : client.tipoPessoa === 'PF' ? 'badge--pf' : 'badge--default'}`;
+        typeBadge.textContent = client.tipoPessoa || 'N/D';
+        typeCell.append(typeBadge);
+
+        const actions = document.createElement('div');
+        actions.className = 'table-actions';
+        actions.append(
+          createAction('Editar', '✏️', 'editar', client),
+          createAction('Inativar', '🗑️', 'inativar', client),
+        );
+
+        const actionsCell = document.createElement('td');
+        actionsCell.append(actions);
+        row.append(
+          createCell(codeLabel(client)),
+          createCell(client.nome),
+          typeCell,
+          createCell(client.documento),
+          createCell(client.telefone),
+          actionsCell,
+        );
+        refs.table.append(row);
+      });
+    }
+
+    refs.counter.textContent = `${clients.length} de ${state.clientes.length} cliente${state.clientes.length === 1 ? '' : 's'}`;
+  }
+
+  function formatCurrency(value) {
+    const amount = Number(value);
+    if (!Number.isFinite(amount)) return 'Não informado';
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
+  }
+
+  function formatDate(value) {
+    if (!value) return 'Data não informada';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return new Intl.DateTimeFormat('pt-BR').format(date);
+  }
+
+  function addressText(address) {
+    if (!address || typeof address !== 'object') return 'Não informado';
+    return [
+      [address.logradouro, address.numero].filter(Boolean).join(', '),
+      address.complemento,
+      address.bairro,
+      [address.cidade, address.estado].filter(Boolean).join('/'),
+      address.cep ? `CEP ${address.cep}` : '',
+    ].filter(Boolean).join(' · ') || 'Não informado';
+  }
+
+  function appendHistoryEmpty(message) {
+    const item = document.createElement('li');
+    item.className = 'history-empty';
+    item.textContent = message;
+    refs.history.replaceChildren(item);
+  }
+
+  function renderEmptyDetails(message = 'Selecione um cliente') {
+    document.getElementById('detailAvatar').textContent = '?';
+    document.getElementById('detailNome').textContent = message;
+    document.getElementById('detailCodigo').textContent = 'Código sequencial indisponível';
+    document.getElementById('detailTipo').textContent = '—';
+    document.getElementById('detailDocumento').textContent = '—';
+    document.getElementById('detailTelefone').textContent = '—';
+    document.getElementById('detailEmail').textContent = '—';
+    document.getElementById('detailEndereco').textContent = '—';
+    document.getElementById('detailStatus').textContent = '—';
+    document.getElementById('metricTotalLocacoes').textContent = '—';
+    document.getElementById('metricLocacoesAndamento').textContent = '—';
+    document.getElementById('metricEquipamentosPosse').textContent = '—';
+    document.getElementById('metricValorAberto').textContent = '—';
+    appendHistoryEmpty('Selecione um cliente para ver os dados disponíveis.');
+    document.getElementById('btnNovaLocacao').disabled = true;
+  }
+
+  function renderDetails(client, historyAvailable = false) {
+    if (!client) {
+      renderEmptyDetails();
+      return;
+    }
+
+    document.getElementById('detailAvatar').textContent = initials(client.nome);
+    document.getElementById('detailNome').textContent = client.nome || 'Nome não informado';
+    document.getElementById('detailCodigo').textContent = client.codigoSequencial == null
+      ? 'Código sequencial não fornecido pela API'
+      : `Código: ${codeLabel(client)}`;
+    document.getElementById('detailTipo').textContent = client.tipoPessoa === 'PF'
+      ? 'Pessoa Física'
+      : client.tipoPessoa === 'PJ' ? 'Pessoa Jurídica' : 'Não informado pela API';
+    document.getElementById('detailDocumento').textContent = client.documento || 'Não informado';
+    document.getElementById('detailTelefone').textContent = client.telefone || 'Não informado';
+    document.getElementById('detailEmail').textContent = client.email || 'Não informado';
+    document.getElementById('detailEndereco').textContent = addressText(client.endereco);
+    document.getElementById('detailStatus').textContent = client.status || 'Não informado';
+
+    document.getElementById('metricTotalLocacoes').textContent = client.totalLocacoes ?? '—';
+    document.getElementById('metricLocacoesAndamento').textContent = client.locacoesEmAndamento ?? '—';
+    document.getElementById('metricEquipamentosPosse').textContent = client.equipamentosEmPosse ?? '—';
+    document.getElementById('metricValorAberto').textContent = client.valorAberto == null
+      ? '—'
+      : formatCurrency(client.valorAberto);
+    appendHistoryEmpty(historyAvailable
+      ? 'Este cliente ainda não possui locações registradas.'
+      : 'O histórico de locações não está disponível na API atual.');
+    document.getElementById('btnNovaLocacao').disabled = false;
+  }
+
+  async function selectClient(id) {
+    const client = state.clientes.find((item) => String(item.id) === String(id));
+    if (!client) return;
+    state.selectedId = client.id;
+    renderTable();
+    renderDetails(client);
+    showError('');
+
+    const requestId = ++state.detailRequest;
+    try {
+      const response = await window.GR.api.clientes.buscarPorId(client.id);
+      if (requestId !== state.detailRequest || String(state.selectedId) !== String(client.id)) return;
+      const details = normalizeClient(response.data);
+      const updated = {
+        ...client,
+        ...details,
+        codigoSequencial: details.codigoSequencial ?? client.codigoSequencial,
+      };
+      state.clientes = state.clientes.map((item) => String(item.id) === String(client.id) ? updated : item);
+      renderTable();
+      renderDetails(updated);
+    } catch (error) {
+      if (requestId !== state.detailRequest) return;
+      if (error.response?.status === 401) {
+        window.GR.auth.sair();
+        return;
+      }
+      setError(`Os dados da lista foram exibidos, mas não foi possível carregar o endereço completo. ${getErrorMessage(error)}`);
+    }
+  }
+
+  function showError(message) {
+    setError(message);
+  }
+
+  async function loadClients({ preserveSelection = true } = {}) {
+    setError('');
+    showMessage('Carregando clientes da base…');
+    refs.counter.textContent = 'Carregando…';
+    try {
+      const response = await window.GR.api.clientes.listar();
+      if (!Array.isArray(response.data)) throw new Error('A API retornou uma lista de clientes inválida.');
+      state.clientes = response.data.map(normalizeClient);
+      renderTable();
+      showMessage('');
+
+      const selected = preserveSelection
+        ? state.clientes.find((client) => String(client.id) === String(state.selectedId))
+        : null;
+      if (selected) {
+        await selectClient(selected.id);
+      } else if (state.clientes.length) {
+        await selectClient(state.clientes[0].id);
+      } else {
+        state.selectedId = null;
+        renderDetails(null);
+      }
+    } catch (error) {
+      showMessage('');
+      refs.counter.textContent = 'Falha ao carregar';
+      setError(getErrorMessage(error));
+      const row = document.createElement('tr');
+      const cell = createCell('Não foi possível carregar a lista. Tente novamente.', 'table-state');
+      cell.colSpan = 6;
+      row.append(cell);
+      refs.table.replaceChildren(row);
+      renderDetails(null);
+    }
+  }
+
+  function formatDocument(value, type) {
+    const valueDigits = digits(value).slice(0, type === 'PJ' ? 14 : 11);
+    if (type === 'PJ') {
+      let formatted = valueDigits;
+      if (valueDigits.length > 2) formatted = `${valueDigits.slice(0, 2)}.${valueDigits.slice(2)}`;
+      if (valueDigits.length > 5) formatted = `${valueDigits.slice(0, 2)}.${valueDigits.slice(2, 5)}.${valueDigits.slice(5)}`;
+      if (valueDigits.length > 8) formatted = `${valueDigits.slice(0, 2)}.${valueDigits.slice(2, 5)}.${valueDigits.slice(5, 8)}/${valueDigits.slice(8)}`;
+      if (valueDigits.length > 12) formatted = `${valueDigits.slice(0, 2)}.${valueDigits.slice(2, 5)}.${valueDigits.slice(5, 8)}/${valueDigits.slice(8, 12)}-${valueDigits.slice(12)}`;
+      return formatted;
+    }
+    return valueDigits
+      .replace(/^(\d{3})(\d)/, '$1.$2')
+      .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  }
+
+  function setPersonType(type) {
+    const isCompany = type === 'PJ';
+    refs.nameLabel.textContent = isCompany ? 'Razão Social / Nome Fantasia' : 'Nome completo';
+    refs.documentLabel.textContent = isCompany ? 'CNPJ' : 'CPF';
+    refs.document.placeholder = isCompany ? '00.000.000/0000-00' : '000.000.000-00';
+    refs.document.maxLength = isCompany ? 18 : 14;
+    refs.document.value = formatDocument(refs.document.value, type);
+  }
+
+  function validCPF(value) {
+    const cpf = digits(value);
+    if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+    const calculate = (length) => {
+      let sum = 0;
+      for (let i = 0; i < length; i += 1) sum += Number(cpf[i]) * (length + 1 - i);
+      const remainder = (sum * 10) % 11;
+      return remainder === 10 ? 0 : remainder;
+    };
+    return calculate(9) === Number(cpf[9]) && calculate(10) === Number(cpf[10]);
+  }
+
+  function validCNPJ(value) {
+    const cnpj = digits(value);
+    if (cnpj.length !== 14 || /^(\d)\1{13}$/.test(cnpj)) return false;
+    const calculate = (length) => {
+      const weights = length === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+      const sum = weights.reduce((total, weight, index) => total + Number(cnpj[index]) * weight, 0);
+      const remainder = sum % 11;
+      return remainder < 2 ? 0 : 11 - remainder;
+    };
+    return calculate(12) === Number(cnpj[12]) && calculate(13) === Number(cnpj[13]);
+  }
+
+  function openModal() {
+    state.lastFocusedElement = document.activeElement;
+    refs.modal.showModal();
+    refs.name.focus();
+  }
+
+  function openCreateModal() {
+    state.editingId = null;
+    refs.form.reset();
+    showFormError('');
+    refs.modalTitle.textContent = 'Novo Cliente';
+    refs.saveButton.textContent = 'Salvar cliente';
+    refs.editNotice.hidden = true;
+    refs.type.disabled = false;
+    refs.document.disabled = false;
+    refs.type.value = 'PF';
+    setPersonType('PF');
+    openModal();
+  }
+
+  async function openEditModal(id) {
+    const client = state.clientes.find((item) => String(item.id) === String(id));
+    if (!client) return;
+    state.editingId = client.id;
+    refs.form.reset();
+    showFormError('');
+    refs.modalTitle.textContent = 'Editar Cliente';
+    refs.saveButton.textContent = 'Salvar alterações';
+    refs.editNotice.hidden = false;
+    refs.type.disabled = true;
+    refs.document.disabled = true;
+    refs.type.value = client.tipoPessoa || inferPersonType(client.documento) || 'PF';
+    setPersonType(refs.type.value);
+    refs.document.value = formatDocument(client.documento || '', refs.type.value);
+    refs.name.value = client.nome || '';
+    refs.phone.value = client.celular || client.telefone || '';
+    refs.email.value = client.email || '';
+
+    try {
+      const response = await window.GR.api.clientes.buscarPorId(client.id);
+      const full = normalizeClient(response.data);
+      const address = full.endereco || {};
+      refs.street.value = address.logradouro || '';
+      refs.number.value = address.numero || '';
+      refs.complement.value = address.complemento || '';
+      refs.neighborhood.value = address.bairro || '';
+      refs.city.value = address.cidade || '';
+      refs.state.value = address.estado || '';
+      refs.postalCode.value = address.cep || '';
+    } catch (error) {
+      if (error.response?.status === 401) {
+        window.GR.auth.sair();
+        return;
+      }
+      showFormError(`Não foi possível carregar o endereço completo. ${getErrorMessage(error)}`);
+      return;
+    }
+    openModal();
+  }
+
+  function closeModal() {
+    if (!refs.modal.open) return;
+    refs.modal.close();
+    state.editingId = null;
+    if (state.lastFocusedElement?.isConnected) state.lastFocusedElement.focus();
+  }
+
+  function buildPayload() {
+    const phone = refs.phone.value.trim();
+    return {
+      nome: refs.name.value.trim(),
+      ...(!state.editingId ? { documento: digits(refs.document.value) } : {}),
+      email: refs.email.value.trim() || null,
+      celular: phone || null,
+      telefone: phone || null,
+      endereco: {
+        logradouro: refs.street.value.trim(),
+        numero: refs.number.value.trim(),
+        complemento: refs.complement.value.trim() || null,
+        bairro: refs.neighborhood.value.trim(),
+        cidade: refs.city.value.trim(),
+        estado: refs.state.value.trim().toUpperCase(),
+        cep: refs.postalCode.value.trim(),
+      },
+    };
+  }
+
+  function validateForm() {
+    if (!refs.name.value.trim()) return 'Informe o nome do cliente.';
+    if (!state.editingId) {
+      const valid = refs.type.value === 'PJ'
+        ? validCNPJ(refs.document.value)
+        : validCPF(refs.document.value);
+      if (!valid) return refs.type.value === 'PJ' ? 'CNPJ inválido. Confira os dígitos.' : 'CPF inválido. Confira os dígitos.';
+    }
+    if (refs.email.value.trim() && !refs.email.validity.valid) return 'Informe um endereço de e-mail válido.';
+    if (!refs.street.value.trim() || !refs.number.value.trim() || !refs.neighborhood.value.trim()
+      || !refs.city.value.trim() || !refs.state.value.trim() || !refs.postalCode.value.trim()) {
+      return 'Preencha rua, número, bairro, cidade, UF e CEP.';
+    }
+    if (!/^[A-Za-z]{2}$/.test(refs.state.value.trim())) return 'Informe a UF com duas letras.';
+    if (!/^\d{5}-?\d{3}$/.test(refs.postalCode.value.trim())) return 'Informe um CEP válido com 8 números.';
+    return null;
+  }
+
+  async function saveClient(event) {
+    event.preventDefault();
+    showFormError('');
+    const validationMessage = validateForm();
+    if (validationMessage) {
+      showFormError(validationMessage);
+      return;
+    }
+
+    refs.saveButton.disabled = true;
+    refs.saveButton.textContent = 'Salvando…';
+    const editingId = state.editingId;
+    try {
+      const payload = buildPayload();
+      if (editingId) {
+        await window.GR.api.clientes.atualizar(editingId, payload);
+      } else {
+        const response = await window.GR.api.clientes.cadastrar(payload);
+        state.selectedId = response.data?.id ?? null;
+      }
+      closeModal();
+      showMessage(editingId ? 'Cliente atualizado com sucesso.' : 'Cliente cadastrado com sucesso.');
+      await loadClients({ preserveSelection: true });
+    } catch (error) {
+      showFormError(getErrorMessage(error));
+    } finally {
+      refs.saveButton.disabled = false;
+      refs.saveButton.textContent = state.editingId ? 'Salvar alterações' : 'Salvar cliente';
+    }
+  }
+
+  function openDeleteConfirmation(id) {
+    const client = state.clientes.find((item) => String(item.id) === String(id));
+    if (!client) return;
+    state.pendingDeleteId = client.id;
+    refs.confirmMessage.textContent = `Deseja inativar ${client.nome}? A operação poderá ser bloqueada caso existam locações em andamento ou atrasadas.`;
+    refs.confirmDialog.showModal();
+  }
+
+  async function confirmDelete() {
+    const id = state.pendingDeleteId;
+    if (id == null) return;
+    refs.confirmButton.disabled = true;
+    try {
+      const response = await window.GR.api.clientes.excluir(id);
+      state.clientes = state.clientes.filter((client) => String(client.id) !== String(id));
+      if (String(state.selectedId) === String(id)) state.selectedId = null;
+      refs.confirmDialog.close();
+      state.pendingDeleteId = null;
+      showMessage(response.data?.mensagem || 'Cliente inativado com sucesso.');
+      renderTable();
+      if (state.clientes.length) {
+        await selectClient(state.clientes[0].id);
+      } else {
+        renderDetails(null);
+      }
+    } catch (error) {
+      refs.confirmDialog.close();
+      state.pendingDeleteId = null;
+      setError(getErrorMessage(error));
+    } finally {
+      refs.confirmButton.disabled = false;
+    }
+  }
+
+  function handleTableClick(event) {
+    const actionButton = event.target.closest('button[data-action]');
+    if (actionButton) {
+      event.stopPropagation();
+      const { action, clientId } = actionButton.dataset;
+      if (action === 'editar') openEditModal(clientId);
+      if (action === 'inativar') openDeleteConfirmation(clientId);
+      return;
+    }
+
+    const row = event.target.closest('tr[data-client-id]');
+    if (row) selectClient(row.dataset.clientId);
+  }
+
+  function handleTableKeydown(event) {
+    if (event.target.matches('button')) return;
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const row = event.target.closest('tr[data-client-id]');
+    if (!row) return;
+    event.preventDefault();
+    selectClient(row.dataset.clientId);
+  }
+
+  function formatPhoneInput() {
+    const value = digits(refs.phone.value).slice(0, 11);
+    if (value.length < 3) {
+      refs.phone.value = value ? `(${value}` : '';
+      return;
+    }
+    const area = value.slice(0, 2);
+    const subscriber = value.slice(2);
+    refs.phone.value = subscriber.length > 8
+      ? `(${area}) ${subscriber.slice(0, 5)}-${subscriber.slice(5)}`
+      : `(${area}) ${subscriber.slice(0, 4)}${subscriber.length > 4 ? `-${subscriber.slice(4)}` : ''}`;
+  }
+
+  function formatPostalCode() {
+    const value = digits(refs.postalCode.value).slice(0, 8);
+    refs.postalCode.value = value.length > 5 ? `${value.slice(0, 5)}-${value.slice(5)}` : value;
+  }
+
+  function bindEvents() {
+    refs.search.addEventListener('input', () => {
+      state.search = refs.search.value;
+      renderTable();
+      const visible = filteredClients();
+      if (visible.length && !visible.some((client) => String(client.id) === String(state.selectedId))) {
+        selectClient(visible[0].id);
+      } else if (!visible.length) {
+        state.selectedId = null;
+        renderDetails(null);
+      }
+    });
+    refs.typeFilter.addEventListener('change', () => {
+      state.typeFilter = refs.typeFilter.value;
+      refs.search.dispatchEvent(new Event('input'));
+    });
+    refs.statusFilter.addEventListener('change', () => {
+      state.statusFilter = refs.statusFilter.value;
+      refs.search.dispatchEvent(new Event('input'));
+    });
+    refs.type.addEventListener('change', () => setPersonType(refs.type.value));
+    refs.document.addEventListener('input', () => {
+      refs.document.value = formatDocument(refs.document.value, refs.type.value);
+    });
+    refs.phone.addEventListener('input', formatPhoneInput);
+    refs.postalCode.addEventListener('input', formatPostalCode);
+    refs.state.addEventListener('input', () => {
+      refs.state.value = refs.state.value.replace(/[^a-z]/gi, '').slice(0, 2).toUpperCase();
+    });
+    refs.table.addEventListener('click', handleTableClick);
+    refs.table.addEventListener('keydown', handleTableKeydown);
+    refs.form.addEventListener('submit', saveClient);
+    document.getElementById('btnNovoCliente').addEventListener('click', openCreateModal);
+    document.getElementById('btnNovaLocacao').addEventListener('click', () => {
+      if (state.selectedId == null) return;
+      window.location.href = `locacoes.html?clienteId=${encodeURIComponent(state.selectedId)}`;
+    });
+    document.getElementById('btnLogout').addEventListener('click', () => window.GR.auth.sair());
+    document.querySelectorAll('[data-close-modal]').forEach((button) => button.addEventListener('click', closeModal));
+    refs.modal.addEventListener('click', (event) => {
+      if (event.target === refs.modal) closeModal();
+    });
+    refs.modal.addEventListener('close', () => {
+      if (state.lastFocusedElement?.isConnected) state.lastFocusedElement.focus();
+    });
+    document.querySelectorAll('[data-close-confirm]').forEach((button) => button.addEventListener('click', () => {
+      refs.confirmDialog.close();
+      state.pendingDeleteId = null;
+    }));
+    document.getElementById('confirmarAcaoInativar').addEventListener('click', confirmDelete);
+    refs.confirmDialog.addEventListener('click', (event) => {
+      if (event.target === refs.confirmDialog) {
+        refs.confirmDialog.close();
+        state.pendingDeleteId = null;
+      }
+    });
+    refs.confirmDialog.addEventListener('close', () => {
+      state.pendingDeleteId = null;
+    });
+  }
+
+  bindEvents();
+  renderEmptyDetails();
+  loadProfile();
+  loadClients({ preserveSelection: false });
+})();

@@ -31,16 +31,22 @@ public class ClienteController {
     }
 
     @PostMapping
-    @Operation(summary = "Cadastrar Cliente", description = "Registra um novo cliente (PF ou PJ) no sistema. Regra de Negócio: O documento (CPF/CNPJ) é validado para garantir que não haja duplicidade de clientes ativos na mesma locadora (tenant).")
+    @Operation(summary = "Cadastrar Cliente",
+            description = "Registra um novo cliente (PF ou PJ) no sistema. Regra de Negócio: o documento (CPF/CNPJ) é verificado na locadora (tenant), "
+                    + "independentemente do status. Se já existir um cliente ATIVO com ele, retorna 409 (duplicidade). "
+                    + "Se existir um cliente removido (cancelado/inativo), o cadastro é reativado com os dados informados, "
+                    + "mantendo o mesmo id e o mesmo número sequencial. Se não existir, cria um novo cliente.")
     public ResponseEntity<ClienteCadastroResponse> cadastrar(
             @AuthenticationPrincipal UsuarioAutenticado usuario,
             @Valid @RequestBody ClienteCadastroRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(clienteService.cadastrar(usuario.locadoraId(), request));
+                .body(clienteService.cadastrar(request, usuario.locadoraId()));
     }
 
     @GetMapping
-    @Operation(summary = "Listar Clientes", description = "Retorna a lista de clientes vinculados à locadora do usuário autenticado. Permite busca rápida opcional através do parâmetro de nome.")
+    @Operation(summary = "Listar Clientes",
+            description = "Retorna a lista de clientes não removidos vinculados à locadora do usuário autenticado. "
+                    + "Permite busca rápida opcional por parte do nome, sem diferenciar maiúsculas de minúsculas.")
     public ResponseEntity<List<ClienteListagemResponse>> listar(
             @AuthenticationPrincipal UsuarioAutenticado usuario,
             @RequestParam(required = false, defaultValue = "") String nome) {
@@ -48,15 +54,17 @@ public class ClienteController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Buscar Cliente por ID", description = "Recupera os detalhes completos de um cliente específico. A operação garante de forma estrita que o cliente pertence à mesma base (tenant) do usuário logado.")
+    @Operation(summary = "Buscar Cliente por ID",
+            description = "Recupera os detalhes completos de um cliente específico. A operação garante de forma estrita que o cliente pertence à mesma base (tenant) do usuário logado.")
     public ResponseEntity<ClienteConsultaResponse> buscarPorId(
             @AuthenticationPrincipal UsuarioAutenticado usuario,
             @PathVariable Long id) {
-        return ResponseEntity.ok(clienteService.buscarPorId(usuario.locadoraId(), id));
+        return ResponseEntity.ok(clienteService.consultar(usuario.locadoraId(), id));
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Atualizar Cliente", description = "Atualiza os dados cadastrais (nome, contatos, endereço) de um cliente existente. Caso o documento seja alterado, o sistema revalida a regra de prevenção de duplicidade na locadora.")
+    @Operation(summary = "Atualizar Cliente",
+            description = "Atualiza os dados cadastrais (nome, contatos, endereço) de um cliente existente. O CPF/CNPJ não pode ser alterado.")
     public ResponseEntity<ClienteAtualizacaoResponse> atualizar(
             @AuthenticationPrincipal UsuarioAutenticado usuario,
             @PathVariable Long id,
@@ -65,7 +73,9 @@ public class ClienteController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Excluir/Inativar Cliente", description = "Altera o status do cliente ou o remove do sistema. Regra de Negócio: A inativação/exclusão é bloqueada caso o cliente possua contratos de locação vinculados a ele com status EM_ANDAMENTO ou ATRASADA.")
+    @Operation(summary = "Excluir Cliente",
+            description = "Remove o cliente por exclusão lógica (status CANCELADO), preservando o histórico de locações e faturamento. "
+                    + "Regra de Negócio: a exclusão é bloqueada caso o cliente possua locações com status EM_ANDAMENTO ou ATRASADA.")
     public ResponseEntity<ClienteExclusaoResponse> excluir(
             @AuthenticationPrincipal UsuarioAutenticado usuario,
             @PathVariable Long id) {

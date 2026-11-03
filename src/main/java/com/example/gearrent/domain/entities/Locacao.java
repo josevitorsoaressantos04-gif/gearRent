@@ -1,34 +1,41 @@
 package com.example.gearrent.domain.entities;
 
+import com.example.gearrent.domain.enums.StatusLocacao;
 import com.example.gearrent.domain.enums.TipoPagamento;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
-import com.example.gearrent.domain.enums.StatusLocacao;
+import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-@Data
+@Getter
+@Setter
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "locacao",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_locacao_locadora_codigo",
+                columnNames = {"locadora_id", "codigo_sequencial"}))
 public class Locacao {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
-    private int codigoSequencial;
+    // Número exibido na tela (1, 2, 3... por locadora). O id continua sendo a chave.
+    @Column(name = "codigo_sequencial", nullable = false, updatable = false)
+    private Long codigoSequencial;
+
     private LocalDateTime dataPrevista;
     private LocalDateTime dataReal;
     private LocalDateTime dataRegistro;
     private LocalDateTime dataAtualizacao;
-    private LocalDate dataDevolucao;
-    private LocalDate dataRetirada;
+    private LocalDateTime dataDevolucao;
+    private LocalDateTime dataRetirada;
 
     @Enumerated(EnumType.STRING)
     private StatusLocacao status;
@@ -44,29 +51,21 @@ public class Locacao {
     precisa registrar o responsavel pela retirada(funcionário ou parceiro deste cliente que
     solicitou a locação)
      */
-
     private String responsavelRetirada;
     private String documentoResponsavelRetirada;
 
     /*
-    Funções e Capacidades do @Embedded (A Aplicação)
-
-    Achatamento Estrutural (Flattening): A função principal desta anotação é instruir o Hibernate a extrair
-    os atributos do molde e injetá-los diretamente como colunas na tabela da entidade que a declarou.
-
-    Isolamento de Domínio: Ela permite separar conceitos coesos no back-end
-    (um endereço é logicamente um grupo de dados inseparáveis), mantendo as classes enxutas
-    enquanto o banco de dados permanece em uma estrutura plana e otimizada
-    (sem necessidade de JOINs em consultas SQL).
+    @Embedded: o Hibernate "achata" os atributos do Endereco como colunas desta tabela,
+    mantendo a classe separada no código e a tabela plana (sem JOINs).
      */
     @Embedded
     private Endereco enderecoEntrega;
 
     @ManyToMany
     @JoinTable(
-            name = "locacao_equipamentos", // Opcional: nome da tabela associativa que será criada
-            joinColumns = @JoinColumn(name = "locacao_id"), // Chave da locação
-            inverseJoinColumns = @JoinColumn(name = "equipamento_id") // Chave do equipamento
+            name = "locacao_equipamentos",
+            joinColumns = @JoinColumn(name = "locacao_id"),
+            inverseJoinColumns = @JoinColumn(name = "equipamento_id")
     )
     private Set<Equipamento> equipamentos = new HashSet<>();
 

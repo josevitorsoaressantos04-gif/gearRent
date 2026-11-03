@@ -82,13 +82,13 @@ input {
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 999px;
+  border-radius: 6px;
   background: #ffffff;
   color: var(--primary);
-  min-height: 42px;
-  min-width: 140px;
-  padding: 10px 18px;
-  font-size: 0.98rem;
+  min-height: 40px;
+  min-width: 120px;
+  padding: 8px 14px;
+  font-size: 16px;
   font-weight: 700;
   cursor: pointer;
   text-decoration: none;
@@ -168,10 +168,10 @@ input {
 
 .field input {
   width: 100%;
-  min-height: 48px;
+  min-height: 44px;
   padding: 10px 12px;
   border: 2px solid var(--border);
-  border-radius: 10px;
+  border-radius: 6px;
   background: #ffffff;
   color: var(--text);
   font-size: 1rem;
@@ -199,14 +199,14 @@ input {
 }
 
 .btn-primary {
-  min-height: 48px;
+  min-height: 42px;
   border: none;
-  border-radius: 10px;
+  border-radius: 6px;
   background: var(--primary);
   color: #ffffff;
   font-weight: 700;
   font-size: 1rem;
-  padding: 10px 16px;
+  padding: 8px 16px;
   cursor: pointer;
   transition: background 0.2s ease, transform 0.1s ease;
 }

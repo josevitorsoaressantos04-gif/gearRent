@@ -1,4 +1,12 @@
 package com.example.gearrent.domain.repository;
 
-public record ItemLocacaoPorCateogria() {
-}
+import com.example.gearrent.domain.enums.CategoriaEquipamento;
+
+public record ItemLocacaoProjecao(
+        Long locacaoId,
+        Long equipamentoId,
+        String nome,
+        String modelo,
+        CategoriaEquipamento categoria,
+        String numeroPatrimonio
+) {}

@@ -14,15 +14,15 @@
     <div class="app-shell">
       <aside class="sidebar" aria-label="Menu lateral da base">
         <div class="sidebar__profile">
-          <div class="avatar avatar--large" aria-label="Avatar do usuário">JS</div>
+          <div class="avatar avatar--large" id="avatarSidebar" aria-hidden="true">GR</div>
           <div class="sidebar__profile-text">
-            <strong>Júlia Silva</strong>
-            <span>Base de Júlia</span>
+            <strong id="userNameSidebar">Usuário autenticado</strong>
+            <span id="baseNameSidebar">Base GearRent</span>
           </div>
         </div>
 
         <nav class="sidebar__nav" aria-label="Menu principal">
-          <a class="nav-item nav-item--active" href="visao-geral.html">
+          <a class="nav-item nav-item--active" href="visao-geral.html" aria-current="page">
             <span class="nav-item__icon" aria-hidden="true">📊</span>
             <span>Visão Geral</span>
           </a>
@@ -40,7 +40,14 @@
           </a>
           <a class="nav-item" href="configuracoes.html">
             <span class="nav-item__icon" aria-hidden="true">⚙️</span>
-            <span>Configurações</span>
+            <span class="nav-item__label">
+              <span>Configurações</span>
+              <small>Operadores, base e credenciais</small>
+            </span>
+          </a>
+          <a class="nav-item" href="configuracoes.html#perfil">
+            <span class="nav-item__icon" aria-hidden="true">👤</span>
+            <span>Meu perfil</span>
           </a>
           <button class="nav-item nav-item--logout" id="btnLogout" type="button">
             <span class="nav-item__icon" aria-hidden="true">🚪</span>
@@ -51,32 +58,27 @@
 
       <div class="main-panel">
         <header class="topbar" aria-label="Barra superior do painel">
-          <div class="topbar__search">
-            <label class="sr-only" for="buscaRapida">Busca rápida</label>
-            <input
-              id="buscaRapida"
-              type="search"
-              name="buscaRapida"
-              placeholder="Buscar cliente, equipamento ou locação"
-              aria-label="Buscar cliente, equipamento ou locação"
-            />
+          <div class="topbar__heading">
+            <span>Painel da base</span>
+            <h1>Visão geral</h1>
           </div>
 
           <div class="topbar__user" aria-label="Perfil do usuário autenticado">
-            <div class="avatar avatar--small" aria-hidden="true">JS</div>
-            <span>Júlia Silva</span>
+            <div class="avatar avatar--small" id="avatarTopbar" aria-hidden="true">GR</div>
+            <span id="userNameTopbar">Usuário autenticado</span>
           </div>
         </header>
 
         <main class="dashboard-content">
           <section class="toolbar" aria-label="Filtros e pesquisa do painel">
             <div class="toolbar__group">
-              <label class="sr-only" for="filtroBusca">Pesquisa rápida</label>
+              <label class="sr-only" for="buscaRapida">Pesquisa rápida nesta página</label>
               <input
-                id="filtroBusca"
+                id="buscaRapida"
                 type="search"
-                placeholder="Pesquisar por cliente ou equipamento"
+                placeholder="Buscar nesta página por cliente, equipamento ou patrimônio"
                 class="toolbar__input"
+                autocomplete="off"
               />
             </div>
 
@@ -91,6 +93,8 @@
             </button>
           </section>
 
+          <p class="search-hint">A busca rápida considera os resultados carregados nesta página.</p>
+
           <section
             id="filtroAvancado"
             class="filter-panel"
@@ -100,44 +104,36 @@
             <div class="filter-panel__row">
               <label>
                 Categoria
-                <select aria-label="Selecionar categoria">
+                <select id="filtroCategoria" name="categoria" aria-label="Selecionar categoria">
                   <option value="">Todas</option>
-                  <option value="escavadeira">Escavadeira</option>
-                  <option value="retroescavadeira">Retroescavadeira</option>
-                  <option value="compactador">Compactador</option>
                 </select>
               </label>
 
               <label>
                 Modelo
-                <select aria-label="Selecionar modelo">
+                <select id="filtroModelo" name="modelo" aria-label="Selecionar modelo">
                   <option value="">Todos</option>
-                  <option value="cat-320">CAT 320</option>
-                  <option value="komatsu-pc200">Komatsu PC200</option>
-                  <option value="ew-200">EW 200</option>
                 </select>
               </label>
 
               <label>
                 Nº de Patrimônio
-                <input type="text" placeholder="Ex.: 48211" aria-label="Número de patrimônio" />
+                <input id="filtroPatrimonio" name="numeroPatrimonio" type="search" placeholder="Ex.: 48211" aria-label="Número de patrimônio" />
               </label>
             </div>
 
             <div class="filter-panel__row">
               <label>
                 Status do Equipamento
-                <select aria-label="Selecionar status do equipamento">
-                  <option value="">Todos</option>
-                  <option value="disponivel">Disponível</option>
-                  <option value="em_uso">Em uso</option>
-                  <option value="manutencao">Manutenção</option>
+                <select id="filtroStatusEquipamento" aria-label="Selecionar status do equipamento" disabled>
+                  <option value="">Indisponível na API atual</option>
                 </select>
+                <small class="filter-help">A consulta atual não filtra pelo status do equipamento.</small>
               </label>
 
               <label>
                 Status da Locação
-                <select aria-label="Selecionar status da locação">
+                <select id="filtroStatusLocacao" name="status" aria-label="Selecionar status da locação">
                   <option value="">Todos</option>
                   <option value="EM_ANDAMENTO">EM_ANDAMENTO</option>
                   <option value="CONCLUIDA">CONCLUIDA</option>
@@ -148,11 +144,8 @@
 
               <label>
                 Cliente
-                <select aria-label="Selecionar cliente">
+                <select id="filtroCliente" name="clienteId" aria-label="Selecionar cliente">
                   <option value="">Todos</option>
-                  <option value="maria">Maria da Silva</option>
-                  <option value="joao">João Pereira</option>
-                  <option value="bruno">Bruno Costa</option>
                 </select>
               </label>
             </div>
@@ -160,48 +153,59 @@
             <div class="filter-panel__row filter-panel__row--dates">
               <label>
                 Data Início
-                <input type="date" aria-label="Data de início" />
+                <input id="filtroDataInicio" name="dataInicio" type="date" aria-label="Data de início" />
               </label>
 
               <label>
                 Data Fim
-                <input type="date" aria-label="Data de fim" />
+                <input id="filtroDataFim" name="dataFim" type="date" aria-label="Data de fim" />
               </label>
 
               <div class="quick-periods" aria-label="Opções de período rápido">
-                <button type="button" class="chip chip--active">Mês Atual</button>
-                <button type="button" class="chip">Mês Anterior</button>
-                <button type="button" class="chip">Este Ano</button>
-                <button type="button" class="chip">Ano Anterior</button>
+                <button type="button" class="chip" data-period="current-month">Mês Atual</button>
+                <button type="button" class="chip" data-period="previous-month">Mês Anterior</button>
+                <button type="button" class="chip" data-period="current-year">Este Ano</button>
+                <button type="button" class="chip" data-period="previous-year">Ano Anterior</button>
               </div>
+            </div>
+            <p class="filter-help">O período é aplicado à listagem; a API atual ainda precisa corrigir a consulta por data.</p>
+
+            <div class="filter-panel__actions">
+              <button id="aplicarFiltros" type="button" class="btn btn--primary">Aplicar filtros</button>
+              <button id="limparFiltros" type="button" class="btn btn--secondary">Limpar filtros</button>
             </div>
           </section>
 
+          <div id="mensagemDashboard" class="dashboard-message" role="status" aria-live="polite" hidden></div>
+          <div id="erroDashboard" class="dashboard-message dashboard-message--error" role="alert" hidden></div>
+
           <section class="kpis" aria-label="Resumo financeiro e operacional">
             <article class="kpi-card">
-              <span class="kpi-card__label">Total de Locações no Período</span>
-              <strong class="kpi-card__value">128</strong>
+              <span class="kpi-card__label">Total de Locações</span>
+              <strong class="kpi-card__value" id="kpiTotal">—</strong>
             </article>
 
             <article class="kpi-card">
               <span class="kpi-card__label">Locações Em Andamento</span>
-              <strong class="kpi-card__value">42</strong>
+              <strong class="kpi-card__value" id="kpiAndamento">—</strong>
             </article>
 
             <article class="kpi-card">
               <span class="kpi-card__label">Locações Atrasadas</span>
-              <strong class="kpi-card__value">9</strong>
+              <strong class="kpi-card__value" id="kpiAtrasadas">—</strong>
             </article>
 
             <article class="kpi-card kpi-card--highlight">
               <span class="kpi-card__label">Faturamento Total</span>
-              <strong class="kpi-card__value">R$ 184.760,00</strong>
+              <strong class="kpi-card__value" id="kpiFaturamento">—</strong>
             </article>
           </section>
+          <p class="kpi-hint">Indicadores gerais da base. A API ainda não aplica o período selecionado aos KPIs.</p>
 
           <section class="table-panel" aria-labelledby="clientes-title">
             <div class="table-panel__header">
               <h2 id="clientes-title">Clientes com Locações</h2>
+              <span id="totalResultados" class="table-panel__count" aria-live="polite"></span>
             </div>
 
             <div class="table-wrapper">
@@ -211,104 +215,40 @@
                     <th scope="col">Nome do Cliente</th>
                     <th scope="col">Código</th>
                     <th scope="col">Item Alugado</th>
-                    <th scope="col">Valor</th>
+                    <th scope="col">Diárias / valor</th>
                     <th scope="col">Status</th>
                     <th scope="col">Ações</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr>
-                    <td>Maria da Silva</td>
-                    <td>CLI-1042</td>
-                    <td>
-                      <div class="cell-with-action">
-                        <span>Retroescavadeira CAT 320</span>
-                        <button type="button" class="icon-button" aria-label="Visualizar itens do cliente">👁️</button>
-                      </div>
-                    </td>
-                    <td>R$ 3.420,00</td>
-                    <td><span class="status status--andamento">EM_ANDAMENTO</span></td>
-                    <td>
-                      <button type="button" class="icon-button" aria-label="Editar locação do cliente">✏️</button>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td>João Pereira</td>
-                    <td>CLI-1089</td>
-                    <td>
-                      <div class="cell-with-action">
-                        <span>Compactador PM-500</span>
-                        <button type="button" class="icon-button" aria-label="Visualizar itens do cliente">👁️</button>
-                      </div>
-                    </td>
-                    <td>R$ 1.850,00</td>
-                    <td><span class="status status--concluida">CONCLUIDA</span></td>
-                    <td>
-                      <button type="button" class="icon-button" aria-label="Editar locação do cliente">✏️</button>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td>Bruno Costa</td>
-                    <td>CLI-1104</td>
-                    <td>
-                      <div class="cell-with-action">
-                        <span>Escavadeira 320D</span>
-                        <button type="button" class="icon-button" aria-label="Visualizar itens do cliente">👁️</button>
-                      </div>
-                    </td>
-                    <td>R$ 4.270,00</td>
-                    <td><span class="status status--atrasada">ATRASADA</span></td>
-                    <td>
-                      <button type="button" class="icon-button" aria-label="Editar locação do cliente">✏️</button>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td>Marina Rocha</td>
-                    <td>CLI-1128</td>
-                    <td>
-                      <div class="cell-with-action">
-                        <span>Trator de pequeno porte</span>
-                        <button type="button" class="icon-button" aria-label="Visualizar itens do cliente">👁️</button>
-                      </div>
-                    </td>
-                    <td>R$ 1.120,00</td>
-                    <td><span class="status status--cancelada">CANCELADA</span></td>
-                    <td>
-                      <button type="button" class="icon-button" aria-label="Editar locação do cliente">✏️</button>
-                    </td>
-                  </tr>
+                <tbody id="locacoesTableBody">
+                  <tr><td class="table-state" colspan="6">Carregando locações…</td></tr>
                 </tbody>
               </table>
+            </div>
+            <div class="pagination" aria-label="Paginação das locações">
+              <button id="paginaAnterior" type="button" class="btn btn--secondary" disabled>Anterior</button>
+              <span id="paginaAtual" aria-live="polite">Página —</span>
+              <button id="proximaPagina" type="button" class="btn btn--secondary" disabled>Próxima</button>
             </div>
           </section>
         </main>
       </div>
     </div>
 
-    <script>
-      const toggleButton = document.getElementById('toggleFiltros');
-      const filterPanel = document.getElementById('filtroAvancado');
+    <dialog id="locacaoDialog" class="dashboard-dialog" aria-labelledby="dialogTitle">
+      <div class="dashboard-dialog__header">
+        <h2 id="dialogTitle">Dados da locação</h2>
+        <button id="fecharDialog" type="button" class="icon-button" aria-label="Fechar">×</button>
+      </div>
+      <div id="locacaoDialogContent"></div>
+      <p id="avisoEdicao" class="dialog-notice" hidden>
+        A API atual não oferece cadastro ou edição de locações. Nenhuma alteração será salva.
+      </p>
+    </dialog>
 
-      if (toggleButton && filterPanel) {
-        toggleButton.addEventListener('click', () => {
-          const isHidden = filterPanel.hidden;
-          filterPanel.hidden = !isHidden;
-          toggleButton.setAttribute('aria-expanded', String(isHidden));
-        });
-      }
-
-      const logoutButton = document.getElementById('btnLogout');
-
-      if (logoutButton) {
-        logoutButton.addEventListener('click', () => {
-          sessionStorage.removeItem('token');
-          sessionStorage.removeItem('usuario');
-          window.location.href = 'login.html';
-        });
-      }
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/visao-geral.js"></script>
   </body>
 </html>
