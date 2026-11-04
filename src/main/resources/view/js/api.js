@@ -6,6 +6,15 @@ const apiClient = axios.create({
   },
 });
 
+window.GR = window.GR || {};
+window.GR.auth = window.GR.auth || {};
+window.GR.auth.sair = () => {
+  sessionStorage.removeItem('gearrent_token');
+  sessionStorage.removeItem('token');
+  sessionStorage.removeItem('usuario');
+  window.location.replace('login.html');
+};
+
 apiClient.interceptors.request.use((config) => {
   const token = sessionStorage.getItem('gearrent_token');
 

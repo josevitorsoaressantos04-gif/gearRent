@@ -32,8 +32,10 @@ public class JwtFilter extends OncePerRequestFilter {
 
             tokenService.validar(token).ifPresentOrElse(
                     usuario -> {
+                        // A autoridade vem do papel gravado no token (ROLE_ADMIN ou ROLE_OPERADOR)
                         var autenticacao = new UsernamePasswordAuthenticationToken(
-                                usuario, null, List.of(new SimpleGrantedAuthority("ROLE_USUARIO")));
+                                usuario, null,
+                                List.of(new SimpleGrantedAuthority(usuario.role().autoridade())));
                         SecurityContextHolder.getContext().setAuthentication(autenticacao);
                     },
                     () -> logger.warn("Token rejeitado (inválido ou expirado) em "

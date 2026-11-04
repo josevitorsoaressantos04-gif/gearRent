@@ -24,9 +24,14 @@ public class Locadora {
     @Column(unique = true)
     private String cnpj;
 
+    @Column(length = 20)
+    private String telefone;
+
+    @Embedded
+    private Endereco endereco;
+
     private LocalDateTime dataCadastro;
     private LocalDateTime dataAtualizacao;
-
 
     @Enumerated(EnumType.STRING)
     private StatusCadastro status;

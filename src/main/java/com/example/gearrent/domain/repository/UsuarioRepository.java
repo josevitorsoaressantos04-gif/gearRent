@@ -26,4 +26,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     @Query("select u.locadora.id from Usuario u where u.id = :usuarioId")
     Optional<Long> findLocadoraIdByUsuarioId(@Param("usuarioId") Long usuarioId);
+
+    boolean existsByCpfAndLocadoraIdAndIdNot(String cpf, Long idBase, Long idUsuario);
 }

@@ -1,9 +1,9 @@
-package com.example.gearrent.application.services;
+package com.example.gearrent.application.service;
 
 import com.example.gearrent.application.DTO.*;
 import com.example.gearrent.domain.entities.Locacao;
 import com.example.gearrent.domain.enums.StatusLocacao;
-import com.example.gearrent.domain.exceptions.RegraDeNegocioException;
+import com.example.gearrent.domain.exception.RegraDeNegocioException;
 import com.example.gearrent.domain.repository.*;
 // Ajuste este import conforme o pacote onde você colocou a LocacaoSpecifications
 // (se estiver em domain.repository, ele já é coberto pelo import acima e esta linha pode sair)

@@ -1,21 +1,19 @@
 package com.example.gearrent.presentation;
 
-import com.example.gearrent.application.DTO.UsuarioAtualizacaoRequest;
-import com.example.gearrent.application.DTO.UsuarioAtualizacaoResponse;
-import com.example.gearrent.application.DTO.UsuarioCadastroRequest;
-import com.example.gearrent.application.DTO.UsuarioCadastroResponse;
-import com.example.gearrent.application.DTO.UsuarioConsultaResponse;
-import com.example.gearrent.application.DTO.UsuarioStatusResponse;
-import com.example.gearrent.application.services.UsuarioService;
+import com.example.gearrent.application.DTO.*;
+import com.example.gearrent.application.service.UsuarioService;
 import com.example.gearrent.infra.security.UsuarioAutenticado;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -45,7 +43,6 @@ public class UsuarioController {
             @RequestParam(required = false, defaultValue = "") String nome) {
         return ResponseEntity.ok(usuarioService.listarUsuariosDaMinhaBase(usuario.locadoraId(), nome));
     }
-
     @PutMapping("/{id}")
     @Operation(summary = "Atualizar Usuario", description = "Metodo utilizado para realizar a atualização das informações do Usuario\n" +
             "1 - Validação da Existência: Confirma que o usuário fornecido pelo ID existe no banco de dados.\n" +
@@ -73,5 +70,56 @@ public class UsuarioController {
             @AuthenticationPrincipal UsuarioAutenticado usuario,
             @PathVariable Long id) {
         return ResponseEntity.ok(usuarioService.desativar(usuario.locadoraId(), id));
+    }
+
+
+    // ---------- Parte 1 ----------
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Criar operador", description = "Cria um usuário na mesma base do administrador logado.")
+    @ApiResponse(responseCode = "201", description = "Operador criado")
+    @ApiResponse(responseCode = "403", description = "Somente administradores")
+    public ResponseEntity<OperadorCadastroResponse> criarOperador(
+            @AuthenticationPrincipal UsuarioAutenticado usuario,
+            @Valid @RequestBody OperadorCadastroRequest request) {
+
+        OperadorCadastroResponse response = usuarioService.criarOperador(usuario.locadoraId(), request);
+        return ResponseEntity.created(URI.create("/api/usuarios/" + response.id())).body(response);
+    }
+
+    @PatchMapping("/{id}/reativar")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Reativar usuário", description = "Volta o acesso de um usuário inativo da sua base.")
+    @ApiResponse(responseCode = "200", description = "Usuário reativado")
+    @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+    public UsuarioReativacaoResponse reativar(@AuthenticationPrincipal UsuarioAutenticado usuario,
+                                              @PathVariable Long id) {
+        return usuarioService.reativar(usuario.locadoraId(), id);
+    }
+
+
+// ---------- Parte 3 ----------
+
+    @GetMapping("/me")
+    @Operation(summary = "Ver meu perfil")
+    public PerfilConsultaResponse meuPerfil(@AuthenticationPrincipal UsuarioAutenticado usuario) {
+        return usuarioService.consultarPerfil(usuario.locadoraId(), usuario.id());
+    }
+
+    @PutMapping("/me")
+    @Operation(summary = "Atualizar meu perfil", description = "Nome, sobrenome, e-mail e CPF. Não pede senha.")
+    public PerfilConsultaResponse atualizarPerfil(@AuthenticationPrincipal UsuarioAutenticado usuario,
+                                                  @Valid @RequestBody PerfilAtualizacaoRequest request) {
+        return usuarioService.atualizarPerfil(usuario.locadoraId(), usuario.id(), request);
+    }
+
+    @PatchMapping("/trocar-senha")
+    @Operation(summary = "Trocar minha senha", description = "Exige a senha atual e a confirmação da nova senha.")
+    @ApiResponse(responseCode = "204", description = "Senha alterada")
+    public ResponseEntity<Void> trocarSenha(@AuthenticationPrincipal UsuarioAutenticado usuario,
+                                            @Valid @RequestBody TrocaSenhaRequest request) {
+        usuarioService.trocarSenha(usuario.locadoraId(), usuario.id(), request);
+        return ResponseEntity.noContent().build();
     }
 }

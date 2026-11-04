@@ -1,5 +1,6 @@
 package com.example.gearrent.domain.entities;
 
+import com.example.gearrent.domain.enums.PapelUsuario;
 import com.example.gearrent.domain.enums.StatusCadastro;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -22,12 +23,20 @@ public class Usuario {
     private String login;
     private String senha; //TODO: adicionar uma criptografia para senha e um token para o gerenciamento de acesso
     private String nome;
+    private String sobrenome;
+
+    @Column(unique = true)
+    private String cpf;
     private LocalDateTime dataCadastro;
     private LocalDateTime dataAtualizacao;
     private LocalDate data_nascimento;
 
     @Enumerated(EnumType.STRING)
     private StatusCadastro status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private PapelUsuario role;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "locadora_id", nullable = false)

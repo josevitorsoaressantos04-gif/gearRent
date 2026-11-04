@@ -1,4 +1,4 @@
-package com.example.gearrent.application.services;
+package com.example.gearrent.application.service;
 
 import com.example.gearrent.application.DTO.EsqueciSenhaRequest;
 import com.example.gearrent.application.DTO.EsqueciSenhaResponse;
@@ -7,8 +7,8 @@ import com.example.gearrent.application.DTO.RedefinirSenhaResponse;
 import com.example.gearrent.domain.entities.TokenRecuperacaoSenha;
 import com.example.gearrent.domain.entities.Usuario;
 import com.example.gearrent.domain.enums.StatusCadastro;
-import com.example.gearrent.domain.exceptions.RegraDeNegocioException;
-import com.example.gearrent.domain.exceptions.TokenRecuperacaoInvalidoException;
+import com.example.gearrent.domain.exception.RegraDeNegocioException;
+import com.example.gearrent.domain.exception.TokenRecuperacaoInvalidoException;
 import com.example.gearrent.domain.repository.TokenRecuperacaoSenhaRepository;
 import com.example.gearrent.domain.repository.UsuarioRepository;
 import com.example.gearrent.infra.email.EmailService;

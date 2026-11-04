@@ -1,10 +1,10 @@
-package com.example.gearrent.application.services;
+package com.example.gearrent.application.service;
 
 import com.example.gearrent.application.DTO.LoginRequest;
 import com.example.gearrent.application.DTO.LoginResponse;
 import com.example.gearrent.domain.entities.Usuario;
 import com.example.gearrent.domain.enums.StatusCadastro;
-import com.example.gearrent.domain.exceptions.CredenciaisInvalidasException;
+import com.example.gearrent.domain.exception.CredenciaisInvalidasException;
 import com.example.gearrent.domain.repository.UsuarioRepository;
 import com.example.gearrent.infra.security.TokenService;
 import org.springframework.security.crypto.password.PasswordEncoder;

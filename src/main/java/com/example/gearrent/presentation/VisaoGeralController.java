@@ -1,7 +1,7 @@
 package com.example.gearrent.presentation;
 
 import com.example.gearrent.application.DTO.*;
-import com.example.gearrent.application.services.VisaoGeralQueryService;
+import com.example.gearrent.application.service.VisaoGeralQueryService;
 import com.example.gearrent.infra.security.UsuarioAutenticado;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

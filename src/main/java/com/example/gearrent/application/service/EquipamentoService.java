@@ -1,4 +1,4 @@
-package com.example.gearrent.application.services;
+package com.example.gearrent.application.service;
 
 import com.example.gearrent.application.DTO.EquipamentoAtualizacaoRequest;
 import com.example.gearrent.application.DTO.EquipamentoAtualizacaoResponse;
@@ -10,14 +10,24 @@ import com.example.gearrent.application.DTO.EquipamentoExclusaoResponse;
 import com.example.gearrent.application.DTO.EquipamentoListagemResponse;
 import com.example.gearrent.domain.entities.Equipamento;
 import com.example.gearrent.domain.enums.StatusEquipamento;
-import com.example.gearrent.domain.exceptions.EquipamentoIndisponivelException;
-import com.example.gearrent.domain.exceptions.PatrimonioDuplicadoException;
-import com.example.gearrent.domain.exceptions.RecursoNaoEncontradoException;
-import com.example.gearrent.domain.exceptions.RegraDeNegocioException;
+import com.example.gearrent.domain.exception.EquipamentoIndisponivelException;
+import com.example.gearrent.domain.exception.PatrimonioDuplicadoException;
+import com.example.gearrent.domain.exception.RecursoNaoEncontradoException;
+import com.example.gearrent.domain.exception.RegraDeNegocioException;
 import com.example.gearrent.domain.repository.EquipamentoRepository;
+import com.example.gearrent.domain.repository.EquipamentoSpecifications;
 import com.example.gearrent.domain.repository.LocadoraRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.gearrent.application.DTO.PaginaResponse;
+import com.example.gearrent.domain.enums.CategoriaEquipamento;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.util.Set;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -151,5 +161,46 @@ public class EquipamentoService {
 
     private String limpar(String texto) {
         return (texto == null || texto.isBlank()) ? null : texto.trim();
+    }
+
+    private static final int TAMANHO_MAXIMO_PAGINA = 50;
+    private static final Set<String> CAMPOS_ORDENAVEIS = Set.of(
+            "nome", "modelo", "categoria", "status", "valorDiaria", "codigoSequencial", "dataCadastro");
+
+    @Transactional(readOnly = true)
+    public PaginaResponse<EquipamentoListagemResponse> listar(Long locadoraId,
+                                                              String nome,
+                                                              CategoriaEquipamento categoria,
+                                                              StatusEquipamento status,
+                                                              Pageable pageable) {
+        // locadoraId SEMPRE primeiro; excluídos nunca entram; os filtros opcionais vêm depois
+        Specification<Equipamento> filtro = EquipamentoSpecifications.daLocadora(locadoraId)
+                .and(EquipamentoSpecifications.naoCancelado());
+
+        if (nome != null && !nome.isBlank()) {
+            filtro = filtro.and(EquipamentoSpecifications.comNome(nome));
+        }
+        if (categoria != null) {
+            filtro = filtro.and(EquipamentoSpecifications.comCategoria(categoria));
+        }
+        if (status != null) {
+            filtro = filtro.and(EquipamentoSpecifications.comStatus(status));
+        }
+
+        Page<Equipamento> pagina = equipamentoRepository.findAll(filtro, sanitizar(pageable));
+        return PaginaResponse.de(pagina.map(EquipamentoListagemResponse::de));
+    }
+
+    // Só deixa ordenar por campos conhecidos e limita o tamanho da página
+    private Pageable sanitizar(Pageable pageable) {
+        for (Sort.Order ordem : pageable.getSort()) {
+            if (!CAMPOS_ORDENAVEIS.contains(ordem.getProperty())) {
+                throw new RegraDeNegocioException("Não é possível ordenar por \"" + ordem.getProperty()
+                        + "\". Use: nome, modelo, categoria, status, valorDiaria, codigoSequencial ou dataCadastro.");
+            }
+        }
+        int tamanho = Math.min(pageable.getPageSize(), TAMANHO_MAXIMO_PAGINA);
+        // "id" como desempate mantém a ordem estável entre as páginas
+        return PageRequest.of(pageable.getPageNumber(), tamanho, pageable.getSort().and(Sort.by("id")));
     }
 }

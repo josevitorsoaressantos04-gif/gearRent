@@ -1,12 +1,12 @@
-package com.example.gearrent.application.services;
+package com.example.gearrent.application.service;
 
 import com.example.gearrent.application.DTO.*;
 import com.example.gearrent.domain.entities.Cliente;
 import com.example.gearrent.domain.entities.Endereco;
 import com.example.gearrent.domain.enums.StatusCadastro;
 import com.example.gearrent.domain.enums.StatusLocacao;
-import com.example.gearrent.domain.exceptions.DocumentoDuplicadoException;
-import com.example.gearrent.domain.exceptions.RegraDeNegocioException;
+import com.example.gearrent.domain.exception.DocumentoDuplicadoException;
+import com.example.gearrent.domain.exception.RegraDeNegocioException;
 import com.example.gearrent.domain.repository.ClienteRepository;
 import com.example.gearrent.domain.repository.LocacaoRepository;
 import com.example.gearrent.domain.repository.LocadoraRepository;

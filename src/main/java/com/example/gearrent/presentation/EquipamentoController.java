@@ -8,7 +8,7 @@ import com.example.gearrent.application.DTO.EquipamentoConsultaResponse;
 import com.example.gearrent.application.DTO.EquipamentoDisponivelResponse;
 import com.example.gearrent.application.DTO.EquipamentoExclusaoResponse;
 import com.example.gearrent.application.DTO.EquipamentoListagemResponse;
-import com.example.gearrent.application.services.EquipamentoService;
+import com.example.gearrent.application.service.EquipamentoService;
 import com.example.gearrent.infra.security.UsuarioAutenticado;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

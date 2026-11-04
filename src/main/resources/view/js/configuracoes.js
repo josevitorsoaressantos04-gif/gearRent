@@ -28,6 +28,8 @@
     profileBirthDate: document.getElementById('profileBirthDate'),
     theme: document.getElementById('baseTheme'),
     operatorDialog: document.getElementById('operatorDialog'),
+    settingsNavLink: document.querySelector('.sidebar__nav a[href="configuracoes.html"]'),
+    profileNavLink: document.querySelector('.sidebar__nav a[href="configuracoes.html#perfil"]'),
   };
   const state = {
     users: [],
@@ -160,6 +162,16 @@
     const tab = document.querySelector(`[data-tab="${name}"]`);
     const panel = document.getElementById(`panel${name.charAt(0).toUpperCase()}${name.slice(1)}`);
     if (!tab || !panel) return;
+    const profileSelected = name === 'profile';
+    refs.settingsNavLink.classList.toggle('nav-item--active', !profileSelected);
+    refs.profileNavLink.classList.toggle('nav-item--active', profileSelected);
+    if (profileSelected) {
+      refs.profileNavLink.setAttribute('aria-current', 'page');
+      refs.settingsNavLink.removeAttribute('aria-current');
+    } else {
+      refs.settingsNavLink.setAttribute('aria-current', 'page');
+      refs.profileNavLink.removeAttribute('aria-current');
+    }
     document.querySelectorAll('.settings-tab').forEach((item) => {
       const selected = item === tab;
       item.setAttribute('aria-selected', String(selected));

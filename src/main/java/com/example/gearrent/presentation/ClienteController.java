@@ -7,7 +7,7 @@ import com.example.gearrent.application.DTO.ClienteCadastroResponse;
 import com.example.gearrent.application.DTO.ClienteConsultaResponse;
 import com.example.gearrent.application.DTO.ClienteExclusaoResponse;
 import com.example.gearrent.application.DTO.ClienteListagemResponse;
-import com.example.gearrent.application.services.ClienteService;
+import com.example.gearrent.application.service.ClienteService;
 import com.example.gearrent.infra.security.UsuarioAutenticado;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

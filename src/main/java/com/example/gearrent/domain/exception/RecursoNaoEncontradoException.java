@@ -1,4 +1,4 @@
-package com.example.gearrent.domain.exceptions;
+package com.example.gearrent.domain.exception;
 
 public class RecursoNaoEncontradoException extends RuntimeException {
     public RecursoNaoEncontradoException(String message) {

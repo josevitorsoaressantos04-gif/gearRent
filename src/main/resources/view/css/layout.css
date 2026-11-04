@@ -3870,3 +3870,235 @@ body.dashboard-body[data-theme="dark"] .equipment-dialog .field-group select {
     gap: 4px;
   }
 }
+
+body.dashboard-body .sidebar {
+  flex: 0 0 190px;
+  width: 190px;
+  height: 100vh;
+  min-height: 100vh;
+  padding: 14px 10px;
+}
+
+body.dashboard-body .sidebar__profile-text strong,
+body.dashboard-body .sidebar__profile-text span {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+body.dashboard-body .nav-item {
+  min-height: 38px;
+  padding: 7px 8px;
+  font-size: 15px;
+}
+
+body.dashboard-body .nav-item__icon {
+  font-size: 14px;
+}
+
+body.dashboard-body .topbar {
+  min-height: 64px;
+  padding: 8px 20px;
+}
+
+body.dashboard-body .topbar__heading span {
+  font-size: 13px;
+}
+
+body.dashboard-body .topbar__heading h1 {
+  font-size: 21px;
+}
+
+body.dashboard-body .topbar__user {
+  min-height: 40px;
+  font-size: 13px;
+}
+
+body.dashboard-body .dashboard-content {
+  width: min(1800px, 100%);
+  margin: 0 auto;
+  padding: 18px 20px 36px;
+}
+
+@media (max-width: 1000px) {
+  body.dashboard-body .app-shell {
+    flex-direction: column;
+  }
+
+  body.dashboard-body .sidebar {
+    position: static;
+    flex: 0 0 auto;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 700px) {
+  body.dashboard-body .topbar {
+    padding: 8px 14px;
+  }
+
+  body.dashboard-body .dashboard-content {
+    padding: 14px 12px 24px;
+  }
+}
+
+body.rentals-dashboard .rentals-page {
+  padding: 18px 20px 36px;
+}
+
+body.rentals-dashboard .rentals-toolbar {
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+body.rentals-dashboard .rentals-toolbar .toolbar__input,
+body.rentals-dashboard .rentals-toolbar .rental-control {
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid #8797a8;
+  border-radius: 5px;
+  font-size: 15px;
+}
+
+body.rentals-dashboard .rentals-toolbar .rental-control {
+  flex-basis: 150px;
+}
+
+body.rentals-dashboard .rentals-toolbar .btn {
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 15px;
+}
+
+body.rentals-dashboard .rental-kpis {
+  gap: 12px;
+  margin: 16px 0 22px;
+}
+
+body.rentals-dashboard .rental-kpis .kpi-card {
+  min-height: 98px;
+  gap: 6px;
+  padding: 14px;
+  border-width: 1px;
+  border-radius: 10px;
+}
+
+body.rentals-dashboard .rental-kpis .kpi-card__label {
+  font-size: 14px;
+}
+
+body.rentals-dashboard .rental-kpis .kpi-card__value {
+  font-size: 25px;
+}
+
+body.rentals-dashboard .rental-kpi-note {
+  font-size: 13px;
+}
+
+body.rentals-dashboard .rental-table-panel {
+  padding: 14px;
+  border-width: 1px;
+  border-radius: 12px;
+}
+
+body.rentals-dashboard .rental-table-panel .table-panel__header h2 {
+  margin-bottom: 10px;
+  font-size: 17px;
+}
+
+body.rentals-dashboard .rentals-table th,
+body.rentals-dashboard .rentals-table td {
+  padding: 8px;
+  font-size: 14px;
+}
+
+body.rentals-dashboard .rentals-table .status {
+  min-height: 30px;
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+body.rentals-dashboard .rental-actions .icon-button {
+  min-width: 36px;
+  min-height: 36px;
+  font-size: 15px;
+}
+
+body.rentals-dashboard .rental-table-panel .pagination {
+  font-size: 14px;
+}
+
+body.rentals-dashboard .rental-table-panel .pagination .btn {
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 15px;
+}
+
+body.rentals-dashboard .rental-dialog {
+  width: min(680px, calc(100% - 32px));
+  padding: 20px;
+  border-radius: 12px;
+  font-size: 15px;
+}
+
+body.rentals-dashboard .rental-dialog .dashboard-dialog__header h2 {
+  font-size: 20px;
+}
+
+body.rentals-dashboard .rental-dialog .field-group label {
+  font-size: 14px;
+}
+
+body.rentals-dashboard .rental-dialog .field-group input,
+body.rentals-dashboard .rental-dialog .field-group select,
+body.rentals-dashboard .rental-dialog .rental-control {
+  min-height: 38px;
+  padding: 7px 10px;
+  border-width: 1px;
+  font-size: 15px;
+}
+
+body.rentals-dashboard .rental-dialog .form-notice,
+body.rentals-dashboard .rental-dialog .filter-help,
+body.rentals-dashboard .rental-dialog .dialog-details dt,
+body.rentals-dashboard .rental-dialog .dialog-details dd,
+body.rentals-dashboard .rental-dialog .dialog-item-list,
+body.rentals-dashboard .rental-dialog .equipment-option span {
+  font-size: 14px;
+}
+
+body.rentals-dashboard .rental-dialog .equipment-picker {
+  padding: 10px;
+  border-width: 1px;
+}
+
+body.rentals-dashboard .rental-dialog .equipment-option {
+  min-height: 36px;
+  gap: 8px;
+  padding: 6px;
+}
+
+body.rentals-dashboard .rental-dialog .equipment-option input {
+  width: 18px;
+  height: 18px;
+  flex-basis: 18px;
+}
+
+body.rentals-dashboard .rental-dialog .rental-estimate {
+  margin-top: 12px;
+  padding: 10px;
+  border-width: 1px;
+  font-size: 14px;
+}
+
+@media (max-width: 700px) {
+  body.rentals-dashboard .rentals-page {
+    padding: 14px 12px 24px;
+  }
+
+  body.rentals-dashboard .rental-kpis {
+    grid-template-columns: 1fr;
+  }
+}

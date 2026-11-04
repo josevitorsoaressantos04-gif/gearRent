@@ -1,11 +1,12 @@
 package com.example.gearrent.domain.entities;
 
+import com.example.gearrent.domain.enums.CategoriaEquipamento;
 import com.example.gearrent.domain.enums.StatusEquipamento;
+import com.example.gearrent.domain.exception.EquipamentoIndisponivelException;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import com.example.gearrent.domain.enums.CategoriaEquipamento;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -37,4 +38,20 @@ public class Equipamento {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "locadora_id", nullable = false)
     private Locadora locadora;
+
+    public boolean estaDisponivel() {
+        return this.status == StatusEquipamento.DISPONIVEL;
+    }
+
+    public void marcarComoAlugado() {
+        if (!estaDisponivel()) {
+            throw new EquipamentoIndisponivelException(
+                    "O equipamento \"" + nome + "\" não está disponível para locação.");
+        }
+        this.status = StatusEquipamento.ALUGADO;
+    }
+
+    public void marcarComoDisponivel() {
+        this.status = StatusEquipamento.DISPONIVEL;
+    }
 }
