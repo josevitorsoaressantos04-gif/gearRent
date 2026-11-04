@@ -72,21 +72,25 @@
     confirmButton: document.getElementById('confirmarAcaoInativar'),
   };
 
+  // Exibe ou limpa o aviso geral de erro da página.
   function setError(message) {
     refs.error.textContent = message;
     refs.error.hidden = !message;
   }
 
+  // Mostra uma falha de validação dentro do formulário do cliente.
   function showFormError(message) {
     refs.formError.textContent = message;
     refs.formError.hidden = !message;
   }
 
+  // Apresenta uma confirmação após uma operação de cliente.
   function showMessage(message) {
     refs.message.textContent = message;
     refs.message.hidden = !message;
   }
 
+  // Traduz respostas HTTP e falhas de conexão em texto para a interface.
   function getErrorMessage(error) {
     if (error.response?.status === 401) {
       window.GR.auth.sair();
@@ -100,21 +104,25 @@
     return 'Não foi possível conectar à API. Verifique a conexão e tente novamente.';
   }
 
+  // Remove caracteres não numéricos de documentos e telefones.
   function digits(value) {
     return String(value || '').replace(/\D/g, '');
   }
 
+  // Infere se o documento informado corresponde a CPF ou CNPJ.
   function inferPersonType(documentValue) {
     const length = digits(documentValue).length;
     return length === 14 ? 'PJ' : length === 11 ? 'PF' : null;
   }
 
+  // Normaliza o tipo de pessoa usando o tipo selecionado ou o documento.
   function normalizePersonType(type, documentValue) {
     if (type === 'PF' || type === 'FISICA') return 'PF';
     if (type === 'PJ' || type === 'JURIDICA') return 'PJ';
     return inferPersonType(documentValue);
   }
 
+  // Padroniza os campos do cliente recebidos da API para uso na tela.
   function normalizeClient(raw) {
     const documentValue = raw.documento || '';
     return {
@@ -127,6 +135,7 @@
     };
   }
 
+  // Calcula as iniciais para o avatar do cliente.
   function initials(name) {
     return String(name || '?')
       .trim()
@@ -136,6 +145,7 @@
       .join('') || '?';
   }
 
+  // Lê o identificador do usuário autenticado a partir do token.
   function getTokenSubject() {
     try {
       const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
@@ -145,6 +155,7 @@
     }
   }
 
+  // Carrega o perfil autenticado e atualiza o cabeçalho da página.
   async function loadProfile() {
     try {
       const response = await window.apiClient.get('/usuarios');
@@ -167,11 +178,13 @@
     }
   }
 
+  // Formata o código sequencial usado para identificar o cliente.
   function codeLabel(client) {
     if (client.codigoSequencial == null) return '—';
     return `CLI-${String(client.codigoSequencial).padStart(4, '0')}`;
   }
 
+  // Filtra a lista de clientes pelo termo de busca atual.
   function filteredClients() {
     const term = state.search.trim().toLocaleLowerCase('pt-BR');
     return state.clientes.filter((client) => {
@@ -188,6 +201,7 @@
     });
   }
 
+  // Cria uma célula da tabela e atribui seu conteúdo como texto.
   function createCell(text, className = '') {
     const cell = document.createElement('td');
     cell.textContent = text || '—';
@@ -195,6 +209,7 @@
     return cell;
   }
 
+  // Cria um botão acessível associado à ação e ao cliente selecionado.
   function createAction(label, icon, action, client) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -207,6 +222,7 @@
     return button;
   }
 
+  // Renderiza a lista filtrada de clientes e destaca a seleção atual.
   function renderTable() {
     const clients = filteredClients();
     refs.table.replaceChildren();
@@ -258,12 +274,14 @@
     refs.counter.textContent = `${clients.length} de ${state.clientes.length} cliente${state.clientes.length === 1 ? '' : 's'}`;
   }
 
+  // Formata valores financeiros para o padrão monetário brasileiro.
   function formatCurrency(value) {
     const amount = Number(value);
     if (!Number.isFinite(amount)) return 'Não informado';
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
   }
 
+  // Converte datas recebidas para o formato de exibição local.
   function formatDate(value) {
     if (!value) return 'Data não informada';
     const date = new Date(value);
@@ -271,6 +289,7 @@
     return new Intl.DateTimeFormat('pt-BR').format(date);
   }
 
+  // Monta o endereço do cliente em uma única linha legível.
   function addressText(address) {
     if (!address || typeof address !== 'object') return 'Não informado';
     return [
@@ -282,6 +301,7 @@
     ].filter(Boolean).join(' · ') || 'Não informado';
   }
 
+  // Exibe um estado vazio ou uma mensagem na área de histórico.
   function appendHistoryEmpty(message) {
     const item = document.createElement('li');
     item.className = 'history-empty';
@@ -289,6 +309,7 @@
     refs.history.replaceChildren(item);
   }
 
+  // Limpa os detalhes e orienta quando não há cliente selecionado.
   function renderEmptyDetails(message = 'Selecione um cliente') {
     document.getElementById('detailAvatar').textContent = '?';
     document.getElementById('detailNome').textContent = message;
@@ -307,6 +328,7 @@
     document.getElementById('btnNovaLocacao').disabled = true;
   }
 
+  // Preenche o painel lateral com dados, métricas e histórico do cliente.
   function renderDetails(client, historyAvailable = false) {
     if (!client) {
       renderEmptyDetails();
@@ -339,6 +361,7 @@
     document.getElementById('btnNovaLocacao').disabled = false;
   }
 
+  // Seleciona o cliente e consulta os detalhes relacionados à sua conta.
   async function selectClient(id) {
     const client = state.clientes.find((item) => String(item.id) === String(id));
     if (!client) return;
@@ -370,10 +393,12 @@
     }
   }
 
+  // Mostra um erro geral e atualiza o painel de detalhes, se necessário.
   function showError(message) {
     setError(message);
   }
 
+  // Busca clientes, atualiza a tabela e opcionalmente preserva a seleção.
   async function loadClients({ preserveSelection = true } = {}) {
     setError('');
     showMessage('Carregando clientes da base…');
@@ -409,6 +434,7 @@
     }
   }
 
+  // Aplica a máscara correspondente ao CPF ou CNPJ informado.
   function formatDocument(value, type) {
     const valueDigits = digits(value).slice(0, type === 'PJ' ? 14 : 11);
     if (type === 'PJ') {
@@ -425,6 +451,7 @@
       .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
   }
 
+  // Atualiza o tipo de pessoa e ajusta o formulário para o documento escolhido.
   function setPersonType(type) {
     const isCompany = type === 'PJ';
     refs.nameLabel.textContent = isCompany ? 'Razão Social / Nome Fantasia' : 'Nome completo';
@@ -434,6 +461,7 @@
     refs.document.value = formatDocument(refs.document.value, type);
   }
 
+  // Valida dígitos verificadores e rejeita CPFs com números repetidos.
   function validCPF(value) {
     const cpf = digits(value);
     if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
@@ -446,6 +474,7 @@
     return calculate(9) === Number(cpf[9]) && calculate(10) === Number(cpf[10]);
   }
 
+  // Valida dígitos verificadores e rejeita CNPJs com números repetidos.
   function validCNPJ(value) {
     const cnpj = digits(value);
     if (cnpj.length !== 14 || /^(\d)\1{13}$/.test(cnpj)) return false;
@@ -458,12 +487,14 @@
     return calculate(12) === Number(cnpj[12]) && calculate(13) === Number(cnpj[13]);
   }
 
+  // Exibe o diálogo de criação ou edição de cliente.
   function openModal() {
     state.lastFocusedElement = document.activeElement;
     refs.modal.showModal();
     refs.name.focus();
   }
 
+  // Prepara um formulário limpo para cadastrar um novo cliente.
   function openCreateModal() {
     state.editingId = null;
     refs.form.reset();
@@ -478,6 +509,7 @@
     openModal();
   }
 
+  // Carrega o cliente escolhido e prepara o formulário de edição.
   async function openEditModal(id) {
     const client = state.clientes.find((item) => String(item.id) === String(id));
     if (!client) return;
@@ -518,6 +550,7 @@
     openModal();
   }
 
+  // Fecha e limpa o diálogo de cadastro ou edição.
   function closeModal() {
     if (!refs.modal.open) return;
     refs.modal.close();
@@ -525,6 +558,7 @@
     if (state.lastFocusedElement?.isConnected) state.lastFocusedElement.focus();
   }
 
+  // Monta o objeto que será enviado à API com os dados do formulário.
   function buildPayload() {
     const phone = refs.phone.value.trim();
     return {
@@ -545,6 +579,7 @@
     };
   }
 
+  // Valida campos, documentos e dados obrigatórios antes do envio.
   function validateForm() {
     if (!refs.name.value.trim()) return 'Informe o nome do cliente.';
     if (!state.editingId) {
@@ -563,6 +598,7 @@
     return null;
   }
 
+  // Envia os dados do formulário e atualiza a lista após o sucesso.
   async function saveClient(event) {
     event.preventDefault();
     showFormError('');
@@ -594,6 +630,7 @@
     }
   }
 
+  // Abre a confirmação para inativar o cliente selecionado.
   function openDeleteConfirmation(id) {
     const client = state.clientes.find((item) => String(item.id) === String(id));
     if (!client) return;
@@ -602,6 +639,7 @@
     refs.confirmDialog.showModal();
   }
 
+  // Confirma a inativação e recarrega a lista de clientes.
   async function confirmDelete() {
     const id = state.pendingDeleteId;
     if (id == null) return;
@@ -628,6 +666,7 @@
     }
   }
 
+  // Encaminha cliques da tabela para seleção, detalhes ou ações do cliente.
   function handleTableClick(event) {
     const actionButton = event.target.closest('button[data-action]');
     if (actionButton) {
@@ -642,6 +681,7 @@
     if (row) selectClient(row.dataset.clientId);
   }
 
+  // Permite selecionar uma linha da tabela usando o teclado.
   function handleTableKeydown(event) {
     if (event.target.matches('button')) return;
     if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -651,6 +691,7 @@
     selectClient(row.dataset.clientId);
   }
 
+  // Formata o telefone conforme os dígitos digitados pelo usuário.
   function formatPhoneInput() {
     const value = digits(refs.phone.value).slice(0, 11);
     if (value.length < 3) {
@@ -664,11 +705,13 @@
       : `(${area}) ${subscriber.slice(0, 4)}${subscriber.length > 4 ? `-${subscriber.slice(4)}` : ''}`;
   }
 
+  // Aplica a máscara de CEP durante o preenchimento do endereço.
   function formatPostalCode() {
     const value = digits(refs.postalCode.value).slice(0, 8);
     refs.postalCode.value = value.length > 5 ? `${value.slice(0, 5)}-${value.slice(5)}` : value;
   }
 
+  // Registra os eventos de busca, formulários, tabela e diálogos.
   function bindEvents() {
     refs.search.addEventListener('input', () => {
       state.search = refs.search.value;

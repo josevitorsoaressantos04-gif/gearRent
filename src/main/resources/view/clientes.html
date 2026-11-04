@@ -9,6 +9,7 @@
   </head>
   <body class="dashboard-body clients-dashboard">
     <div class="app-shell">
+      <!-- Menu de navegação e identificação da base autenticada. -->
       <aside class="sidebar" aria-label="Menu lateral da base">
         <div class="sidebar__profile">
           <div class="avatar avatar--large" id="avatarSidebar" aria-hidden="true">GR</div>
@@ -54,6 +55,7 @@
       </aside>
 
       <div class="main-panel">
+        <!-- Identificação da página e do usuário atual. -->
         <header class="topbar" aria-label="Barra superior do painel">
           <div class="topbar__heading">
             <span>Painel da base</span>
@@ -65,6 +67,7 @@
           </div>
         </header>
 
+        <!-- Busca, filtros, listagem e informações detalhadas dos clientes. -->
         <main class="dashboard-content clientes-page">
           <section class="toolbar toolbar--clients" aria-label="Busca, filtros e ações de clientes">
             <div class="toolbar__group toolbar__group--wide">
@@ -99,6 +102,7 @@
           <div id="mensagemClientes" class="clients-message" role="status" aria-live="polite" hidden></div>
           <div id="erroClientes" class="clients-message clients-message--error" role="alert" hidden></div>
 
+          <!-- Divide a área entre a tabela de clientes e o painel de detalhes. -->
           <section class="clients-layout" aria-label="Lista e detalhes do cliente">
             <section class="clients-list-panel" aria-labelledby="clientesListTitle">
               <div class="panel-header">
@@ -149,6 +153,7 @@
                   <div><dt>Status</dt><dd id="detailStatus">—</dd></div>
                 </dl>
 
+                <!-- Indicadores associados ao histórico de consumo do cliente. -->
                 <section class="metrics-panel" aria-labelledby="metricsTitle">
                   <h3 id="metricsTitle">Resumo de consumo</h3>
                   <p class="detail-api-note">Indicadores de locação não são fornecidos pela API atual.</p>
@@ -172,6 +177,7 @@
                   </div>
                 </section>
 
+                <!-- Histórico de locações do cliente selecionado. -->
                 <section class="history-panel" aria-labelledby="historyTitle">
                   <h3 id="historyTitle">Histórico recente</h3>
                   <p class="detail-api-note">A API ainda não disponibiliza o histórico de locações por cliente.</p>
@@ -190,6 +196,7 @@
       </div>
     </div>
 
+    <!-- Diálogo usado para criar ou atualizar o cadastro de um cliente. -->
     <dialog id="clienteModal" class="modal modal--clients" aria-labelledby="modalTitle">
       <div class="modal__dialog">
         <div class="modal__header">
@@ -265,6 +272,7 @@
       </div>
     </dialog>
 
+    <!-- Confirmação explícita antes de inativar um cliente. -->
     <dialog id="confirmarInativacao" class="modal modal--clients modal--confirm" aria-labelledby="confirmTitle">
       <div class="modal__dialog">
         <div class="modal__header">

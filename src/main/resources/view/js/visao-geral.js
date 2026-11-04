@@ -1,12 +1,15 @@
 (() => {
+  // Exige uma sessão válida antes de inicializar os dados do painel.
   const tokenKey = 'gearrent_token';
   const token = sessionStorage.getItem(tokenKey);
   if (!token) {
     window.location.replace('login.html');
     return;
   }
+  // Restaura o tema escolhido pelo usuário em visitas anteriores.
   if (localStorage.getItem('gearRentTheme') === 'dark') document.body.dataset.theme = 'dark';
 
+  // Mantém paginação, resultados atuais e filtros aplicados durante o uso da tela.
   const pageSize = 10;
   const messages = new Set();
   const state = {
@@ -17,6 +20,7 @@
     filters: {},
   };
 
+  // Guarda referências aos elementos usados pelas funções e eventos do painel.
   const elements = {
     toggleFilters: document.getElementById('toggleFiltros'),
     filterPanel: document.getElementById('filtroAvancado'),
@@ -42,10 +46,30 @@
     editNotice: document.getElementById('avisoEdicao'),
   };
 
+  // Restaura e persiste as preferências de exibição dos cards desta página.
+  function setupKpiVisibility(pageKey) {
+    const storagePrefix = `gearRentHiddenKpi:${pageKey}:`;
+    const checkboxes = document.querySelectorAll('[data-kpi-visibility]');
+    checkboxes.forEach((checkbox) => {
+      const cardKey = checkbox.dataset.kpiVisibility;
+      const card = document.querySelector(`[data-kpi-card="${cardKey}"]`);
+      if (!card) return;
+
+      checkbox.checked = localStorage.getItem(`${storagePrefix}${cardKey}`) !== 'true';
+      card.hidden = !checkbox.checked;
+      checkbox.addEventListener('change', () => {
+        card.hidden = !checkbox.checked;
+        localStorage.setItem(`${storagePrefix}${cardKey}`, String(!checkbox.checked));
+      });
+    });
+  }
+
+  // Encerra a sessão usando o comportamento compartilhado de autenticação.
   function logout() {
     window.GR.auth.sair();
   }
 
+  // Consulta a API e converte erros HTTP ou de conexão em mensagens legíveis.
   async function getJSON(path) {
     try {
       const response = await window.apiClient.get(path);
@@ -66,21 +90,25 @@
       throw new Error('Não foi possível conectar à API. Verifique a conexão e tente novamente.');
     }
   }
+  // Atualiza a área de erro com todas as mensagens registradas.
   function updateMessages() {
     elements.error.textContent = [...messages].join(' ');
     elements.error.hidden = messages.size === 0;
   }
 
+  // Registra um erro sem apagar mensagens anteriores da mesma operação.
   function reportError(error) {
     messages.add(error.message || 'Ocorreu um erro ao carregar os dados.');
     updateMessages();
   }
 
+  // Limpa os erros apresentados antes de iniciar uma nova consulta.
   function clearErrors() {
     messages.clear();
     updateMessages();
   }
 
+  // Gera as iniciais usadas nos avatares a partir do nome do usuário.
   function initials(name) {
     return name
       .trim()
@@ -90,6 +118,7 @@
       .join('');
   }
 
+  // Lê o identificador do usuário autenticado no payload do token JWT.
   function getTokenSubject() {
     try {
       const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
@@ -99,6 +128,7 @@
     }
   }
 
+  // Consulta os usuários e preenche nome, base e avatares do perfil atual.
   async function loadProfile() {
     const users = await getJSON('/usuarios');
     if (!Array.isArray(users)) {
@@ -119,6 +149,7 @@
     document.getElementById('avatarTopbar').textContent = initials(name);
   }
 
+  // Transforma valores enumerados em rótulos legíveis para os filtros.
   function readableEnum(value) {
     return value
       .toLocaleLowerCase('pt-BR')
@@ -126,11 +157,13 @@
       .replace(/(^|\s)\S/g, (letter) => letter.toLocaleUpperCase('pt-BR'));
   }
 
+  // Substitui as opções de um seletor pelo placeholder e pelos valores recebidos.
   function addOptions(select, values, placeholder, labelForValue = readableEnum) {
     select.replaceChildren(new Option(placeholder, ''));
     values.forEach((value) => select.add(new Option(labelForValue(value), value)));
   }
 
+  // Busca na API as opções disponíveis para categoria, modelo e cliente.
   async function loadFilterOptions() {
     const options = await getJSON('/visao-geral/filtros-opcoes');
     const categories = options.filtros?.categorias;
@@ -149,23 +182,53 @@
     });
   }
 
+  // Formata valores numéricos como moeda brasileira, tratando dados ausentes.
   function formatCurrency(value) {
     const amount = Number(value);
-    if (!Number.isFinite(amount)) return 'Não informado';
+    if (value === null || value === undefined || value === '' || !Number.isFinite(amount)) {
+      return 'Não informado';
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
     }).format(amount);
   }
 
-  async function loadSummary() {
-    const summary = await getJSON('/visao-geral/resumo');
-    document.getElementById('kpiTotal').textContent = summary.totalLocacoes ?? '—';
-    document.getElementById('kpiAndamento').textContent = summary.emAndamento ?? '—';
-    document.getElementById('kpiAtrasadas').textContent = summary.atrasadas ?? '—';
-    document.getElementById('kpiFaturamento').textContent = formatCurrency(summary.faturamentoTotal);
+  // Formata quantidades inteiras e rejeita valores ausentes ou inválidos.
+  function formatCount(value) {
+    const count = Number(value);
+    return value !== null && value !== undefined && value !== ''
+      && Number.isSafeInteger(count) && count >= 0
+      ? new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(count)
+      : '—';
   }
 
+  // Carrega os indicadores operacionais gerais exibidos nos cards.
+  async function loadSummary() {
+    const summary = await getJSON('/visao-geral/resumo');
+    document.getElementById('kpiTotal').textContent = formatCount(summary.totalLocacoes);
+    document.getElementById('kpiAtrasadas').textContent = formatCount(summary.atrasadas);
+  }
+
+  // Consulta o resumo financeiro usando o período atualmente aplicado.
+  async function loadFinancialSummary() {
+    const query = new URLSearchParams();
+    ['dataInicio', 'dataFim'].forEach((key) => {
+      if (state.filters[key]) query.set(key, state.filters[key]);
+    });
+    const queryString = query.toString();
+    const suffix = queryString ? `?${queryString}` : '';
+    const summary = await getJSON(`/financeiro/resumo${suffix}`);
+    if (!summary || summary.receitaTotal === undefined || !summary.valoresEmAberto) {
+      throw new Error('A resposta do resumo financeiro veio em um formato inesperado.');
+    }
+    document.getElementById('kpiFaturamento').textContent = formatCurrency(summary.receitaTotal);
+    document.getElementById('kpiAndamento').textContent = formatCount(
+      summary.valoresEmAberto.quantidadeEmAndamento
+    );
+  }
+
+  // Monta os parâmetros de paginação e filtros para a listagem de locações.
   function buildFilterQuery() {
     const query = new URLSearchParams({
       page: String(state.page),
@@ -177,10 +240,12 @@
     return query.toString();
   }
 
+  // Retorna a busca textual normalizada para comparação sem diferença de caixa.
   function currentSearch() {
     return elements.search.value.trim().toLocaleLowerCase('pt-BR');
   }
 
+  // Filtra localmente a página carregada por cliente, status ou equipamento.
   function visibleRows() {
     const searchTerm = currentSearch();
     if (!searchTerm) return state.rows;
@@ -198,6 +263,7 @@
     });
   }
 
+  // Cria uma célula de tabela e define seu texto com segurança.
   function makeCell(text, className = '') {
     const cell = document.createElement('td');
     if (className) cell.className = className;
@@ -205,6 +271,7 @@
     return cell;
   }
 
+  // Associa cada status da locação à classe visual correspondente.
   function statusClass(status) {
     const classes = {
       EM_ANDAMENTO: 'status--andamento',
@@ -215,6 +282,7 @@
     return classes[status] || '';
   }
 
+  // Cria um botão de ação acessível e vinculado à locação indicada.
   function makeAction(label, icon, rentalId, action) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -226,6 +294,7 @@
     return button;
   }
 
+  // Desenha as locações visíveis e atualiza contador e controles de paginação.
   function renderRows() {
     const rows = visibleRows();
     elements.tableBody.replaceChildren();
@@ -293,6 +362,7 @@
     elements.nextPage.disabled = state.totalPages === 0 || state.page >= state.totalPages - 1;
   }
 
+  // Busca a página atual de locações e apresenta resultados ou erro na interface.
   async function loadRentals() {
     elements.message.textContent = 'Carregando locações…';
     elements.message.hidden = false;
@@ -317,6 +387,7 @@
     }
   }
 
+  // Adiciona um par de título e valor aos detalhes de uma locação.
   function appendDefinition(parent, term, description) {
     const wrapper = document.createElement('div');
     const title = document.createElement('dt');
@@ -327,6 +398,7 @@
     parent.append(wrapper);
   }
 
+  // Abre o diálogo com os dados da locação e seus equipamentos associados.
   function openRentalDialog(rentalId, action) {
     const rental = state.rows.find((row) => String(row.id) === String(rentalId));
     if (!rental) return;
@@ -365,6 +437,7 @@
     elements.dialog.showModal();
   }
 
+  // Valida e aplica os filtros; atualiza a listagem e a receita do período.
   function applyFilters() {
     clearErrors();
     if (elements.startDate.value && elements.endDate.value
@@ -383,9 +456,13 @@
       dataInicio: elements.startDate.value,
       dataFim: elements.endDate.value,
     };
-    loadRentals();
+    Promise.all([
+      loadRentals(),
+      loadFinancialSummary().catch(reportError),
+    ]);
   }
 
+  // Preenche as datas conforme o período rápido escolhido pelo usuário.
   function setPeriod(period) {
     const today = new Date();
     let start;
@@ -416,11 +493,13 @@
     });
   }
 
+  // Expande ou recolhe o painel que contém os filtros avançados.
   elements.toggleFilters.addEventListener('click', () => {
     const expanded = elements.toggleFilters.getAttribute('aria-expanded') === 'true';
     elements.filterPanel.hidden = expanded;
     elements.toggleFilters.setAttribute('aria-expanded', String(!expanded));
   });
+  // Liga as ações de aplicar e limpar aos controles de filtro da tela.
   document.getElementById('aplicarFiltros').addEventListener('click', applyFilters);
   document.getElementById('limparFiltros').addEventListener('click', () => {
     document.getElementById('filtroAvancado').querySelectorAll('select').forEach((select) => {
@@ -433,9 +512,11 @@
     document.querySelectorAll('[data-period]').forEach((button) => button.classList.remove('chip--active'));
     applyFilters();
   });
+  // Permite selecionar um dos períodos predefinidos para os filtros de data.
   document.querySelectorAll('[data-period]').forEach((button) => {
     button.addEventListener('click', () => setPeriod(button.dataset.period));
   });
+  // Atualiza a busca local e a navegação entre páginas da listagem.
   elements.search.addEventListener('input', renderRows);
   elements.previousPage.addEventListener('click', () => {
     if (state.page > 0) {
@@ -449,20 +530,27 @@
       loadRentals();
     }
   });
+  // Abre os detalhes da locação correspondente ao botão acionado na tabela.
   elements.tableBody.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-action]');
     if (button) openRentalDialog(button.dataset.rentalId, button.dataset.action);
   });
+  // Fecha o diálogo pelo botão ou quando o usuário clica em sua área externa.
   document.getElementById('fecharDialog').addEventListener('click', () => elements.dialog.close());
   elements.dialog.addEventListener('click', (event) => {
     if (event.target === elements.dialog) elements.dialog.close();
   });
+  // Registra a ação de sair e inicializa os cards personalizados.
   document.getElementById('btnLogout').addEventListener('click', logout);
 
+  setupKpiVisibility('overview');
+
+  // Carrega em paralelo perfil, filtros, indicadores e locações da página inicial.
   Promise.all([
     loadProfile().catch(reportError),
     loadFilterOptions().catch(reportError),
     loadSummary().catch(reportError),
+    loadFinancialSummary().catch(reportError),
     loadRentals(),
   ]);
 })();

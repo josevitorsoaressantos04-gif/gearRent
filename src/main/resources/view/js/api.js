@@ -1,3 +1,4 @@
+// Cria o cliente HTTP compartilhado para as rotas da API.
 const apiClient = axios.create({
   baseURL: 'http://localhost:8080/api',
   timeout: 15000,
@@ -6,6 +7,7 @@ const apiClient = axios.create({
   },
 });
 
+// Centraliza a limpeza da sessão e o redirecionamento para o login.
 window.GR = window.GR || {};
 window.GR.auth = window.GR.auth || {};
 window.GR.auth.sair = () => {
@@ -15,6 +17,7 @@ window.GR.auth.sair = () => {
   window.location.replace('login.html');
 };
 
+// Anexa o token de autenticação às requisições quando houver sessão ativa.
 apiClient.interceptors.request.use((config) => {
   const token = sessionStorage.getItem('gearrent_token');
 
@@ -25,4 +28,5 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Disponibiliza o cliente HTTP para os scripts das páginas.
 window.apiClient = apiClient;

@@ -66,6 +66,7 @@
     statusInput: document.getElementById('equipmentFormStatus'),
   };
 
+  // Converte erros de rede ou da API em mensagens compreensíveis.
   function getErrorMessage(error) {
     if (error.response?.status === 401) {
       window.GR.auth.sair();
@@ -78,26 +79,31 @@
     return 'Não foi possível conectar à API. Verifique a conexão e tente novamente.';
   }
 
+  // Exibe ou limpa a mensagem de erro da página.
   function setError(message) {
     refs.error.textContent = message;
     refs.error.hidden = !message;
   }
 
+  // Atualiza a confirmação apresentada após uma operação.
   function setMessage(message) {
     refs.message.textContent = message;
     refs.message.hidden = !message;
   }
 
+  // Apresenta erros de validação dentro do formulário de equipamento.
   function setFormError(message) {
     refs.formError.textContent = message;
     refs.formError.hidden = !message;
   }
 
+  // Gera as iniciais utilizadas no cabeçalho do painel.
   function initials(name) {
     return String(name || 'GR').trim().split(/\s+/).slice(0, 2)
       .map((part) => part.charAt(0).toLocaleUpperCase('pt-BR')).join('') || 'GR';
   }
 
+  // Obtém a identificação do usuário a partir do token da sessão.
   function tokenSubject() {
     try {
       const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
@@ -107,6 +113,7 @@
     }
   }
 
+  // Consulta e exibe o perfil autenticado no cabeçalho.
   async function loadProfile() {
     try {
       const response = await window.apiClient.get('/usuarios');
@@ -123,6 +130,7 @@
     }
   }
 
+  // Apresenta valores de diária no padrão monetário brasileiro.
   function formatCurrency(value) {
     if (value === null || value === undefined || value === '') return 'Não informado';
     const amount = Number(value);
@@ -130,11 +138,13 @@
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
   }
 
+  // Formata o código sequencial do equipamento para exibição.
   function codeLabel(item) {
     if (item.codigoSequencial == null) return `ID ${item.id}`;
     return `EQP-${String(item.codigoSequencial).padStart(4, '0')}`;
   }
 
+  // Associa o status do equipamento à classe visual correspondente.
   function statusClass(status) {
     return ({
       DISPONIVEL: 'equipment-status--available',
@@ -144,10 +154,12 @@
     })[status] || '';
   }
 
+  // Localiza na coleção carregada o equipamento identificado pelo ID.
   function getEquipmentById(id) {
     return state.equipment.find((item) => String(item.id) === String(id));
   }
 
+  // Consolida os campos pesquisáveis de um equipamento em texto normalizado.
   function searchableText(item) {
     const detail = state.details.get(String(item.id)) || {};
     return [
@@ -161,6 +173,7 @@
     ].filter((value) => value != null).join(' ').toLocaleLowerCase('pt-BR');
   }
 
+  // Aplica o termo de busca atual aos equipamentos carregados.
   function filteredEquipment() {
     const term = state.search.trim().toLocaleLowerCase('pt-BR');
     return state.equipment.filter((item) => {
@@ -171,12 +184,14 @@
     });
   }
 
+  // Cria uma célula da tabela de equipamentos com texto seguro.
   function makeCell(text) {
     const cell = document.createElement('td');
     cell.textContent = text || '—';
     return cell;
   }
 
+  // Cria um botão de ação acessível associado a um equipamento.
   function actionButton(label, icon, action, item) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -189,6 +204,7 @@
     return button;
   }
 
+  // Desenha os resultados filtrados na tabela do catálogo.
   function renderTable() {
     const equipment = filteredEquipment();
     refs.table.replaceChildren();
@@ -245,12 +261,14 @@
     refs.count.textContent = `${equipment.length} de ${state.equipment.length} equipamento(s)`;
   }
 
+  // Recalcula os indicadores do catálogo com os dados já carregados.
   function updateSummary() {
     refs.total.textContent = String(state.equipment.length);
     refs.available.textContent = String(state.equipment.filter((item) => item.status === 'DISPONIVEL').length);
     refs.maintenance.textContent = String(state.equipment.filter((item) => item.status === 'MANUTENCAO').length);
   }
 
+  // Limpa o painel de detalhes quando nenhum item está selecionado.
   function resetDetails() {
     refs.emptyDetail.hidden = false;
     refs.detailList.hidden = true;
@@ -258,6 +276,7 @@
     document.getElementById('deleteSelectedEquipment').disabled = true;
   }
 
+  // Preenche o painel lateral com os dados do equipamento selecionado.
   function displayDetails(item) {
     refs.emptyDetail.hidden = true;
     refs.detailList.hidden = false;
@@ -274,6 +293,7 @@
     renderTable();
   }
 
+  // Marca um item como selecionado e carrega seus detalhes atuais.
   async function selectEquipment(id) {
     const rowData = getEquipmentById(id);
     if (!rowData) return;
@@ -296,6 +316,7 @@
     }
   }
 
+  // Consulta o catálogo e atualiza tabela, resumo e seleção.
   async function loadEquipment() {
     setError('');
     setMessage('Carregando equipamentos…');
@@ -326,6 +347,7 @@
     }
   }
 
+  // Abre o formulário vazio ou preenchido para criar ou editar um item.
   function openForm(item = null) {
     state.editingId = item ? item.id : null;
     setFormError('');
@@ -344,6 +366,7 @@
     refs.formDialog.showModal();
   }
 
+  // Monta o corpo da requisição usando os campos do formulário.
   function formPayload() {
     const payload = {
       nome: document.getElementById('equipmentName').value.trim(),
@@ -356,6 +379,7 @@
     return payload;
   }
 
+  // Valida e envia a criação ou atualização do equipamento.
   async function saveEquipment(event) {
     event.preventDefault();
     setFormError('');
@@ -383,12 +407,14 @@
     }
   }
 
+  // Guarda o item selecionado e solicita confirmação antes de removê-lo.
   function openDeleteConfirmation(item) {
     state.pendingDeleteId = item.id;
     refs.deleteText.textContent = `Deseja inativar ${item.nome || 'este equipamento'} (${codeLabel(item)})?`;
     refs.deleteDialog.showModal();
   }
 
+  // Exclui o equipamento confirmado e atualiza o catálogo.
   async function deletePendingEquipment() {
     if (state.pendingDeleteId == null) return;
     refs.confirmDelete.disabled = true;
@@ -410,6 +436,7 @@
     }
   }
 
+  // Fecha um diálogo nativo se ele estiver aberto.
   function closeDialog(dialog) {
     if (dialog.open) dialog.close();
   }

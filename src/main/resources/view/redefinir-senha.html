@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/recuperacao-senha.css" />
   </head>
   <body>
+    <!-- Cabeçalho da área pública de autenticação. -->
     <header class="topbar" aria-label="Cabeçalho do sistema">
       <div class="topbar__content">
         <div class="topbar__brand">GearRent</div>
@@ -33,6 +34,7 @@
       </div>
     </header>
 
+    <!-- Área para cadastrar a nova senha usando o token do link. -->
     <main class="auth-shell">
       <section class="auth-card" aria-labelledby="titulo-redefinir">
         <div class="auth-card__header">
@@ -40,6 +42,7 @@
           <h1 id="titulo-redefinir">Criar nova senha</h1>
         </div>
 
+        <!-- Mensagens exibidas durante validação e envio da nova senha. -->
         <div
           id="mensagemErro"
           class="message-box message-box--error"
@@ -55,6 +58,7 @@
           hidden
         ></div>
 
+        <!-- Senha e confirmação submetidas ao endpoint de redefinição. -->
         <form id="formRedefinir" novalidate>
           <div class="form-grid">
             <div class="field">
@@ -109,6 +113,7 @@
       </section>
     </main>
 
+    <!-- Rodapé compartilhado pelas telas de autenticação. -->
     <footer class="footer" aria-label="Rodapé do sistema">
       <div class="footer__content">
         <span>© 2026 GearRent</span>

@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
+    <!-- Marca e atalho para usuários que já possuem uma conta. -->
     <header class="topbar" aria-label="Cabeçalho do sistema">
       <div class="topbar__content">
         <div class="topbar__brand">GearRent</div>
@@ -27,6 +28,7 @@
       </div>
     </header>
 
+    <!-- Formulário de criação do usuário e da base inicial. -->
     <main class="login-page">
       <section class="login-card cadastro-card" aria-labelledby="titulo-cadastro">
         <div class="login-card__header">
@@ -34,6 +36,7 @@
           <h1 id="titulo-cadastro">Criar minha base</h1>
         </div>
 
+        <!-- Regiões de retorno para erros e conclusão do cadastro. -->
         <div
           id="mensagemErro"
           class="alert-box alert-box--error"
@@ -50,6 +53,7 @@
           hidden
         ></div>
 
+        <!-- Dados pessoais e credenciais enviados à API de cadastro. -->
         <form id="cadastroForm" novalidate>
           <div class="field-group">
             <label for="nome">Nome</label>
@@ -149,6 +153,7 @@
       </section>
     </main>
 
+    <!-- Rodapé institucional compartilhado com as páginas de acesso. -->
     <footer class="footer" aria-label="Rodapé do sistema">
       <div class="footer__content">
         <span>© 2026 GearRent</span>

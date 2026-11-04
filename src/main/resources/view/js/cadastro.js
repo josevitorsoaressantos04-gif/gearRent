@@ -1,3 +1,4 @@
+// Oculta e limpa as mensagens anteriores do formulário.
 function limparMensagens() {
   const mensagemErro = document.getElementById('mensagemErro');
   const mensagemSucesso = document.getElementById('mensagemSucesso');
@@ -9,6 +10,7 @@ function limparMensagens() {
   mensagemSucesso.textContent = '';
 }
 
+// Exibe uma mensagem de erro ou sucesso e oculta a mensagem oposta.
 function mostrarMensagem(tipo, texto) {
   const mensagemErro = document.getElementById('mensagemErro');
   const mensagemSucesso = document.getElementById('mensagemSucesso');
@@ -27,6 +29,7 @@ function mostrarMensagem(tipo, texto) {
   mensagemErro.textContent = '';
 }
 
+// Mantém o CPF formatado durante a digitação, limitando-o a onze números.
 function mascararCPF(input) {
   let valor = input.value.replace(/\D/g, '').slice(0, 11);
 
@@ -43,6 +46,7 @@ function mascararCPF(input) {
   input.value = valor.replace(/(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
 }
 
+// Valida os campos obrigatórios, o CPF e a confirmação da senha.
 function validarFormularioCadastro() {
   const nome = document.getElementById('nome').value.trim();
   const sobrenome = document.getElementById('sobrenome').value.trim();
@@ -71,6 +75,7 @@ function validarFormularioCadastro() {
   return null;
 }
 
+// Valida os dados e envia o cadastro do usuário para a API.
 function realizarCadastro() {
   limparMensagens();
 
@@ -114,4 +119,5 @@ function realizarCadastro() {
     });
 }
 
+// Permite que o formulário HTML invoque a rotina de cadastro.
 window.realizarCadastro = realizarCadastro;

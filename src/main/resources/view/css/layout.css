@@ -1,3 +1,4 @@
+/* Tokens visuais e estilos globais da página institucional. */
 :root {
   --page-bg: #f4f6f8;
   --surface: #ffffff;
@@ -51,6 +52,7 @@ select {
   font: inherit;
 }
 
+/* Navegação pública, marca e componentes de chamada para ação. */
 .topbar {
   position: sticky;
   top: 0;
@@ -338,6 +340,7 @@ select {
   line-height: 1.5;
 }
 
+/* Rodapé institucional e estrutura base do painel autenticado. */
 .site-footer {
   width: min(1200px, 92%);
   margin: 30px auto 48px;
@@ -773,6 +776,7 @@ th {
   border: 0;
 }
 
+/* Ferramentas de busca e disposição da tela de clientes. */
 .clientes-page {
   display: flex;
   flex-direction: column;
@@ -1789,6 +1793,7 @@ body.dashboard-body .status {
   }
 }
 
+/* Personalização completa da tabela, dos detalhes e dos formulários de clientes. */
 .clients-dashboard {
   font-size: 18px;
   line-height: 1.5;
@@ -2751,6 +2756,7 @@ body.dashboard-body .modal__close {
 }
 
 .rentals-dashboard,
+/* Layout compartilhado e componentes da área de configurações. */
 .settings-dashboard {
   font-size: 18px;
   line-height: 1.5;
@@ -3460,6 +3466,7 @@ body.settings-dashboard .operator-action {
   }
 }
 
+/* Catálogo de equipamentos, indicadores e painel de detalhes. */
 .equipment-dashboard {
   min-height: 100vh;
   font-size: 18px;
@@ -3944,6 +3951,7 @@ body.dashboard-body .dashboard-content {
   }
 }
 
+/* Ajustes compactos para locações e controles de visibilidade dos cards. */
 body.rentals-dashboard .rentals-page {
   padding: 18px 20px 36px;
 }
@@ -3991,6 +3999,40 @@ body.rentals-dashboard .rental-kpis .kpi-card__label {
 
 body.rentals-dashboard .rental-kpis .kpi-card__value {
   font-size: 25px;
+}
+
+body.dashboard-body .kpi-card[hidden] {
+  display: none;
+}
+
+body.dashboard-body .kpi-visibility-settings {
+  margin: 14px 0 8px;
+  color: var(--text);
+}
+
+body.dashboard-body .kpi-visibility-settings summary {
+  width: fit-content;
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+body.dashboard-body .kpi-visibility-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 12px 0;
+}
+
+body.dashboard-body .kpi-visibility-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+}
+
+body.dashboard-body .kpi-visibility-options input {
+  accent-color: var(--primary);
 }
 
 body.rentals-dashboard .rental-kpi-note {

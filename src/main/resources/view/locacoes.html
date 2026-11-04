@@ -9,6 +9,7 @@
   </head>
   <body class="dashboard-body rentals-dashboard">
     <div class="app-shell">
+      <!-- Navegação principal e perfil da base ativa. -->
       <aside class="sidebar" aria-label="Menu lateral da base">
         <div class="sidebar__profile">
           <div class="avatar avatar--large" id="avatarSidebar" aria-hidden="true">GR</div>
@@ -29,6 +30,7 @@
       </aside>
 
       <div class="main-panel">
+        <!-- Título da área de locações e identificação do usuário atual. -->
         <header class="topbar" aria-label="Barra superior do painel">
           <div class="topbar__heading">
             <span>Painel da base</span>
@@ -40,6 +42,7 @@
           </div>
         </header>
 
+        <!-- Controles de consulta, indicadores, listagem e ações de locação. -->
         <main class="dashboard-content rentals-page">
           <section class="toolbar rentals-toolbar" aria-label="Busca, filtros e ações de locação">
             <label class="sr-only" for="rentalSearch">Buscar locações por cliente, código ou equipamento</label>
@@ -64,23 +67,64 @@
           <div id="rentalMessage" class="dashboard-message" role="status" aria-live="polite" hidden></div>
           <div id="rentalError" class="dashboard-message dashboard-message--error" role="alert" hidden></div>
 
+          <!-- Preferências para exibir ou ocultar indicadores financeiros. -->
+          <details class="kpi-visibility-settings">
+            <summary>Personalizar cards</summary>
+            <div class="kpi-visibility-options">
+              <label><input type="checkbox" data-kpi-visibility="revenue" checked /> Receita do período</label>
+              <label><input type="checkbox" data-kpi-visibility="completed" checked /> Locações concluídas</label>
+              <label><input type="checkbox" data-kpi-visibility="fines" checked /> Multas no período</label>
+              <label><input type="checkbox" data-kpi-visibility="discounts" checked /> Descontos no período</label>
+              <label><input type="checkbox" data-kpi-visibility="open" checked /> Total em aberto</label>
+              <label><input type="checkbox" data-kpi-visibility="active" checked /> Em andamento</label>
+              <label><input type="checkbox" data-kpi-visibility="overdue" checked /> Atrasadas</label>
+              <label><input type="checkbox" data-kpi-visibility="overdue-fines" checked /> Multas por atraso em aberto</label>
+            </div>
+          </details>
+
+          <!-- Resumo financeiro e quantidades de locações abertas. -->
           <section class="kpis rental-kpis" aria-label="Resumo financeiro e operacional das locações">
-            <article class="kpi-card">
-              <span class="kpi-card__label">Faturamento total da base</span>
+            <article class="kpi-card" data-kpi-card="revenue">
+              <span class="kpi-card__label">Receita do período</span>
               <strong class="kpi-card__value" id="rentalRevenue">—</strong>
-              <span class="rental-kpi-note">A API ainda não filtra receita por mês.</span>
+              <span class="rental-kpi-note" id="rentalRevenuePeriod">Carregando período…</span>
             </article>
-            <article class="kpi-card">
-              <span class="kpi-card__label">Diárias em aberto</span>
-              <strong class="kpi-card__value" id="rentalOpenAmount">Indisponível</strong>
-              <span class="rental-kpi-note">Indicador não fornecido pela API.</span>
+            <article class="kpi-card" data-kpi-card="completed">
+              <span class="kpi-card__label">Locações concluídas</span>
+              <strong class="kpi-card__value" id="rentalCompletedCount">—</strong>
+              <span class="rental-kpi-note">No período selecionado.</span>
             </article>
-            <article class="kpi-card">
-              <span class="kpi-card__label">Contratos em andamento</span>
+            <article class="kpi-card" data-kpi-card="fines">
+              <span class="kpi-card__label">Multas no período</span>
+              <strong class="kpi-card__value" id="rentalFines">—</strong>
+            </article>
+            <article class="kpi-card" data-kpi-card="discounts">
+              <span class="kpi-card__label">Descontos no período</span>
+              <strong class="kpi-card__value" id="rentalDiscounts">—</strong>
+            </article>
+            <article class="kpi-card" data-kpi-card="open">
+              <span class="kpi-card__label">Total em aberto</span>
+              <strong class="kpi-card__value" id="rentalOpenAmount">—</strong>
+              <span class="rental-kpi-note">Posição atual, independente do período.</span>
+            </article>
+            <article class="kpi-card" data-kpi-card="active">
+              <span class="kpi-card__label">Em andamento</span>
               <strong class="kpi-card__value" id="rentalActiveCount">—</strong>
+              <span class="rental-kpi-note">locação(ões) · <span id="rentalActiveAmount">—</span> em valores</span>
+            </article>
+            <article class="kpi-card" data-kpi-card="overdue">
+              <span class="kpi-card__label">Atrasadas</span>
+              <strong class="kpi-card__value" id="rentalOverdueAmount">—</strong>
+              <span class="rental-kpi-note"><span id="rentalOverdueCount">—</span> locação(ões)</span>
+            </article>
+            <article class="kpi-card" data-kpi-card="overdue-fines">
+              <span class="kpi-card__label">Multas por atraso em aberto</span>
+              <strong class="kpi-card__value" id="rentalOverdueFines">—</strong>
             </article>
           </section>
+          <p class="kpi-hint">A receita, multas e descontos seguem o período selecionado. Os valores em aberto representam a posição atual da base.</p>
 
+          <!-- Lista paginada com as locações que correspondem aos filtros. -->
           <section class="table-panel rental-table-panel" aria-labelledby="rentalsTableTitle">
             <div class="table-panel__header">
               <h2 id="rentalsTableTitle">Contratos de locação</h2>
@@ -115,6 +159,7 @@
       </div>
     </div>
 
+    <!-- Consulta detalhada dos dados e equipamentos de uma locação. -->
     <dialog id="rentalDetailsDialog" class="dashboard-dialog rental-dialog" aria-labelledby="rentalDialogTitle">
       <div class="dashboard-dialog__header">
         <h2 id="rentalDialogTitle">Detalhes da locação</h2>
@@ -126,6 +171,7 @@
       </div>
     </dialog>
 
+    <!-- Confirmação para concluir ou cancelar uma locação. -->
     <dialog id="rentalActionDialog" class="dashboard-dialog rental-dialog" aria-labelledby="rentalActionTitle">
       <div class="dashboard-dialog__header">
         <h2 id="rentalActionTitle">Ação da locação</h2>
@@ -138,17 +184,18 @@
       </div>
       <div class="modal__actions">
         <button class="btn btn--secondary" type="button" data-close-action-dialog>Fechar</button>
-        <button id="unavailableRentalAction" class="btn btn--primary" type="button" disabled>Ação indisponível na API</button>
+        <button id="confirmRentalAction" class="btn btn--primary" type="button">Confirmar ação</button>
       </div>
     </dialog>
 
+    <!-- Fluxo de criação de locação com estimativa informativa de valores. -->
     <dialog id="newRentalDialog" class="dashboard-dialog rental-dialog" aria-labelledby="newRentalTitle">
       <div class="dashboard-dialog__header">
         <h2 id="newRentalTitle">Nova locação</h2>
         <button class="icon-button" type="button" data-close-new-dialog aria-label="Fechar">×</button>
       </div>
       <div class="form-notice" role="status">
-        Clientes e equipamentos disponíveis são consultados na API. O servidor ainda não possui rota para criar o contrato; esta tela não enviará nem gravará uma locação.
+        O servidor valida a disponibilidade e calcula os valores oficiais da locação. A estimativa abaixo é apenas informativa.
       </div>
       <div id="newRentalError" class="dashboard-message dashboard-message--error" role="alert" hidden></div>
       <form id="newRentalForm">
@@ -171,15 +218,26 @@
             <label for="newRentalDue">Devolução prevista</label>
             <input id="newRentalDue" class="rental-control" type="date" required />
           </div>
+          <div class="field-group field-group--full">
+            <label for="newRentalPaymentType">Forma de pagamento</label>
+            <select id="newRentalPaymentType" class="rental-control">
+              <option value="">Não informada</option>
+              <option value="DINHEIRO">Dinheiro</option>
+              <option value="PIX">PIX</option>
+              <option value="CARTAO_CREDITO">Cartão de crédito</option>
+              <option value="CARTAO_DEBITO">Cartão de débito</option>
+              <option value="FATURADO">Faturado</option>
+            </select>
+          </div>
         </div>
         <div class="rental-estimate" aria-live="polite">
           <span id="estimatedRentalDays">Diárias estimadas: —</span>
           <strong id="estimatedRentalTotal">Total estimado: —</strong>
         </div>
-        <p class="filter-help">Estimativa informativa: soma das diárias dos itens selecionados × dias entre as datas. Regras oficiais de cobrança, multa e desconto dependem do servidor.</p>
+        <p class="filter-help">O valor final é calculado pelo servidor conforme as regras de cobrança da locadora.</p>
         <div class="modal__actions">
           <button class="btn btn--secondary" type="button" data-close-new-dialog>Cancelar</button>
-          <button class="btn btn--primary" type="submit" disabled title="A API não possui rota para criar locações">Criar locação (indisponível)</button>
+          <button id="submitNewRental" class="btn btn--primary" type="submit">Criar locação</button>
         </div>
       </form>
     </dialog>

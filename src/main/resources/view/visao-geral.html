@@ -12,6 +12,7 @@
   </head>
   <body class="dashboard-body">
     <div class="app-shell">
+      <!-- Navegação do painel e identificação da base autenticada. -->
       <aside class="sidebar" aria-label="Menu lateral da base">
         <div class="sidebar__profile">
           <div class="avatar avatar--large" id="avatarSidebar" aria-hidden="true">GR</div>
@@ -57,6 +58,7 @@
       </aside>
 
       <div class="main-panel">
+        <!-- Título da visão geral e identidade do usuário. -->
         <header class="topbar" aria-label="Barra superior do painel">
           <div class="topbar__heading">
             <span>Painel da base</span>
@@ -69,7 +71,9 @@
           </div>
         </header>
 
+        <!-- Pesquisa, filtros, indicadores e resultados da visão geral. -->
         <main class="dashboard-content">
+          <!-- Busca rápida e acesso aos filtros avançados da listagem. -->
           <section class="toolbar" aria-label="Filtros e pesquisa do painel">
             <div class="toolbar__group">
               <label class="sr-only" for="buscaRapida">Pesquisa rápida nesta página</label>
@@ -95,6 +99,7 @@
 
           <p class="search-hint">A busca rápida considera os resultados carregados nesta página.</p>
 
+          <!-- Filtros de categoria, cliente, status, patrimônio e período. -->
           <section
             id="filtroAvancado"
             class="filter-panel"
@@ -168,7 +173,7 @@
                 <button type="button" class="chip" data-period="previous-year">Ano Anterior</button>
               </div>
             </div>
-            <p class="filter-help">O período é aplicado à listagem; a API atual ainda precisa corrigir a consulta por data.</p>
+            <p class="filter-help">O período selecionado também atualiza a receita financeira; os demais filtros se aplicam à listagem.</p>
 
             <div class="filter-panel__actions">
               <button id="aplicarFiltros" type="button" class="btn btn--primary">Aplicar filtros</button>
@@ -179,29 +184,42 @@
           <div id="mensagemDashboard" class="dashboard-message" role="status" aria-live="polite" hidden></div>
           <div id="erroDashboard" class="dashboard-message dashboard-message--error" role="alert" hidden></div>
 
+          <!-- Preferências para escolher quais indicadores ficam visíveis. -->
+          <details class="kpi-visibility-settings">
+            <summary>Personalizar cards</summary>
+            <div class="kpi-visibility-options">
+              <label><input type="checkbox" data-kpi-visibility="total" checked /> Total de Locações</label>
+              <label><input type="checkbox" data-kpi-visibility="andamento" checked /> Locações Em Andamento</label>
+              <label><input type="checkbox" data-kpi-visibility="atrasadas" checked /> Locações Atrasadas</label>
+              <label><input type="checkbox" data-kpi-visibility="faturamento" checked /> Receita do período</label>
+            </div>
+          </details>
+
+          <!-- Indicadores operacionais da base e receita do período. -->
           <section class="kpis" aria-label="Resumo financeiro e operacional">
-            <article class="kpi-card">
+            <article class="kpi-card" data-kpi-card="total">
               <span class="kpi-card__label">Total de Locações</span>
               <strong class="kpi-card__value" id="kpiTotal">—</strong>
             </article>
 
-            <article class="kpi-card">
+            <article class="kpi-card" data-kpi-card="andamento">
               <span class="kpi-card__label">Locações Em Andamento</span>
               <strong class="kpi-card__value" id="kpiAndamento">—</strong>
             </article>
 
-            <article class="kpi-card">
+            <article class="kpi-card" data-kpi-card="atrasadas">
               <span class="kpi-card__label">Locações Atrasadas</span>
               <strong class="kpi-card__value" id="kpiAtrasadas">—</strong>
             </article>
 
-            <article class="kpi-card kpi-card--highlight">
-              <span class="kpi-card__label">Faturamento Total</span>
+            <article class="kpi-card kpi-card--highlight" data-kpi-card="faturamento">
+              <span class="kpi-card__label">Receita do período</span>
               <strong class="kpi-card__value" id="kpiFaturamento">—</strong>
             </article>
           </section>
-          <p class="kpi-hint">Indicadores gerais da base. A API ainda não aplica o período selecionado aos KPIs.</p>
+          <p class="kpi-hint">Os indicadores operacionais são gerais da base; a receita acompanha o período selecionado.</p>
 
+          <!-- Locações da página atual, com busca e paginação. -->
           <section class="table-panel" aria-labelledby="clientes-title">
             <div class="table-panel__header">
               <h2 id="clientes-title">Clientes com Locações</h2>
@@ -235,6 +253,7 @@
       </div>
     </div>
 
+    <!-- Diálogo com dados e equipamentos da locação selecionada. -->
     <dialog id="locacaoDialog" class="dashboard-dialog" aria-labelledby="dialogTitle">
       <div class="dashboard-dialog__header">
         <h2 id="dialogTitle">Dados da locação</h2>

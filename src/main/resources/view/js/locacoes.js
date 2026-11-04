@@ -22,10 +22,12 @@
     page: 0,
     totalPages: 0,
     totalElements: 0,
+    financialRequest: 0,
     rows: [],
     filters: {},
     clients: [],
     equipment: [],
+    pendingAction: null,
   };
   const refs = {
     search: document.getElementById('rentalSearch'),
@@ -38,7 +40,16 @@
     previous: document.getElementById('previousRentalPage'),
     next: document.getElementById('nextRentalPage'),
     revenue: document.getElementById('rentalRevenue'),
+    revenuePeriod: document.getElementById('rentalRevenuePeriod'),
+    completedCount: document.getElementById('rentalCompletedCount'),
+    fines: document.getElementById('rentalFines'),
+    discounts: document.getElementById('rentalDiscounts'),
+    openAmount: document.getElementById('rentalOpenAmount'),
+    activeAmount: document.getElementById('rentalActiveAmount'),
     active: document.getElementById('rentalActiveCount'),
+    overdueAmount: document.getElementById('rentalOverdueAmount'),
+    overdueCount: document.getElementById('rentalOverdueCount'),
+    overdueFines: document.getElementById('rentalOverdueFines'),
     message: document.getElementById('rentalMessage'),
     error: document.getElementById('rentalError'),
     detailsDialog: document.getElementById('rentalDetailsDialog'),
@@ -55,10 +66,31 @@
     newError: document.getElementById('newRentalError'),
     startDate: document.getElementById('newRentalStart'),
     dueDate: document.getElementById('newRentalDue'),
+    paymentType: document.getElementById('newRentalPaymentType'),
     estimateDays: document.getElementById('estimatedRentalDays'),
     estimateTotal: document.getElementById('estimatedRentalTotal'),
+    submitNewRental: document.getElementById('submitNewRental'),
+    confirmAction: document.getElementById('confirmRentalAction'),
   };
 
+  // Restaura e salva a preferência de visibilidade de cada indicador.
+  function setupKpiVisibility(pageKey) {
+    const storagePrefix = `gearRentHiddenKpi:${pageKey}:`;
+    document.querySelectorAll('[data-kpi-visibility]').forEach((checkbox) => {
+      const cardKey = checkbox.dataset.kpiVisibility;
+      const card = document.querySelector(`[data-kpi-card="${cardKey}"]`);
+      if (!card) return;
+
+      checkbox.checked = localStorage.getItem(`${storagePrefix}${cardKey}`) !== 'true';
+      card.hidden = !checkbox.checked;
+      checkbox.addEventListener('change', () => {
+        card.hidden = !checkbox.checked;
+        localStorage.setItem(`${storagePrefix}${cardKey}`, String(!checkbox.checked));
+      });
+    });
+  }
+
+  // Traduz falhas de rede e respostas HTTP em mensagens para o usuário.
   function getErrorMessage(error) {
     if (error.response?.status === 401) {
       window.GR.auth.sair();
@@ -66,26 +98,31 @@
     }
     const apiMessages = error.response?.data?.mensagens;
     if (Array.isArray(apiMessages) && apiMessages.length) return apiMessages.join(' ');
-    if (error.response?.status === 404) return 'Este recurso ainda não está disponível na API atual.';
+    if (error.response?.status === 404) return 'O registro solicitado não foi encontrado.';
     if (error.response) return `A solicitação falhou (HTTP ${error.response.status}).`;
+    if (!error.isAxiosError && error.message) return error.message;
     return 'Não foi possível conectar à API. Verifique a conexão e tente novamente.';
   }
 
+  // Consulta a API autenticada e retorna o corpo da resposta.
   async function getJSON(path) {
     const response = await window.apiClient.get(path);
     return response.data;
   }
 
+  // Exibe ou limpa a área de erro da página de locações.
   function setError(message) {
     refs.error.textContent = message;
     refs.error.hidden = !message;
   }
 
+  // Exibe ou limpa a mensagem de estado da página.
   function setMessage(message) {
     refs.message.textContent = message;
     refs.message.hidden = !message;
   }
 
+  // Formata valores válidos como moeda brasileira.
   function currency(value) {
     if (value === null || value === undefined || value === '') return 'Não informado';
     const amount = Number(value);
@@ -94,6 +131,16 @@
       : 'Não informado';
   }
 
+  // Formata quantidades inteiras sem converter valores inválidos em zero.
+  function formatCount(value) {
+    const count = Number(value);
+    return value !== null && value !== undefined && value !== ''
+      && Number.isSafeInteger(count) && count >= 0
+      ? new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(count)
+      : '—';
+  }
+
+  // Exibe datas no formato brasileiro sem deslocamento de fuso horário.
   function formatDate(value) {
     if (!value) return '—';
     const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -102,11 +149,13 @@
     return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat('pt-BR').format(date);
   }
 
+  // Calcula as iniciais usadas nos avatares do usuário.
   function initials(name) {
     return String(name || 'GR').trim().split(/\s+/).slice(0, 2)
       .map((part) => part.charAt(0).toLocaleUpperCase('pt-BR')).join('') || 'GR';
   }
 
+  // Obtém o identificador do usuário autenticado a partir do token.
   function tokenSubject() {
     try {
       const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
@@ -116,6 +165,7 @@
     }
   }
 
+  // Carrega o perfil para preencher nome, base e avatares da página.
   async function loadProfile() {
     try {
       const users = await getJSON('/usuarios');
@@ -133,6 +183,7 @@
     }
   }
 
+  // Filtra localmente as locações carregadas pela busca textual atual.
   function currentRows() {
     const term = refs.search.value.trim().toLocaleLowerCase('pt-BR');
     if (!term) return state.rows;
@@ -151,6 +202,7 @@
     });
   }
 
+  // Cria uma célula segura para apresentar valores na tabela.
   function makeCell(text, className = '') {
     const cell = document.createElement('td');
     cell.textContent = text || '—';
@@ -158,6 +210,7 @@
     return cell;
   }
 
+  // Retorna a classe visual correspondente ao status da locação.
   function statusClass(status) {
     return ({
       EM_ANDAMENTO: 'status--andamento',
@@ -167,6 +220,7 @@
     })[status] || '';
   }
 
+  // Cria botão acessível associado à ação e à locação selecionada.
   function makeAction(label, icon, rental, action, disabled = false) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -175,11 +229,12 @@
     button.dataset.action = action;
     button.dataset.rentalId = String(rental.id);
     button.setAttribute('aria-label', `${label}, locação ${rental.id}`);
-    button.title = disabled ? `${label}: indisponível na API atual` : label;
+    button.title = label;
     button.disabled = disabled;
     return button;
   }
 
+  // Renderiza as locações e sincroniza os contadores e a paginação.
   function renderRows() {
     const rows = currentRows();
     refs.table.replaceChildren();
@@ -207,10 +262,12 @@
 
         const actions = document.createElement('td');
         actions.className = 'rental-actions';
+        const canCancel = rental.status === 'EM_ANDAMENTO';
+        const canReturn = ['EM_ANDAMENTO', 'ATRASADA'].includes(rental.status);
         actions.append(
           makeAction('Ver detalhes do contrato', '👁️', rental, 'details'),
-          makeAction('Registrar devolução', '📥', rental, 'return', rental.status !== 'EM_ANDAMENTO'),
-          makeAction('Cancelar locação', '🚫', rental, 'cancel', rental.status !== 'EM_ANDAMENTO'),
+          makeAction('Registrar devolução', '📥', rental, 'return', !canReturn),
+          makeAction('Cancelar locação', '🚫', rental, 'cancel', !canCancel),
         );
         row.append(
           makeCell(`ID ${rental.id ?? '—'}`),
@@ -232,6 +289,7 @@
     refs.next.disabled = state.totalPages === 0 || state.page >= state.totalPages - 1;
   }
 
+  // Monta filtros e paginação para a consulta de locações.
   function queryString() {
     const params = new URLSearchParams({ page: String(state.page), size: String(pageSize) });
     Object.entries(state.filters).forEach(([key, value]) => {
@@ -240,6 +298,7 @@
     return params.toString();
   }
 
+  // Busca os resultados da página atual e trata estados de sucesso ou erro.
   async function loadRentals() {
     setError('');
     setMessage('Carregando locações…');
@@ -261,18 +320,58 @@
     }
   }
 
+  // Atualiza cards financeiros e operacionais usando o período selecionado.
   async function loadSummary() {
+    const requestId = ++state.financialRequest;
+    const query = new URLSearchParams();
+    ['dataInicio', 'dataFim'].forEach((key) => {
+      if (state.filters[key]) query.set(key, state.filters[key]);
+    });
+    const suffix = query.toString() ? `?${query.toString()}` : '';
+
     try {
-      const summary = await getJSON('/visao-geral/resumo');
-      refs.revenue.textContent = currency(summary.faturamentoTotal);
-      refs.active.textContent = summary.emAndamento ?? '—';
+      const summary = await getJSON(`/financeiro/resumo${suffix}`);
+      if (!summary || !summary.valoresEmAberto) {
+        throw new Error('A resposta do resumo financeiro veio em um formato inesperado.');
+      }
+      if (requestId !== state.financialRequest) return;
+
+      const open = summary.valoresEmAberto;
+      refs.revenue.textContent = currency(summary.receitaTotal);
+      refs.revenuePeriod.textContent = summary.dataInicio && summary.dataFim
+        ? `${formatDate(summary.dataInicio)} a ${formatDate(summary.dataFim)}`
+        : 'Período não informado';
+      refs.completedCount.textContent = formatCount(summary.quantidadeConcluidas);
+      refs.fines.textContent = currency(summary.totalMultas);
+      refs.discounts.textContent = currency(summary.totalDescontos);
+      refs.openAmount.textContent = currency(open.valorTotal);
+      refs.activeAmount.textContent = currency(open.valorEmAndamento);
+      refs.active.textContent = formatCount(open.quantidadeEmAndamento);
+      refs.overdueAmount.textContent = currency(open.valorAtrasadas);
+      refs.overdueCount.textContent = formatCount(open.quantidadeAtrasadas);
+      refs.overdueFines.textContent = currency(open.valorMultasAtrasadas);
     } catch (error) {
-      refs.revenue.textContent = 'Indisponível';
-      refs.active.textContent = 'Indisponível';
+      if (requestId !== state.financialRequest) return;
+      [
+        refs.revenue,
+        refs.completedCount,
+        refs.fines,
+        refs.discounts,
+        refs.openAmount,
+        refs.activeAmount,
+        refs.active,
+        refs.overdueAmount,
+        refs.overdueCount,
+        refs.overdueFines,
+      ].forEach((element) => {
+        element.textContent = 'Indisponível';
+      });
+      refs.revenuePeriod.textContent = 'Não foi possível carregar o período.';
       setError(`${getErrorMessage(error)} Os indicadores financeiros não puderam ser carregados.`);
     }
   }
 
+  // Adiciona um campo de nome e valor aos detalhes do contrato.
   function appendDefinition(parent, term, value) {
     const wrapper = document.createElement('div');
     const title = document.createElement('dt');
@@ -283,18 +382,32 @@
     parent.append(wrapper);
   }
 
-  function openDetails(rental) {
+  // Busca e apresenta os detalhes completos da locação selecionada.
+  async function openDetails(rental) {
     refs.detailsTitle.textContent = `Detalhes da locação · ID ${rental.id}`;
+    refs.detailsContent.replaceChildren();
+    refs.detailsContent.textContent = 'Carregando detalhes do contrato…';
+    refs.detailsDialog.showModal();
+    try {
+      rental = await getJSON(`/locacoes/${encodeURIComponent(rental.id)}`);
+    } catch (error) {
+      refs.detailsContent.textContent = getErrorMessage(error);
+      return;
+    }
+
     refs.detailsContent.replaceChildren();
     const details = document.createElement('dl');
     details.className = 'dialog-details';
-    appendDefinition(details, 'Cliente', rental.cliente?.nome);
+    appendDefinition(details, 'Cliente', rental.clienteNome || rental.cliente?.nome);
     appendDefinition(details, 'Status', rental.status);
     appendDefinition(details, 'Data de retirada', formatDate(rental.dataRetirada));
     appendDefinition(details, 'Devolução prevista', formatDate(rental.dataPrevista));
-    appendDefinition(details, 'Devolução real', formatDate(rental.dataReal));
-    appendDefinition(details, 'Diárias calculadas pela API', rental.diarias);
-    appendDefinition(details, 'Valor final cobrado', currency(rental.valorFinalCobrado));
+    appendDefinition(details, 'Devolução real', formatDate(rental.dataDevolucao || rental.dataReal));
+    appendDefinition(details, 'Dias de atraso', rental.diasAtraso);
+    appendDefinition(details, 'Diárias', currency(rental.valorDiarias ?? rental.diarias));
+    appendDefinition(details, 'Desconto', currency(rental.valorDesconto));
+    appendDefinition(details, 'Multa', currency(rental.valorMulta));
+    appendDefinition(details, 'Total', currency(rental.valorTotal ?? rental.valorFinalCobrado));
     refs.detailsContent.append(details);
 
     const title = document.createElement('h3');
@@ -303,7 +416,12 @@
     list.className = 'dialog-item-list';
     (Array.isArray(rental.itens) ? rental.itens : []).forEach((item) => {
       const li = document.createElement('li');
-      li.textContent = [item.nome, item.modelo, item.numeroPatrimonio ? `Patrimônio ${item.numeroPatrimonio}` : '']
+      li.textContent = [
+        item.nome,
+        item.modelo,
+        item.numeroPatrimonio ? `Patrimônio ${item.numeroPatrimonio}` : '',
+        item.valorDiaria == null ? '' : `${currency(item.valorDiaria)}/dia`,
+      ]
         .filter(Boolean).join(' · ') || 'Equipamento não informado';
       list.append(li);
     });
@@ -316,26 +434,59 @@
 
     const note = document.createElement('p');
     note.className = 'form-notice';
-    note.textContent = 'A API fornece apenas os dados sintéticos da locação; não há documento de contrato para download.';
+    note.textContent = 'Valores e informações do contrato retornados pela API.';
     refs.detailsContent.append(note);
-    refs.detailsDialog.showModal();
   }
 
-  function showUnavailableAction(rental, action) {
+  // Prepara a confirmação da ação disponível para a locação.
+  function showRentalAction(rental, action) {
     const isReturn = action === 'return';
     refs.actionTitle.textContent = isReturn ? 'Registrar devolução' : 'Cancelar locação';
     refs.actionContent.replaceChildren();
     const notice = document.createElement('p');
     notice.className = 'form-notice';
     notice.textContent = isReturn
-      ? `A API não possui rota para registrar a devolução da locação ${rental.id}, atualizar seu status ou calcular diárias e multa. Nenhuma alteração foi feita.`
-      : `A API não possui rota para cancelar a locação ${rental.id}. Nenhuma alteração foi feita.`;
+      ? `Confirme a devolução da locação ${rental.id}. O servidor calculará o valor final e eventuais multas.`
+      : `Confirme o cancelamento da locação ${rental.id}. Os equipamentos serão liberados pelo servidor.`;
     refs.actionContent.append(notice);
     refs.returnDateGroup.hidden = !isReturn;
     refs.returnDate.value = '';
+    refs.confirmAction.textContent = isReturn ? 'Confirmar devolução' : 'Confirmar cancelamento';
+    refs.confirmAction.dataset.action = action;
+    state.pendingAction = { id: rental.id, action };
     refs.actionDialog.showModal();
   }
 
+  // Envia a ação confirmada e recarrega locações e indicadores.
+  async function confirmRentalAction() {
+    if (!state.pendingAction) return;
+    const { id, action } = state.pendingAction;
+    refs.confirmAction.disabled = true;
+    refs.confirmAction.textContent = 'Processando…';
+    try {
+      if (action === 'return') {
+        const body = refs.returnDate.value ? { dataDevolucao: refs.returnDate.value } : {};
+        await window.apiClient.patch(`/locacoes/${encodeURIComponent(id)}/devolucao`, body);
+      } else {
+        await window.apiClient.patch(`/locacoes/${encodeURIComponent(id)}/cancelamento`);
+      }
+      refs.actionDialog.close();
+      state.pendingAction = null;
+      setError('');
+      await Promise.all([loadRentals(), loadSummary()]);
+      setMessage(action === 'return' ? 'Devolução registrada com sucesso.' : 'Locação cancelada com sucesso.');
+    } catch (error) {
+      const notice = document.createElement('p');
+      notice.className = 'form-notice';
+      notice.textContent = getErrorMessage(error);
+      refs.actionContent.replaceChildren(notice);
+    } finally {
+      refs.confirmAction.disabled = false;
+      refs.confirmAction.textContent = action === 'return' ? 'Confirmar devolução' : 'Confirmar cancelamento';
+    }
+  }
+
+  // Adiciona um equipamento selecionável ao formulário de nova locação.
   function addEquipmentOption(equipment) {
     const label = document.createElement('label');
     label.className = 'equipment-option';
@@ -352,6 +503,7 @@
     refs.equipmentList.append(label);
   }
 
+  // Carrega clientes e equipamentos que podem ser usados na nova locação.
   async function loadNewRentalOptions() {
     refs.newError.hidden = true;
     refs.newClient.replaceChildren(new Option('Carregando clientes…', ''));
@@ -391,22 +543,25 @@
     updateEstimate();
   }
 
+  // Acumula e exibe erros de validação ou consulta do formulário.
   function reportNewRentalError(message) {
     refs.newError.textContent = refs.newError.hidden ? message : `${refs.newError.textContent} ${message}`;
     refs.newError.hidden = false;
   }
 
+  // Converte uma data do campo HTML em dia UTC para cálculos consistentes.
   function dateValueToUtcDay(value) {
     if (!value) return null;
     const [year, month, day] = value.split('-').map(Number);
     return Date.UTC(year, month - 1, day);
   }
 
+  // Recalcula a estimativa informativa conforme datas e equipamentos escolhidos.
   function updateEstimate() {
     const start = dateValueToUtcDay(refs.startDate.value);
     const due = dateValueToUtcDay(refs.dueDate.value);
     const selected = [...refs.equipmentList.querySelectorAll('input[name="equipment"]:checked')];
-    if (start == null || due == null || due < start || !selected.length) {
+    if (start == null || due == null || due <= start || !selected.length) {
       refs.estimateDays.textContent = 'Diárias estimadas: —';
       refs.estimateTotal.textContent = 'Total estimado: —';
       return;
@@ -423,6 +578,7 @@
     refs.estimateTotal.textContent = `Total estimado: ${currency(days * dailyTotal)}`;
   }
 
+  // Valida filtros de período e solicita novamente a lista de locações.
   function applyFilters() {
     if (refs.start.value && refs.end.value && refs.start.value > refs.end.value) {
       setError('A data inicial não pode ser posterior à data final.');
@@ -434,7 +590,7 @@
       dataInicio: refs.start.value,
       dataFim: refs.end.value,
     };
-    loadRentals();
+    Promise.all([loadRentals(), loadSummary()]);
   }
 
   document.getElementById('btnLogout').addEventListener('click', () => window.GR.auth.sair());
@@ -446,7 +602,7 @@
     refs.end.value = '';
     state.filters = {};
     state.page = 0;
-    loadRentals();
+    Promise.all([loadRentals(), loadSummary()]);
   });
   refs.search.addEventListener('input', renderRows);
   refs.previous.addEventListener('click', () => {
@@ -467,9 +623,12 @@
     const rental = state.rows.find((item) => String(item.id) === button.dataset.rentalId);
     if (!rental) return;
     if (button.dataset.action === 'details') openDetails(rental);
-    else showUnavailableAction(rental, button.dataset.action);
+    else showRentalAction(rental, button.dataset.action);
   });
   document.getElementById('openNewRental').addEventListener('click', async () => {
+    document.getElementById('newRentalForm').reset();
+    refs.newError.hidden = true;
+    refs.newError.textContent = '';
     refs.newDialog.showModal();
     await loadNewRentalOptions();
   });
@@ -485,10 +644,44 @@
   refs.equipmentList.addEventListener('change', updateEstimate);
   refs.startDate.addEventListener('change', updateEstimate);
   refs.dueDate.addEventListener('change', updateEstimate);
-  document.getElementById('newRentalForm').addEventListener('submit', (event) => {
+  document.getElementById('newRentalForm').addEventListener('submit', async (event) => {
     event.preventDefault();
-    reportNewRentalError('A API ainda não disponibiliza a criação de contratos; nenhuma locação foi enviada.');
+    const equipmentIds = [...refs.equipmentList.querySelectorAll('input[name="equipment"]:checked')]
+      .map((input) => Number(input.value));
+    if (!equipmentIds.length) {
+      reportNewRentalError('Selecione pelo menos um equipamento para criar a locação.');
+      return;
+    }
+    if (refs.dueDate.value <= refs.startDate.value) {
+      reportNewRentalError('A data prevista de devolução deve ser posterior à data de retirada.');
+      return;
+    }
+
+    const payload = {
+      clienteId: Number(refs.newClient.value),
+      equipamentosIds: equipmentIds,
+      dataRetirada: refs.startDate.value,
+      dataPrevista: refs.dueDate.value,
+      tipoPagamento: refs.paymentType.value || null,
+    };
+    refs.submitNewRental.disabled = true;
+    refs.submitNewRental.textContent = 'Criando…';
+    refs.newError.hidden = true;
+    try {
+      const response = await window.apiClient.post('/locacoes', payload);
+      refs.newDialog.close();
+      document.getElementById('newRentalForm').reset();
+      state.page = 0;
+      await Promise.all([loadRentals(), loadSummary()]);
+      setMessage(`Locação ${response.data.codigoSequencial ?? response.data.id} criada com sucesso.`);
+    } catch (error) {
+      reportNewRentalError(getErrorMessage(error));
+    } finally {
+      refs.submitNewRental.disabled = false;
+      refs.submitNewRental.textContent = 'Criar locação';
+    }
   });
+  refs.confirmAction.addEventListener('click', confirmRentalAction);
   [refs.detailsDialog, refs.actionDialog, refs.newDialog].forEach((dialog) => {
     dialog.addEventListener('click', (event) => {
       if (event.target === dialog) dialog.close();
@@ -497,6 +690,7 @@
 
   const savedTheme = localStorage.getItem('gearRentTheme');
   if (savedTheme === 'dark') document.body.dataset.theme = 'dark';
+  setupKpiVisibility('rentals');
   loadProfile();
   loadSummary();
   loadRentals();

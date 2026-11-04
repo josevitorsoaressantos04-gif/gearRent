@@ -6,36 +6,36 @@
     return;
   }
 
-  window.GR = window.GR || {};
-  window.GR.auth = window.GR.auth || {};
-  if (typeof window.GR.auth.sair !== 'function') {
-    window.GR.auth.sair = () => {
-      sessionStorage.removeItem(tokenKey);
-      sessionStorage.removeItem('token');
-      sessionStorage.removeItem('usuario');
-      window.location.replace('login.html');
-    };
-  }
-
   const refs = {
     table: document.getElementById('operatorsTableBody'),
     message: document.getElementById('settingsMessage'),
     error: document.getElementById('settingsError'),
+    profileNotice: document.getElementById('profileNotice'),
+    baseNotice: document.getElementById('baseNotice'),
+    operatorNotice: document.getElementById('operatorNotice'),
+    operatorFormNotice: document.getElementById('operatorFormNotice'),
     profileName: document.getElementById('profileDisplayName'),
     profileAvatar: document.getElementById('profileAvatar'),
     profileFirstName: document.getElementById('profileFirstName'),
+    profileLastName: document.getElementById('profileLastName'),
     profileEmail: document.getElementById('profileEmail'),
+    profileCpf: document.getElementById('profileCpf'),
     profileBirthDate: document.getElementById('profileBirthDate'),
     theme: document.getElementById('baseTheme'),
     operatorDialog: document.getElementById('operatorDialog'),
     settingsNavLink: document.querySelector('.sidebar__nav a[href="configuracoes.html"]'),
     profileNavLink: document.querySelector('.sidebar__nav a[href="configuracoes.html#perfil"]'),
+    saveBaseButton: document.getElementById('saveBaseButton'),
+    saveProfileButton: document.getElementById('saveProfileButton'),
+    changePasswordButton: document.getElementById('changePasswordButton'),
+    submitOperatorButton: document.getElementById('submitOperatorButton'),
   };
   const state = {
     users: [],
-    currentUserId: null,
+    isAdmin: false,
   };
 
+  // Converte respostas de erro HTTP em mensagens adequadas para a interface.
   function getErrorMessage(error) {
     if (error.response?.status === 401) {
       window.GR.auth.sair();
@@ -43,65 +43,104 @@
     }
     const messages = error.response?.data?.mensagens;
     if (Array.isArray(messages) && messages.length) return messages.join(' ');
-    if (error.response?.status === 404) return 'Este recurso ainda não está disponível na API atual.';
+    if (error.response?.status === 403) return 'Seu usuário não tem permissão para executar esta operação.';
+    if (error.response?.status === 404) return 'O registro solicitado não foi encontrado.';
     if (error.response) return `A solicitação falhou (HTTP ${error.response.status}).`;
     return 'Não foi possível conectar à API. Verifique a conexão e tente novamente.';
   }
 
-  async function getJSON(path) {
-    const response = await window.apiClient.get(path);
-    return response.data;
-  }
-
-  function setError(message) {
-    refs.error.textContent = message;
-    refs.error.hidden = !message;
-  }
-
-  function setMessage(message) {
-    refs.message.textContent = message;
-    refs.message.hidden = !message;
-  }
-
-  function getTokenSubject() {
+  // Lê as informações públicas do token para identificar o usuário da sessão.
+  function tokenClaims() {
     try {
       const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      return JSON.parse(window.atob(payload)).sub;
+      return JSON.parse(window.atob(payload));
     } catch {
-      return null;
+      return {};
     }
   }
 
+  // Gera as iniciais exibidas nos avatares do painel.
   function initials(name) {
     return String(name || 'GR').trim().split(/\s+/).slice(0, 2)
       .map((part) => part.charAt(0).toLocaleUpperCase('pt-BR')).join('') || 'GR';
   }
 
-  function formatDateForInput(value) {
-    if (!value) return '';
-    const match = String(value).match(/^(\d{4}-\d{2}-\d{2})/);
-    return match ? match[1] : '';
+  // Mostra ou oculta o aviso geral de erro da página.
+  function setError(message) {
+    refs.error.textContent = message;
+    refs.error.hidden = !message;
   }
 
+  // Mostra uma confirmação geral para a última operação concluída.
+  function setMessage(message) {
+    refs.message.textContent = message;
+    refs.message.hidden = !message;
+  }
+
+  // Atualiza um aviso específico associado a um formulário.
+  function setNotice(element, message) {
+    element.textContent = message;
+    element.hidden = !message;
+  }
+
+  // Evita envios duplicados e comunica visualmente o estado do botão.
+  function setBusy(button, busy, busyText, readyText) {
+    button.disabled = busy;
+    button.textContent = busy ? busyText : readyText;
+  }
+
+  // Executa uma consulta autenticada e devolve somente os dados da resposta.
+  async function getJSON(path) {
+    const response = await window.apiClient.get(path);
+    return response.data;
+  }
+
+  // Atualiza os dados do usuário e da base no cabeçalho lateral.
+  function updateHeader(user, baseName) {
+    const name = user.nome || 'Usuário autenticado';
+    refs.profileName.textContent = [name, user.sobrenome].filter(Boolean).join(' ');
+    refs.profileAvatar.textContent = initials(name);
+    document.getElementById('userNameSidebar').textContent = name;
+    document.getElementById('userNameTopbar').textContent = name;
+    document.getElementById('baseNameSidebar').textContent = baseName || 'Minha base';
+    document.getElementById('avatarSidebar').textContent = initials(name);
+    document.getElementById('avatarTopbar').textContent = initials(name);
+  }
+
+  // Preenche o formulário de perfil com os dados do usuário atual.
   function populateProfile(user) {
-    refs.profileName.textContent = user.nome;
     refs.profileFirstName.value = user.nome || '';
-    refs.profileEmail.value = user.login || '';
-    refs.profileBirthDate.value = formatDateForInput(user.dataNascimento);
-    refs.profileAvatar.textContent = initials(user.nome);
-    document.getElementById('userNameSidebar').textContent = user.nome;
-    document.getElementById('userNameTopbar').textContent = user.nome;
-    document.getElementById('baseNameSidebar').textContent = `Base de ${user.nome}`;
-    document.getElementById('avatarSidebar').textContent = initials(user.nome);
-    document.getElementById('avatarTopbar').textContent = initials(user.nome);
+    refs.profileLastName.value = user.sobrenome || '';
+    refs.profileEmail.value = user.email || '';
+    refs.profileCpf.value = user.cpf || '';
+    refs.profileBirthDate.value = user.dataNascimento || '';
+    updateHeader(user, document.getElementById('baseNameSidebar').textContent);
   }
 
+  // Preenche o formulário de configuração com os dados da locadora.
+  function populateBase(base) {
+    document.getElementById('baseDisplayName').value = base.nomeFantasia || '';
+    document.getElementById('basePhone').value = base.telefone || '';
+    document.getElementById('baseDocument').value = base.cnpj || '';
+    const address = base.endereco || {};
+    document.getElementById('baseStreet').value = address.logradouro || '';
+    document.getElementById('baseAddressNumber').value = address.numero || '';
+    document.getElementById('baseComplement').value = address.complemento || '';
+    document.getElementById('baseNeighborhood').value = address.bairro || '';
+    document.getElementById('baseCity').value = address.cidade || '';
+    document.getElementById('baseState').value = address.estado || '';
+    document.getElementById('basePostalCode').value = address.cep || '';
+    document.getElementById('baseNameSidebar').textContent = base.nomeFantasia || 'Minha base';
+  }
+
+  // Cria uma célula de tabela com texto inserido sem interpretar HTML.
   function createCell(text) {
     const cell = document.createElement('td');
     cell.textContent = text || '—';
     return cell;
   }
 
+  // Atualiza a tabela com os operadores e suas ações disponíveis.
   function renderUsers() {
     refs.table.replaceChildren();
     if (!state.users.length) {
@@ -118,18 +157,27 @@
       const row = document.createElement('tr');
       const status = String(user.status || 'Não informado');
       const actionCell = document.createElement('td');
-      const action = document.createElement('button');
-      action.type = 'button';
-      action.className = 'btn btn--secondary operator-action';
-      action.textContent = status === 'ATIVO' ? 'Desativação bloqueada' : 'Reativação indisponível';
-      action.disabled = true;
-      action.title = 'A API ainda não protege a gestão de acesso por papel de administrador.';
-      action.setAttribute('aria-label', `Gestão de acesso de ${user.nome || 'operador'} indisponível`);
-      actionCell.append(action);
+      if (state.isAdmin && status === 'INATIVO') {
+        const action = document.createElement('button');
+        action.type = 'button';
+        action.className = 'btn btn--secondary operator-action';
+        action.textContent = 'Reativar';
+        action.dataset.reactivateId = String(user.id);
+        action.setAttribute('aria-label', `Reativar ${user.nome || 'operador'}`);
+        actionCell.append(action);
+      } else {
+        const action = document.createElement('button');
+        action.type = 'button';
+        action.className = 'btn btn--secondary operator-action';
+        action.textContent = status === 'ATIVO' ? 'Desativação indisponível' : 'Ação indisponível';
+        action.disabled = true;
+        action.title = 'A API não protege a desativação por papel administrativo.';
+        actionCell.append(action);
+      }
       row.append(
-        createCell(user.nome),
+        createCell([user.nome, user.sobrenome].filter(Boolean).join(' ')),
         createCell(user.login),
-        createCell('Não definido na API'),
+        createCell(user.role),
         createCell(status),
         actionCell,
       );
@@ -137,27 +185,42 @@
     });
   }
 
+  // Consulta os operadores da base e atualiza sua listagem.
   async function loadUsers() {
-    setError('');
-    setMessage('Carregando usuários da base…');
     try {
       const users = await getJSON('/usuarios');
       if (!Array.isArray(users)) throw new Error('A resposta de usuários veio em formato inesperado.');
       state.users = users;
-      state.currentUserId = getTokenSubject();
-      const current = users.find((user) => String(user.id) === String(state.currentUserId));
-      if (current?.nome) populateProfile(current);
-      else setError('A lista foi carregada, mas não foi possível identificar seu usuário autenticado.');
       renderUsers();
-      setMessage('');
     } catch (error) {
       state.users = [];
       renderUsers();
-      setMessage('');
-      setError(`${getErrorMessage(error)} A consulta de operadores utiliza GET /usuarios, restrita ao tenant autenticado.`);
+      setError(`${getErrorMessage(error)} Não foi possível carregar os operadores da base.`);
     }
   }
 
+  // Busca o usuário autenticado e atualiza o perfil e o cabeçalho.
+  async function loadProfile() {
+    try {
+      const user = await getJSON('/usuarios/me');
+      populateProfile(user);
+      if (!user.cpf) setNotice(refs.profileNotice, 'A API não retornou CPF para o perfil. Informe um CPF válido antes de salvar.');
+    } catch (error) {
+      setNotice(refs.profileNotice, getErrorMessage(error));
+    }
+  }
+
+  // Carrega os dados da base para o formulário de configurações.
+  async function loadBase() {
+    try {
+      const base = await getJSON('/locadora');
+      populateBase(base);
+    } catch (error) {
+      setNotice(refs.baseNotice, getErrorMessage(error));
+    }
+  }
+
+  // Alterna os painéis de configuração e sincroniza a aba com a URL.
   function activateTab(name, updateHash = true) {
     const tab = document.querySelector(`[data-tab="${name}"]`);
     const panel = document.getElementById(`panel${name.charAt(0).toUpperCase()}${name.slice(1)}`);
@@ -181,14 +244,23 @@
       item.hidden = item !== panel;
     });
     if (updateHash) {
-      const hash = name === 'profile' ? '#perfil' : `#${name}`;
-      history.replaceState(null, '', hash);
+      history.replaceState(null, '', name === 'profile' ? '#perfil' : `#${name}`);
     }
     tab.focus();
   }
 
-  function closeDialog(dialog) {
-    if (dialog.open) dialog.close();
+  // Reativa o operador selecionado e atualiza o estado da tabela.
+  async function reactivateUser(id, button) {
+    button.disabled = true;
+    try {
+      await window.apiClient.patch(`/usuarios/${encodeURIComponent(id)}/reativar`);
+      setError('');
+      setMessage('Usuário reativado com sucesso.');
+      await loadUsers();
+    } catch (error) {
+      button.disabled = false;
+      setError(getErrorMessage(error));
+    }
   }
 
   document.getElementById('btnLogout').addEventListener('click', () => window.GR.auth.sair());
@@ -210,43 +282,148 @@
       : window.location.hash === '#base' ? 'base' : 'operators';
     activateTab(tabName, false);
   });
-  document.getElementById('openOperatorDialog').addEventListener('click', () => refs.operatorDialog.showModal());
+
+  document.getElementById('openOperatorDialog').addEventListener('click', () => {
+    document.getElementById('operatorForm').reset();
+    setNotice(refs.operatorFormNotice, '');
+    refs.operatorDialog.showModal();
+  });
   document.querySelectorAll('[data-close-operator-dialog]').forEach((button) => {
-    button.addEventListener('click', () => closeDialog(refs.operatorDialog));
+    button.addEventListener('click', () => refs.operatorDialog.close());
   });
-  document.getElementById('operatorForm').addEventListener('submit', (event) => {
+  refs.table.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-reactivate-id]');
+    if (button) reactivateUser(button.dataset.reactivateId, button);
+  });
+
+  document.getElementById('operatorForm').addEventListener('submit', async (event) => {
     event.preventDefault();
-    setError('Não foi enviado: ainda não existe uma rota segura de cadastro de operador vinculada à base atual.');
+    const button = refs.submitOperatorButton;
+    setBusy(button, true, 'Criando…', 'Adicionar operador');
+    setNotice(refs.operatorFormNotice, '');
+    try {
+      await window.apiClient.post('/usuarios', {
+        nome: document.getElementById('operatorName').value.trim(),
+        sobrenome: document.getElementById('operatorLastName').value.trim(),
+        email: document.getElementById('operatorEmail').value.trim(),
+        senha: document.getElementById('operatorPassword').value,
+        role: document.getElementById('operatorRole').value,
+      });
+      refs.operatorDialog.close();
+      setMessage('Operador criado com sucesso.');
+      await loadUsers();
+    } catch (error) {
+      setNotice(refs.operatorFormNotice, getErrorMessage(error));
+    } finally {
+      setBusy(button, false, 'Criando…', 'Adicionar operador');
+    }
   });
-  document.getElementById('baseForm').addEventListener('submit', (event) => {
+
+  document.getElementById('baseForm').addEventListener('submit', async (event) => {
     event.preventDefault();
-    setError('Os dados da base não foram enviados; a API ainda não oferece atualização de Locadora.');
+    const button = refs.saveBaseButton;
+    setBusy(button, true, 'Salvando…', 'Salvar dados da base');
+    setNotice(refs.baseNotice, '');
+    try {
+      const name = document.getElementById('baseDisplayName').value.trim();
+      const response = await window.apiClient.put('/locadora', {
+        nome: name,
+        nomeFantasia: name,
+        cnpj: document.getElementById('baseDocument').value || null,
+        telefone: document.getElementById('basePhone').value.trim(),
+        endereco: {
+          logradouro: document.getElementById('baseStreet').value.trim(),
+          numero: document.getElementById('baseAddressNumber').value.trim(),
+          complemento: document.getElementById('baseComplement').value.trim() || null,
+          bairro: document.getElementById('baseNeighborhood').value.trim(),
+          cidade: document.getElementById('baseCity').value.trim(),
+          estado: document.getElementById('baseState').value.trim().toUpperCase(),
+          cep: document.getElementById('basePostalCode').value.trim(),
+        },
+      });
+      populateBase(response.data);
+      setMessage('Dados da base atualizados com sucesso.');
+    } catch (error) {
+      setNotice(refs.baseNotice, getErrorMessage(error));
+    } finally {
+      setBusy(button, false, 'Salvando…', 'Salvar dados da base');
+    }
   });
-  document.getElementById('profileForm').addEventListener('submit', (event) => {
+
+  document.getElementById('profileForm').addEventListener('submit', async (event) => {
     event.preventDefault();
-    setError('O perfil não foi enviado; a rota atual exige dados que a consulta não fornece e senha no corpo da atualização.');
+    const button = refs.saveProfileButton;
+    setBusy(button, true, 'Salvando…', 'Salvar perfil');
+    setNotice(refs.profileNotice, '');
+    try {
+      const response = await window.apiClient.put('/usuarios/me', {
+        nome: refs.profileFirstName.value.trim(),
+        sobrenome: refs.profileLastName.value.trim(),
+        email: refs.profileEmail.value.trim(),
+        cpf: refs.profileCpf.value.trim(),
+      });
+      populateProfile(response.data);
+      setMessage('Perfil atualizado com sucesso.');
+    } catch (error) {
+      setNotice(refs.profileNotice, getErrorMessage(error));
+    } finally {
+      setBusy(button, false, 'Salvando…', 'Salvar perfil');
+    }
   });
-  document.getElementById('passwordForm').addEventListener('submit', (event) => {
+
+  document.getElementById('passwordForm').addEventListener('submit', async (event) => {
     event.preventDefault();
-    setError('A senha não foi enviada; solicite a implementação de uma rota autenticada de troca de senha.');
+    const button = refs.changePasswordButton;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    if (newPassword !== confirmPassword) {
+      setError('A confirmação precisa ser igual à nova senha.');
+      return;
+    }
+    setBusy(button, true, 'Atualizando…', 'Atualizar minha senha');
+    setError('');
+    try {
+      await window.apiClient.patch('/usuarios/trocar-senha', {
+        senhaAtual: document.getElementById('currentPassword').value,
+        novaSenha: newPassword,
+        confirmacaoSenha: confirmPassword,
+      });
+      document.getElementById('passwordForm').reset();
+      setMessage('Senha alterada com sucesso.');
+    } catch (error) {
+      setError(getErrorMessage(error));
+    } finally {
+      setBusy(button, false, 'Atualizando…', 'Atualizar minha senha');
+    }
   });
+
   refs.theme.value = localStorage.getItem('gearRentTheme') || 'light';
   if (refs.theme.value === 'dark') document.body.dataset.theme = 'dark';
   refs.theme.addEventListener('change', () => {
-    if (refs.theme.value === 'dark') {
-      document.body.dataset.theme = 'dark';
-    } else {
-      delete document.body.dataset.theme;
-    }
+    if (refs.theme.value === 'dark') document.body.dataset.theme = 'dark';
+    else delete document.body.dataset.theme;
     localStorage.setItem('gearRentTheme', refs.theme.value);
     setMessage('Preferência visual aplicada e salva neste navegador.');
   });
   refs.operatorDialog.addEventListener('click', (event) => {
-    if (event.target === refs.operatorDialog) closeDialog(refs.operatorDialog);
+    if (event.target === refs.operatorDialog) refs.operatorDialog.close();
   });
+
+  state.isAdmin = tokenClaims().role === 'ADMIN';
+  document.getElementById('openOperatorDialog').disabled = !state.isAdmin;
+  refs.saveBaseButton.disabled = !state.isAdmin;
+  document.querySelectorAll('#baseForm input:not([readonly])').forEach((input) => {
+    input.disabled = !state.isAdmin;
+  });
+  setNotice(refs.operatorNotice, state.isAdmin
+    ? 'A desativação permanece bloqueada porque a rota existente não exige papel administrativo.'
+    : 'Somente administradores podem cadastrar ou reativar operadores. A desativação está indisponível por segurança.');
+  if (!state.isAdmin) setNotice(refs.baseNotice, 'Somente administradores podem atualizar os dados da base.');
 
   const initialTab = window.location.hash === '#perfil' ? 'profile'
     : window.location.hash === '#base' ? 'base' : 'operators';
   activateTab(initialTab, false);
   loadUsers();
+  loadProfile();
+  loadBase();
 })();

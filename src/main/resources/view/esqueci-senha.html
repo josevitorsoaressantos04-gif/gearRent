@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/recuperacao-senha.css" />
   </head>
   <body>
+    <!-- Cabeçalho da área pública de autenticação. -->
     <header class="topbar" aria-label="Cabeçalho do sistema">
       <div class="topbar__content">
         <div class="topbar__brand">GearRent</div>
@@ -32,6 +33,7 @@
       </div>
     </header>
 
+    <!-- Formulário para solicitar um link de recuperação pelo e-mail. -->
     <main class="auth-shell">
       <section class="auth-card" aria-labelledby="titulo-recuperacao">
         <div class="auth-card__header">
@@ -40,6 +42,7 @@
           <p class="auth-card__subtitle">Digite o seu e-mail e enviaremos as instruções.</p>
         </div>
 
+        <!-- Mensagens de erro, orientação e sucesso do pedido de recuperação. -->
         <div
           id="mensagemErro"
           class="message-box message-box--error"
@@ -55,6 +58,7 @@
           hidden
         ></div>
 
+        <!-- Endereço usado pela API para enviar as instruções de recuperação. -->
         <form id="formRecuperacao" novalidate>
           <div class="form-grid">
             <div class="field">
@@ -86,6 +90,7 @@
       </section>
     </main>
 
+    <!-- Rodapé compartilhado pelas telas de autenticação. -->
     <footer class="footer" aria-label="Rodapé do sistema">
       <div class="footer__content">
         <span>© 2026 GearRent</span>

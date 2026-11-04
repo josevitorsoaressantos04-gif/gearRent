@@ -9,6 +9,7 @@
   </head>
   <body class="dashboard-body settings-dashboard">
     <div class="app-shell">
+      <!-- Navegação entre as telas da base autenticada. -->
       <aside class="sidebar" aria-label="Menu lateral da base">
         <div class="sidebar__profile">
           <div class="avatar avatar--large" id="avatarSidebar" aria-hidden="true">GR</div>
@@ -29,6 +30,7 @@
       </aside>
 
       <div class="main-panel">
+        <!-- Cabeçalho com a seção atual e o usuário autenticado. -->
         <header class="topbar" aria-label="Barra superior do painel">
           <div class="topbar__heading">
             <span>Painel da base</span>
@@ -40,6 +42,7 @@
           </div>
         </header>
 
+        <!-- Abas para administrar operadores, dados da base e perfil pessoal. -->
         <main class="dashboard-content settings-page">
           <div id="settingsMessage" class="dashboard-message" role="status" aria-live="polite" hidden></div>
           <div id="settingsError" class="dashboard-message dashboard-message--error" role="alert" hidden></div>
@@ -49,6 +52,7 @@
             <button id="tabProfile" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="panelProfile" data-tab="profile" tabindex="-1">Meu perfil e senha</button>
           </nav>
 
+          <!-- Gerenciamento dos operadores e permissões de acesso. -->
           <section id="panelOperators" class="settings-panel" role="tabpanel" aria-labelledby="tabOperators">
             <div class="settings-panel__header">
               <div>
@@ -57,9 +61,7 @@
               </div>
               <button id="openOperatorDialog" class="btn btn--primary" type="button">＋ Adicionar operador</button>
             </div>
-            <div class="form-notice" role="status">
-              O cadastro público cria uma base nova e não será usado aqui. A API atual não oferece cadastro de operador vinculado à base nem papéis/permissões administrativas. Embora exista uma rota de desativação com isolamento por base, ela ainda não valida o papel de administrador; por segurança, a ação fica bloqueada nesta tela até essa proteção existir.
-            </div>
+            <div id="operatorNotice" class="form-notice" role="status" hidden></div>
             <div class="table-panel settings-table-panel">
               <div class="table-wrapper">
                 <table class="settings-table">
@@ -80,6 +82,7 @@
             </div>
           </section>
 
+          <!-- Dados cadastrais e preferência visual da base no navegador. -->
           <section id="panelBase" class="settings-panel" role="tabpanel" aria-labelledby="tabBase" hidden>
             <div class="settings-panel__header">
               <div>
@@ -87,26 +90,48 @@
                 <p>Identidade visual e dados cadastrais do tenant.</p>
               </div>
             </div>
-            <div class="form-notice" role="status">
-              Não existe atualmente uma rota autenticada de consulta/atualização da Locadora. Os dados empresariais abaixo não serão enviados ou salvos no servidor.
-            </div>
+            <div id="baseNotice" class="form-notice" role="status" hidden></div>
             <form class="settings-card" id="baseForm">
               <div class="form-grid">
                 <div class="field-group field-group--full">
                   <label for="baseDisplayName">Nome da base</label>
-                  <input id="baseDisplayName" type="text" placeholder="Indisponível na API" disabled />
+                  <input id="baseDisplayName" type="text" required />
                 </div>
                 <div class="field-group">
                   <label for="basePhone">Telefone da empresa</label>
-                  <input id="basePhone" type="tel" placeholder="Indisponível na API" disabled />
+                  <input id="basePhone" type="tel" maxlength="20" required />
                 </div>
                 <div class="field-group">
                   <label for="baseDocument">CNPJ / CPF da locadora</label>
-                  <input id="baseDocument" type="text" placeholder="Indisponível na API" disabled />
+                  <input id="baseDocument" type="text" readonly />
                 </div>
-                <div class="field-group field-group--full">
-                  <label for="baseAddress">Endereço</label>
-                  <input id="baseAddress" type="text" placeholder="Indisponível na API" disabled />
+                <div class="field-group">
+                  <label for="baseStreet">Logradouro</label>
+                  <input id="baseStreet" type="text" required />
+                </div>
+                <div class="field-group">
+                  <label for="baseAddressNumber">Número</label>
+                  <input id="baseAddressNumber" type="text" required />
+                </div>
+                <div class="field-group">
+                  <label for="baseComplement">Complemento</label>
+                  <input id="baseComplement" type="text" />
+                </div>
+                <div class="field-group">
+                  <label for="baseNeighborhood">Bairro</label>
+                  <input id="baseNeighborhood" type="text" required />
+                </div>
+                <div class="field-group">
+                  <label for="baseCity">Cidade</label>
+                  <input id="baseCity" type="text" required />
+                </div>
+                <div class="field-group">
+                  <label for="baseState">Estado (UF)</label>
+                  <input id="baseState" type="text" minlength="2" maxlength="2" required />
+                </div>
+                <div class="field-group">
+                  <label for="basePostalCode">CEP</label>
+                  <input id="basePostalCode" type="text" maxlength="9" required />
                 </div>
                 <div class="field-group field-group--full">
                   <label for="baseTheme">Tema desta instalação</label>
@@ -118,11 +143,12 @@
                 </div>
               </div>
               <div class="modal__actions">
-                <button id="saveBaseButton" class="btn btn--primary" type="submit" disabled>Salvar dados da base (API indisponível)</button>
+                <button id="saveBaseButton" class="btn btn--primary" type="submit">Salvar dados da base</button>
               </div>
             </form>
           </section>
 
+          <!-- Atualização dos dados pessoais e das credenciais do usuário. -->
           <section id="panelProfile" class="settings-panel" role="tabpanel" aria-labelledby="tabProfile" hidden>
             <div class="settings-panel__header">
               <div>
@@ -130,35 +156,31 @@
                 <p>Dados disponíveis do usuário autenticado na base.</p>
               </div>
             </div>
-            <div class="form-notice" role="status">
-              A API lista nome, e-mail/login e data de nascimento, mas não permite atualizar perfil com segurança: o DTO atual exige CPF e senha em texto no PUT, e não há rota para validar a senha atual ou trocar credenciais. O formulário fica somente para leitura até haver endpoints específicos.
-            </div>
+            <div id="profileNotice" class="form-notice" role="status" hidden></div>
             <form class="settings-card" id="profileForm">
               <div class="profile-heading">
                 <div class="avatar avatar--large" id="profileAvatar" aria-hidden="true">GR</div>
                 <div>
                   <strong id="profileDisplayName">Usuário autenticado</strong>
-                  <p>Foto de perfil não disponível na API atual.</p>
+                  <p>Foto de perfil ainda não é suportada pela API.</p>
                 </div>
-                <label class="btn btn--secondary disabled-control" for="profileAvatarUpload">Alterar foto (indisponível)</label>
-                <input id="profileAvatarUpload" class="sr-only" type="file" accept="image/*" disabled />
               </div>
               <div class="form-grid">
                 <div class="field-group">
                   <label for="profileFirstName">Nome</label>
-                  <input id="profileFirstName" type="text" readonly />
+                  <input id="profileFirstName" type="text" required />
                 </div>
                 <div class="field-group">
                   <label for="profileLastName">Sobrenome</label>
-                  <input id="profileLastName" type="text" placeholder="Não informado pela API" disabled />
+                  <input id="profileLastName" type="text" required />
                 </div>
                 <div class="field-group">
                   <label for="profileEmail">E-mail</label>
-                  <input id="profileEmail" type="email" readonly />
+                  <input id="profileEmail" type="email" required />
                 </div>
                 <div class="field-group">
-                  <label for="profilePhone">Telefone pessoal</label>
-                  <input id="profilePhone" type="tel" placeholder="Não informado pela API" disabled />
+                  <label for="profileCpf">CPF</label>
+                  <input id="profileCpf" type="text" inputmode="numeric" maxlength="14" required />
                 </div>
                 <div class="field-group">
                   <label for="profileBirthDate">Data de nascimento</label>
@@ -166,29 +188,29 @@
                 </div>
               </div>
               <div class="modal__actions">
-                <button class="btn btn--primary" type="submit" disabled>Salvar perfil (API indisponível)</button>
+                <button id="saveProfileButton" class="btn btn--primary" type="submit">Salvar perfil</button>
               </div>
             </form>
 
             <form class="settings-card password-card" id="passwordForm">
               <h3>Alterar senha</h3>
-              <p>Troca segura requer validação da senha atual no servidor; esse recurso ainda não existe na API.</p>
+              <p>A senha atual será validada pelo servidor antes de salvar a nova senha.</p>
               <div class="form-grid">
                 <div class="field-group field-group--full">
                   <label for="currentPassword">Senha atual</label>
-                  <input id="currentPassword" type="password" autocomplete="current-password" disabled />
+                  <input id="currentPassword" type="password" autocomplete="current-password" required />
                 </div>
                 <div class="field-group">
                   <label for="newPassword">Nova senha (mínimo 6 caracteres)</label>
-                  <input id="newPassword" type="password" minlength="6" autocomplete="new-password" disabled />
+                  <input id="newPassword" type="password" minlength="6" autocomplete="new-password" required />
                 </div>
                 <div class="field-group">
                   <label for="confirmPassword">Confirmar nova senha</label>
-                  <input id="confirmPassword" type="password" minlength="6" autocomplete="new-password" disabled />
+                  <input id="confirmPassword" type="password" minlength="6" autocomplete="new-password" required />
                 </div>
               </div>
               <div class="modal__actions">
-                <button class="btn btn--primary" type="submit" disabled>Atualizar minha senha (API indisponível)</button>
+                <button id="changePasswordButton" class="btn btn--primary" type="submit">Atualizar minha senha</button>
               </div>
             </form>
           </section>
@@ -196,36 +218,42 @@
       </div>
     </div>
 
+    <!-- Formulário de inclusão de um operador na base. -->
     <dialog id="operatorDialog" class="dashboard-dialog rental-dialog" aria-labelledby="operatorDialogTitle">
       <div class="dashboard-dialog__header">
         <h2 id="operatorDialogTitle">Adicionar operador</h2>
         <button class="icon-button" type="button" data-close-operator-dialog aria-label="Fechar">×</button>
       </div>
-      <p class="form-notice">Cadastro interrompido: a rota POST /usuarios/cadastro cria uma nova locadora. É necessário implementar uma rota autenticada que associe o novo usuário à base atual antes de habilitar o envio.</p>
+      <div id="operatorFormNotice" class="form-notice" role="status" hidden></div>
       <form id="operatorForm">
         <div class="form-grid">
           <div class="field-group">
             <label for="operatorName">Nome</label>
-            <input id="operatorName" type="text" disabled />
+            <input id="operatorName" type="text" required />
+          </div>
+          <div class="field-group">
+            <label for="operatorLastName">Sobrenome</label>
+            <input id="operatorLastName" type="text" required />
           </div>
           <div class="field-group">
             <label for="operatorEmail">E-mail</label>
-            <input id="operatorEmail" type="email" disabled />
+            <input id="operatorEmail" type="email" required />
           </div>
           <div class="field-group">
             <label for="operatorRole">Permissão</label>
-            <select id="operatorRole" disabled>
-              <option>Permissões não disponíveis na API</option>
+            <select id="operatorRole" required>
+              <option value="OPERADOR">Operador</option>
+              <option value="ADMIN">Administrador</option>
             </select>
           </div>
           <div class="field-group">
             <label for="operatorPassword">Senha inicial</label>
-            <input id="operatorPassword" type="password" minlength="6" disabled />
+            <input id="operatorPassword" type="password" minlength="6" autocomplete="new-password" required />
           </div>
         </div>
         <div class="modal__actions">
           <button class="btn btn--secondary" type="button" data-close-operator-dialog>Fechar</button>
-          <button class="btn btn--primary" type="submit" disabled>Adicionar (API indisponível)</button>
+          <button id="submitOperatorButton" class="btn btn--primary" type="submit">Adicionar operador</button>
         </div>
       </form>
     </dialog>

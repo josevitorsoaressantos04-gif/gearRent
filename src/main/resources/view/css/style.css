@@ -1,3 +1,4 @@
+/* Paleta, tipografia e regras base compartilhadas pelas telas de acesso. */
 :root {
   --bg-page: #f5f7fa;
   --bg-surface: #ffffff;
@@ -41,6 +42,7 @@ input {
   font: inherit;
 }
 
+/* Cabeçalho das páginas de login e cadastro. */
 .topbar {
   position: sticky;
   top: 0;
@@ -105,6 +107,7 @@ input {
   transform: translateY(1px);
 }
 
+/* Cartão central e campos dos formulários de autenticação. */
 .login-page {
   flex: 1;
   min-height: calc(100vh - 72px - 64px);
@@ -181,6 +184,7 @@ input {
   color: var(--text-soft);
 }
 
+/* Estados visuais de botões, links e mensagens de retorno. */
 .btn-primary {
   margin-top: 8px;
   border: none;
@@ -245,6 +249,7 @@ input {
   border-color: #b9e4c4;
 }
 
+/* Área opcional para apresentar informações de token. */
 .token-panel {
   margin-top: 22px;
   padding: 14px 16px;
@@ -266,6 +271,7 @@ input {
   font-size: 0.96rem;
 }
 
+/* Rodapé e ajustes para telas estreitas. */
 .footer {
   background: #dfe8f1;
   border-top: 1px solid #d0d9e4;

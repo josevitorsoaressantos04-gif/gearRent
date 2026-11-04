@@ -1,3 +1,4 @@
+/* Variáveis de cores e tipografia das páginas de recuperação de senha. */
 :root {
   --bg-page: #f5f7fa;
   --bg-surface: #ffffff;
@@ -41,6 +42,7 @@ input {
   font: inherit;
 }
 
+/* Cabeçalho comum às etapas de autenticação. */
 .topbar {
   position: sticky;
   top: 0;
@@ -105,6 +107,7 @@ input {
   transform: translateY(1px);
 }
 
+/* Cartão central, campos de senha e organização dos formulários. */
 .auth-shell {
   flex: 1;
   min-height: calc(100vh - 72px - 64px);
@@ -198,6 +201,7 @@ input {
   font-size: 0.95rem;
 }
 
+/* Aparência dos botões, links e mensagens de resposta da API. */
 .btn-primary {
   min-height: 42px;
   border: none;
@@ -235,6 +239,7 @@ input {
   color: var(--primary-dark);
 }
 
+/* Estados de aviso, listas de erros e navegação auxiliar. */
 .message-box {
   border-radius: 10px;
   border: 1px solid transparent;
@@ -271,6 +276,7 @@ input {
   justify-content: center;
 }
 
+/* Rodapé e adaptação da tela para dispositivos móveis. */
 .footer {
   background: #dfe8f1;
   border-top: 1px solid #d0d9e4;
