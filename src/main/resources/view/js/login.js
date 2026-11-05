@@ -1,3 +1,4 @@
+// Limpa os avisos que foram apresentados na tentativa anterior.
 function limparMensagens() {
   const mensagemErro = document.getElementById('mensagemErro');
   const mensagemSucesso = document.getElementById('mensagemSucesso');
@@ -9,6 +10,7 @@ function limparMensagens() {
   mensagemSucesso.textContent = '';
 }
 
+// Exibe o aviso solicitado e oculta a mensagem do tipo oposto.
 function mostrarMensagem(tipo, texto) {
   const mensagemErro = document.getElementById('mensagemErro');
   const mensagemSucesso = document.getElementById('mensagemSucesso');
@@ -27,6 +29,7 @@ function mostrarMensagem(tipo, texto) {
   mensagemErro.textContent = '';
 }
 
+// Valida as credenciais, autentica o usuário e inicia a sessão local.
 function realizarLogin() {
   limparMensagens();
 
@@ -68,4 +71,5 @@ function realizarLogin() {
     });
 }
 
+// Disponibiliza a rotina para o manipulador declarado na página.
 window.realizarLogin = realizarLogin;

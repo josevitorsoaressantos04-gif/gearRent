@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
+    <!-- Marca e atalho para quem ainda precisa criar uma conta. -->
     <header class="topbar" aria-label="Cabeçalho do sistema">
       <div class="topbar__content">
         <div class="topbar__brand">GearRent</div>
@@ -27,6 +28,7 @@
       </div>
     </header>
 
+    <!-- Área central de autenticação do usuário. -->
     <main class="login-page">
       <section class="login-card" aria-labelledby="titulo-login">
         <div class="login-card__header">
@@ -34,6 +36,7 @@
           <h1 id="titulo-login">Entrar no GearRent</h1>
         </div>
 
+        <!-- Áreas para mensagens de validação, API e confirmação do acesso. -->
         <div
           id="mensagemErro"
           class="alert-box alert-box--error"
@@ -50,6 +53,7 @@
           hidden
         ></div>
 
+        <!-- Credenciais enviadas pelo script de autenticação. -->
         <form id="loginForm" novalidate>
           <div class="field-group">
             <label for="email">E-mail</label>
@@ -86,12 +90,14 @@
           </button>
         </form>
 
+        <!-- Atalho para iniciar o fluxo de recuperação de senha. -->
         <div class="link-row">
           <a href="esqueci-senha.html" class="inline-link">Esqueci minha senha</a>
         </div>
       </section>
     </main>
 
+    <!-- Informações institucionais exibidas ao fim da página. -->
     <footer class="footer" aria-label="Rodapé do sistema">
       <div class="footer__content">
         <span>© 2026 GearRent</span>

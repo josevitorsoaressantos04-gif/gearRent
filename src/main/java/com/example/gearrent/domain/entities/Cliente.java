@@ -12,14 +12,17 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(uniqueConstraints = @UniqueConstraint(
-        name = "uk_cliente_locadora_documento",
-        columnNames = {"locadora_id", "documento"}))
+@Table(name = "cliente",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_cliente_locadora_codigo",
+                columnNames = {"locadora_id", "codigo_sequencial"}))
 public class Cliente {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "codigo_sequencial", nullable = false, updatable = false)
+    private Long codigoSequencial;
     @Column(nullable = false)
     private String nome;
 

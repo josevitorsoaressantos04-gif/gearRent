@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GearRent | Locações</title>
+    <meta name="description" content="Gestão de contratos e locações da base GearRent." />
+    <link rel="stylesheet" href="css/layout.css" />
+  </head>
+  <body class="dashboard-body rentals-dashboard">
+    <div class="app-shell">
+      <!-- Navegação principal e perfil da base ativa. -->
+      <aside class="sidebar" aria-label="Menu lateral da base">
+        <div class="sidebar__profile">
+          <div class="avatar avatar--large" id="avatarSidebar" aria-hidden="true">GR</div>
+          <div class="sidebar__profile-text">
+            <strong id="userNameSidebar">Usuário autenticado</strong>
+            <span id="baseNameSidebar">Base GearRent</span>
+          </div>
+        </div>
+        <nav class="sidebar__nav" aria-label="Menu principal">
+          <a class="nav-item" href="visao-geral.html"><span class="nav-item__icon" aria-hidden="true">📊</span><span>Visão Geral</span></a>
+          <a class="nav-item" href="clientes.html"><span class="nav-item__icon" aria-hidden="true">👥</span><span>Clientes</span></a>
+          <a class="nav-item" href="equipamentos.html"><span class="nav-item__icon" aria-hidden="true">🚜</span><span>Equipamentos</span></a>
+          <a class="nav-item nav-item--active" href="locacoes.html" aria-current="page"><span class="nav-item__icon" aria-hidden="true">📄</span><span>Locações</span></a>
+          <a class="nav-item" href="configuracoes.html"><span class="nav-item__icon" aria-hidden="true">⚙️</span><span>Configurações</span></a>
+          <a class="nav-item" href="configuracoes.html#perfil"><span class="nav-item__icon" aria-hidden="true">👤</span><span>Meu perfil</span></a>
+          <button class="nav-item nav-item--logout" id="btnLogout" type="button"><span class="nav-item__icon" aria-hidden="true">🚪</span><span>Sair</span></button>
+        </nav>
+      </aside>
+
+      <div class="main-panel">
+        <!-- Título da área de locações e identificação do usuário atual. -->
+        <header class="topbar" aria-label="Barra superior do painel">
+          <div class="topbar__heading">
+            <span>Painel da base</span>
+            <h1>Locações</h1>
+          </div>
+        </header>
+
+        <!-- Controles de consulta, indicadores, listagem e ações de locação. -->
+        <main class="dashboard-content rentals-page">
+          <section class="toolbar rentals-toolbar" aria-label="Busca, filtros e ações de locação">
+            <label class="sr-only" for="rentalSearch">Buscar locações por cliente, código ou equipamento</label>
+            <input id="rentalSearch" class="toolbar__input" type="search" placeholder="Buscar cliente, ID da locação ou equipamento" autocomplete="off" />
+            <label class="sr-only" for="rentalStatusFilter">Filtrar por status</label>
+            <select id="rentalStatusFilter" class="rental-control">
+              <option value="">Todos os status</option>
+              <option value="EM_ANDAMENTO">Em andamento</option>
+              <option value="CONCLUIDA">Concluída</option>
+              <option value="ATRASADA">Atrasada</option>
+              <option value="CANCELADA">Cancelada</option>
+            </select>
+            <label class="sr-only" for="rentalStartFilter">Data inicial</label>
+            <input id="rentalStartFilter" class="rental-control" type="date" />
+            <label class="sr-only" for="rentalEndFilter">Data final</label>
+            <input id="rentalEndFilter" class="rental-control" type="date" />
+            <button id="applyRentalFilters" class="btn btn--secondary" type="button">Aplicar</button>
+            <button id="clearRentalFilters" class="btn btn--secondary" type="button">Limpar</button>
+            <button id="openNewRental" class="btn btn--primary" type="button">＋ Nova Locação</button>
+          </section>
+
+          <div id="rentalMessage" class="dashboard-message" role="status" aria-live="polite" hidden></div>
+          <div id="rentalError" class="dashboard-message dashboard-message--error" role="alert" hidden></div>
+
+          <!-- Preferências para exibir ou ocultar indicadores financeiros. -->
+          <details class="kpi-visibility-settings">
+            <summary>Personalizar cards</summary>
+            <div class="kpi-visibility-options">
+              <label><input type="checkbox" data-kpi-visibility="revenue" checked /> Receita do período</label>
+              <label><input type="checkbox" data-kpi-visibility="completed" checked /> Locações concluídas</label>
+              <label><input type="checkbox" data-kpi-visibility="fines" checked /> Multas no período</label>
+              <label><input type="checkbox" data-kpi-visibility="discounts" checked /> Descontos no período</label>
+              <label><input type="checkbox" data-kpi-visibility="open" checked /> Total em aberto</label>
+              <label><input type="checkbox" data-kpi-visibility="active" checked /> Em andamento</label>
+              <label><input type="checkbox" data-kpi-visibility="overdue" checked /> Atrasadas</label>
+              <label><input type="checkbox" data-kpi-visibility="overdue-fines" checked /> Multas por atraso em aberto</label>
+            </div>
+          </details>
+
+          <!-- Resumo financeiro e quantidades de locações abertas. -->
+          <section class="kpis rental-kpis" aria-label="Resumo financeiro e operacional das locações">
+            <article class="kpi-card" data-kpi-card="revenue">
+              <span class="kpi-card__label">Receita do período</span>
+              <strong class="kpi-card__value" id="rentalRevenue">—</strong>
+              <span class="rental-kpi-note" id="rentalRevenuePeriod">Carregando período…</span>
+            </article>
+            <article class="kpi-card" data-kpi-card="completed">
+              <span class="kpi-card__label">Locações concluídas</span>
+              <strong class="kpi-card__value" id="rentalCompletedCount">—</strong>
+              <span class="rental-kpi-note">No período selecionado.</span>
+            </article>
+            <article class="kpi-card" data-kpi-card="fines">
+              <span class="kpi-card__label">Multas no período</span>
+              <strong class="kpi-card__value" id="rentalFines">—</strong>
+            </article>
+            <article class="kpi-card" data-kpi-card="discounts">
+              <span class="kpi-card__label">Descontos no período</span>
+              <strong class="kpi-card__value" id="rentalDiscounts">—</strong>
+            </article>
+            <article class="kpi-card" data-kpi-card="open">
+              <span class="kpi-card__label">Total em aberto</span>
+              <strong class="kpi-card__value" id="rentalOpenAmount">—</strong>
+              <span class="rental-kpi-note">Posição atual, independente do período.</span>
+            </article>
+            <article class="kpi-card" data-kpi-card="active">
+              <span class="kpi-card__label">Em andamento</span>
+              <strong class="kpi-card__value" id="rentalActiveCount">—</strong>
+              <span class="rental-kpi-note">locação(ões) · <span id="rentalActiveAmount">—</span> em valores</span>
+            </article>
+            <article class="kpi-card" data-kpi-card="overdue">
+              <span class="kpi-card__label">Atrasadas</span>
+              <strong class="kpi-card__value" id="rentalOverdueAmount">—</strong>
+              <span class="rental-kpi-note"><span id="rentalOverdueCount">—</span> locação(ões)</span>
+            </article>
+            <article class="kpi-card" data-kpi-card="overdue-fines">
+              <span class="kpi-card__label">Multas por atraso em aberto</span>
+              <strong class="kpi-card__value" id="rentalOverdueFines">—</strong>
+            </article>
+          </section>
+          <p class="kpi-hint">A receita, multas e descontos seguem o período selecionado. Os valores em aberto representam a posição atual da base.</p>
+
+          <!-- Lista paginada com as locações que correspondem aos filtros. -->
+          <section class="table-panel rental-table-panel" aria-labelledby="rentalsTableTitle">
+            <div class="table-panel__header">
+              <h2 id="rentalsTableTitle">Contratos de locação</h2>
+              <span id="rentalResultCount" class="table-panel__count" aria-live="polite"></span>
+            </div>
+            <div class="table-wrapper">
+              <table class="rentals-table">
+                <thead>
+                  <tr>
+                    <th scope="col">ID da locação</th>
+                    <th scope="col">Cliente</th>
+                    <th scope="col">Equipamentos</th>
+                    <th scope="col">Retirada</th>
+                    <th scope="col">Devolução prevista</th>
+                    <th scope="col">Total cobrado</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="rentalsTableBody">
+                  <tr><td class="table-state" colspan="8">Carregando locações…</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pagination" aria-label="Paginação das locações">
+              <button id="previousRentalPage" class="btn btn--secondary" type="button" disabled>Anterior</button>
+              <span id="rentalPageLabel" aria-live="polite">Página —</span>
+              <button id="nextRentalPage" class="btn btn--secondary" type="button" disabled>Próxima</button>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Consulta detalhada dos dados e equipamentos de uma locação. -->
+    <dialog id="rentalDetailsDialog" class="dashboard-dialog rental-dialog" aria-labelledby="rentalDialogTitle">
+      <div class="dashboard-dialog__header">
+        <h2 id="rentalDialogTitle">Detalhes da locação</h2>
+        <button class="icon-button" type="button" data-close-dialog aria-label="Fechar">×</button>
+      </div>
+      <div id="rentalDialogContent"></div>
+      <div class="modal__actions">
+        <button class="btn btn--secondary" type="button" data-close-dialog>Fechar</button>
+      </div>
+    </dialog>
+
+    <!-- Confirmação para concluir ou cancelar uma locação. -->
+    <dialog id="rentalActionDialog" class="dashboard-dialog rental-dialog" aria-labelledby="rentalActionTitle">
+      <div class="dashboard-dialog__header">
+        <h2 id="rentalActionTitle">Ação da locação</h2>
+        <button class="icon-button" type="button" data-close-action-dialog aria-label="Fechar">×</button>
+      </div>
+      <div id="rentalActionContent"></div>
+      <div id="returnDateGroup" class="field-group" hidden>
+        <label for="actualReturnDate">Data real da devolução</label>
+        <input id="actualReturnDate" class="rental-control" type="date" />
+      </div>
+      <div class="modal__actions">
+        <button class="btn btn--secondary" type="button" data-close-action-dialog>Fechar</button>
+        <button id="confirmRentalAction" class="btn btn--primary" type="button">Confirmar ação</button>
+      </div>
+    </dialog>
+
+    <!-- Fluxo de criação de locação com estimativa informativa de valores. -->
+    <dialog id="newRentalDialog" class="dashboard-dialog rental-dialog" aria-labelledby="newRentalTitle">
+      <div class="dashboard-dialog__header">
+        <h2 id="newRentalTitle">Nova locação</h2>
+        <button class="icon-button" type="button" data-close-new-dialog aria-label="Fechar">×</button>
+      </div>
+      <div class="form-notice" role="status">
+        O servidor valida a disponibilidade e calcula os valores oficiais da locação. A estimativa abaixo é apenas informativa.
+      </div>
+      <div id="newRentalError" class="dashboard-message dashboard-message--error" role="alert" hidden></div>
+      <form id="newRentalForm">
+        <div class="form-grid rental-form-grid">
+          <div class="field-group field-group--full">
+            <label for="newRentalClient">Cliente</label>
+            <select id="newRentalClient" class="rental-control" required>
+              <option value="">Carregando clientes…</option>
+            </select>
+          </div>
+          <fieldset class="equipment-picker field-group--full">
+            <legend>Equipamentos disponíveis</legend>
+            <div id="availableEquipmentList" class="equipment-picker__list">Carregando equipamentos…</div>
+          </fieldset>
+          <div class="field-group">
+            <label for="newRentalStart">Data de retirada</label>
+            <input id="newRentalStart" class="rental-control" type="date" required />
+          </div>
+          <div class="field-group">
+            <label for="newRentalDue">Devolução prevista</label>
+            <input id="newRentalDue" class="rental-control" type="date" required />
+          </div>
+          <div class="field-group field-group--full">
+            <label for="newRentalPaymentType">Forma de pagamento</label>
+            <select id="newRentalPaymentType" class="rental-control">
+              <option value="">Não informada</option>
+              <option value="DINHEIRO">Dinheiro</option>
+              <option value="PIX">PIX</option>
+              <option value="CARTAO_CREDITO">Cartão de crédito</option>
+              <option value="CARTAO_DEBITO">Cartão de débito</option>
+              <option value="FATURADO">Faturado</option>
+            </select>
+          </div>
+        </div>
+        <div class="rental-estimate" aria-live="polite">
+          <span id="estimatedRentalDays">Diárias estimadas: —</span>
+          <strong id="estimatedRentalTotal">Total estimado: —</strong>
+        </div>
+        <p class="filter-help">O valor final é calculado pelo servidor conforme as regras de cobrança da locadora.</p>
+        <div class="modal__actions">
+          <button class="btn btn--secondary" type="button" data-close-new-dialog>Cancelar</button>
+          <button id="submitNewRental" class="btn btn--primary" type="submit">Criar locação</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/locacoes.js"></script>
+  </body>
+</html>

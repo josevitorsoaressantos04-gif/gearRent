@@ -24,10 +24,24 @@ public class Locadora {
     @Column(unique = true)
     private String cnpj;
 
+    @Column(length = 20)
+    private String telefone;
+
+    @Embedded
+    private Endereco endereco;
+
     private LocalDateTime dataCadastro;
     private LocalDateTime dataAtualizacao;
 
-
     @Enumerated(EnumType.STRING)
     private StatusCadastro status;
+
+    @Column(name = "ultimo_codigo_cliente", nullable = false, updatable = false)
+    private Long ultimoCodigoCliente = 0L;
+
+    @Column(name = "ultimo_codigo_equipamento", nullable = false, updatable = false)
+    private Long ultimoCodigoEquipamento = 0L;
+
+    @Column(name = "ultimo_codigo_locacao", nullable = false, updatable = false)
+    private Long ultimoCodigoLocacao = 0L;
 }

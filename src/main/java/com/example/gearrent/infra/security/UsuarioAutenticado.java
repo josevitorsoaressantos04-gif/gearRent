@@ -1,4 +1,6 @@
 package com.example.gearrent.infra.security;
 
-public record UsuarioAutenticado(Long id, Long locadoraId) {
+import com.example.gearrent.domain.enums.PapelUsuario;
+
+public record UsuarioAutenticado(Long id, Long locadoraId, PapelUsuario role) {
 }

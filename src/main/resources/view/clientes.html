@@ -4,20 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GearRent | Clientes</title>
-    <meta
-      name="description"
-      content="Gerenciamento de clientes da base GearRent."
-    />
+    <meta name="description" content="Gerenciamento de clientes da base GearRent." />
     <link rel="stylesheet" href="css/layout.css" />
   </head>
-  <body class="dashboard-body">
+  <body class="dashboard-body clients-dashboard">
     <div class="app-shell">
+      <!-- Menu de navegação e identificação da base autenticada. -->
       <aside class="sidebar" aria-label="Menu lateral da base">
         <div class="sidebar__profile">
-          <div class="avatar avatar--large" aria-label="Avatar do usuário">JS</div>
+          <div class="avatar avatar--large" id="avatarSidebar" aria-hidden="true">GR</div>
           <div class="sidebar__profile-text">
-            <strong>Júlia Silva</strong>
-            <span>Base de Júlia</span>
+            <strong id="userNameSidebar">Usuário autenticado</strong>
+            <span id="baseNameSidebar">Base GearRent</span>
           </div>
         </div>
 
@@ -26,7 +24,7 @@
             <span class="nav-item__icon" aria-hidden="true">📊</span>
             <span>Visão Geral</span>
           </a>
-          <a class="nav-item nav-item--active" href="clientes.html">
+          <a class="nav-item nav-item--active" href="clientes.html" aria-current="page">
             <span class="nav-item__icon" aria-hidden="true">👥</span>
             <span>Clientes</span>
           </a>
@@ -40,7 +38,14 @@
           </a>
           <a class="nav-item" href="configuracoes.html">
             <span class="nav-item__icon" aria-hidden="true">⚙️</span>
-            <span>Configurações</span>
+            <span class="nav-item__label">
+              <span>Configurações</span>
+              <small>Operadores, base e credenciais</small>
+            </span>
+          </a>
+          <a class="nav-item" href="configuracoes.html#perfil">
+            <span class="nav-item__icon" aria-hidden="true">👤</span>
+            <span>Meu perfil</span>
           </a>
           <button class="nav-item nav-item--logout" id="btnLogout" type="button">
             <span class="nav-item__icon" aria-hidden="true">🚪</span>
@@ -50,69 +55,58 @@
       </aside>
 
       <div class="main-panel">
+        <!-- Identificação da página e do usuário atual. -->
         <header class="topbar" aria-label="Barra superior do painel">
-          <div class="topbar__search">
-            <label class="sr-only" for="globalSearch">Busca rápida</label>
-            <input
-              id="globalSearch"
-              type="search"
-              placeholder="Buscar por nome, CPF/CNPJ ou código"
-              aria-label="Buscar por nome, CPF/CNPJ ou código"
-            />
-          </div>
-
-          <div class="topbar__user" aria-label="Perfil do usuário autenticado">
-            <div class="avatar avatar--small" aria-hidden="true">JS</div>
-            <span>Júlia Silva</span>
+          <div class="topbar__heading">
+            <span>Painel da base</span>
+            <h1>Gerenciamento de clientes</h1>
           </div>
         </header>
 
+        <!-- Busca, filtros, listagem e informações detalhadas dos clientes. -->
         <main class="dashboard-content clientes-page">
-          <section class="toolbar toolbar--clients" aria-label="Ações e filtros de clientes">
+          <section class="toolbar toolbar--clients" aria-label="Busca, filtros e ações de clientes">
             <div class="toolbar__group toolbar__group--wide">
-              <label class="sr-only" for="clienteSearch">Busca de clientes</label>
+              <label class="sr-only" for="clienteSearch">Buscar por nome, CPF, CNPJ ou código sequencial</label>
               <input
                 id="clienteSearch"
                 class="toolbar__input"
                 type="search"
-                placeholder="Buscar cliente por nome, CPF/CNPJ ou código"
+                placeholder="Buscar por nome, CPF/CNPJ ou código sequencial"
+                autocomplete="off"
               />
             </div>
-
             <div class="toolbar__filters">
-              <label>
-                <span class="sr-only">Tipo de pessoa</span>
-                <select id="tipoPessoaFilter">
-                  <option value="TODOS">Todos</option>
-                  <option value="PF">Pessoa Física</option>
-                  <option value="PJ">Pessoa Jurídica</option>
-                </select>
-              </label>
-
-              <label>
-                <span class="sr-only">Status do cadastro</span>
-                <select id="statusFilter">
-                  <option value="TODOS">Status: Todos</option>
-                  <option value="ATIVO">Ativo</option>
-                  <option value="INATIVO">Inativo</option>
-                </select>
-              </label>
+              <label for="tipoPessoaFilter" class="sr-only">Filtrar por tipo de pessoa</label>
+              <select id="tipoPessoaFilter" aria-label="Filtrar por tipo de pessoa">
+                <option value="TODOS">Todos os tipos</option>
+                <option value="PF">Pessoa Física</option>
+                <option value="PJ">Pessoa Jurídica</option>
+              </select>
+              <label for="statusFilter" class="sr-only">Filtrar por status</label>
+              <select id="statusFilter" aria-label="Filtrar por status do cadastro">
+                <option value="TODOS">Todos os status</option>
+                <option value="ATIVO">Ativo</option>
+                <option value="INATIVO">Inativo</option>
+              </select>
             </div>
-
             <button id="btnNovoCliente" type="button" class="btn btn--primary">
-              Novo Cliente
+              <span aria-hidden="true">＋</span> Novo Cliente
             </button>
           </section>
 
-          <section class="clients-layout">
-            <div class="clients-list-panel">
-              <div class="panel-header">
-                <h2>Clientes cadastrados</h2>
-                <span id="contadorClientes" class="panel-header__counter">0 registros</span>
-              </div>
+          <div id="mensagemClientes" class="clients-message" role="status" aria-live="polite" hidden></div>
+          <div id="erroClientes" class="clients-message clients-message--error" role="alert" hidden></div>
 
+          <!-- Divide a área entre a tabela de clientes e o painel de detalhes. -->
+          <section class="clients-layout" aria-label="Lista e detalhes do cliente">
+            <section class="clients-list-panel" aria-labelledby="clientesListTitle">
+              <div class="panel-header">
+                <h2 id="clientesListTitle">Clientes cadastrados</h2>
+                <span id="contadorClientes" class="panel-header__counter" aria-live="polite">Carregando…</span>
+              </div>
               <div class="table-wrapper">
-                <table aria-label="Lista de clientes">
+                <table class="clients-table" aria-label="Lista de clientes da base">
                   <thead>
                     <tr>
                       <th scope="col">Código</th>
@@ -123,76 +117,72 @@
                       <th scope="col">Ações</th>
                     </tr>
                   </thead>
-                  <tbody id="clientesTableBody"></tbody>
+                  <tbody id="clientesTableBody">
+                    <tr><td class="table-state" colspan="6">Carregando clientes…</td></tr>
+                  </tbody>
                 </table>
               </div>
-            </div>
+              <p class="clients-api-note">
+                Os clientes e seus dados cadastrais são carregados da base autenticada.
+              </p>
+            </section>
 
-            <aside class="client-detail-panel" aria-live="polite">
+            <aside class="client-detail-panel" aria-labelledby="detailPanelTitle" aria-live="polite">
               <div class="panel-header">
-                <h2>Detalhes do cliente</h2>
+                <h2 id="detailPanelTitle">Detalhes do cliente</h2>
               </div>
-
               <div class="detail-card">
                 <div class="detail-card__header">
-                  <div class="avatar avatar--large" id="detailAvatar">JS</div>
+                  <div class="avatar avatar--large" id="detailAvatar" aria-hidden="true">?</div>
                   <div>
                     <h3 id="detailNome">Selecione um cliente</h3>
-                    <span id="detailCodigo" class="detail-card__meta">Código: -</span>
+                    <span id="detailCodigo" class="detail-card__meta">Código sequencial indisponível</span>
                   </div>
                 </div>
 
                 <dl class="detail-list">
-                  <div>
-                    <dt>Tipo</dt>
-                    <dd id="detailTipo">-</dd>
-                  </div>
-                  <div>
-                    <dt>Documento</dt>
-                    <dd id="detailDocumento">-</dd>
-                  </div>
-                  <div>
-                    <dt>E-mail</dt>
-                    <dd id="detailEmail">-</dd>
-                  </div>
-                  <div>
-                    <dt>Endereço</dt>
-                    <dd id="detailEndereco">-</dd>
-                  </div>
-                  <div>
-                    <dt>Status</dt>
-                    <dd id="detailStatus">-</dd>
-                  </div>
+                  <div><dt>Tipo de pessoa</dt><dd id="detailTipo">—</dd></div>
+                  <div><dt>Documento</dt><dd id="detailDocumento">—</dd></div>
+                  <div><dt>Telefone / WhatsApp</dt><dd id="detailTelefone">—</dd></div>
+                  <div><dt>E-mail</dt><dd id="detailEmail">—</dd></div>
+                  <div><dt>Endereço</dt><dd id="detailEndereco">—</dd></div>
+                  <div><dt>Status</dt><dd id="detailStatus">—</dd></div>
                 </dl>
 
-                <div class="metrics-panel">
-                  <h3>Resumo de consumo</h3>
+                <!-- Indicadores associados ao histórico de consumo do cliente. -->
+                <section class="metrics-panel" aria-labelledby="metricsTitle">
+                  <h3 id="metricsTitle">Resumo de consumo</h3>
+                  <p class="detail-api-note">Indicadores de locação não são fornecidos pela API atual.</p>
                   <div class="metrics-grid">
                     <div class="metric-box">
                       <span>Total de locações</span>
-                      <strong id="metricTotalLocacoes">0</strong>
+                      <strong id="metricTotalLocacoes">—</strong>
                     </div>
                     <div class="metric-box">
                       <span>Em andamento</span>
-                      <strong id="metricLocacoesAndamento">0</strong>
+                      <strong id="metricLocacoesAndamento">—</strong>
                     </div>
                     <div class="metric-box">
                       <span>Equipamentos em posse</span>
-                      <strong id="metricEquipamentosPosse">0</strong>
+                      <strong id="metricEquipamentosPosse">—</strong>
                     </div>
                     <div class="metric-box metric-box--accent">
                       <span>Valor em aberto</span>
-                      <strong id="metricValorAberto">R$ 0,00</strong>
+                      <strong id="metricValorAberto">—</strong>
                     </div>
                   </div>
-                </div>
+                </section>
 
-                <div class="history-panel">
-                  <h3>Histórico recente</h3>
-                  <ul id="historicoLocacoes" class="history-list"></ul>
-                </div>
+                <!-- Histórico de locações do cliente selecionado. -->
+                <section class="history-panel" aria-labelledby="historyTitle">
+                  <h3 id="historyTitle">Histórico recente</h3>
+                  <p class="detail-api-note">A API ainda não disponibiliza o histórico de locações por cliente.</p>
+                  <ul id="historicoLocacoes" class="history-list">
+                    <li class="history-empty">Selecione um cliente para ver os dados disponíveis.</li>
+                  </ul>
+                </section>
 
-                <button type="button" class="btn btn--primary btn--full" id="btnNovaLocacao">
+                <button type="button" class="btn btn--primary btn--full" id="btnNovaLocacao" disabled>
                   Nova Locação para este Cliente
                 </button>
               </div>
@@ -202,59 +192,100 @@
       </div>
     </div>
 
-    <div id="clienteModal" class="modal" aria-hidden="true">
-      <div class="modal__backdrop" data-close-modal="true"></div>
-      <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <!-- Diálogo usado para criar ou atualizar o cadastro de um cliente. -->
+    <dialog id="clienteModal" class="modal modal--clients" aria-labelledby="modalTitle">
+      <div class="modal__dialog">
         <div class="modal__header">
-          <h2 id="modalTitle">Novo Cliente</h2>
-          <button type="button" class="modal__close" aria-label="Fechar modal" data-close-modal="true">×</button>
+          <div>
+            <p class="eyebrow">Cadastro da base</p>
+            <h2 id="modalTitle">Novo Cliente</h2>
+          </div>
+          <button type="button" class="modal__close" aria-label="Fechar formulário" data-close-modal>×</button>
         </div>
-
+        <div id="avisoDocumentoEdicao" class="form-notice" hidden>
+          A API atual não permite alterar tipo de pessoa ou documento após o cadastro.
+        </div>
+        <div id="erroFormulario" class="clients-message clients-message--error" role="alert" hidden></div>
         <form id="clienteForm" novalidate>
           <div class="form-grid">
-            <div class="field-group field-group--full">
-              <label for="tipoPessoa">Tipo de Pessoa</label>
+            <div class="field-group">
+              <label for="tipoPessoa">Tipo de pessoa</label>
               <select id="tipoPessoa" name="tipoPessoa">
                 <option value="PF">Pessoa Física</option>
                 <option value="PJ">Pessoa Jurídica</option>
               </select>
             </div>
-
-            <div class="field-group field-group--full">
-              <label id="labelNome" for="nomeCliente">Nome Completo</label>
-              <input id="nomeCliente" name="nome" type="text" placeholder="Digite o nome do cliente" required />
-            </div>
-
-            <div class="field-group field-group--full">
-              <label id="labelDocumento" for="documentoCliente">CPF</label>
-              <input id="documentoCliente" name="documento" type="text" placeholder="000.000.000-00" required />
-            </div>
-
             <div class="field-group">
-              <label for="telefoneCliente">Telefone/WhatsApp</label>
-              <input id="telefoneCliente" name="telefone" type="tel" placeholder="(11) 91234-5678" required />
+              <label id="labelDocumento" for="documentoCliente">CPF</label>
+              <input id="documentoCliente" name="documento" type="text" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" required />
             </div>
-
+            <div class="field-group field-group--full">
+              <label id="labelNome" for="nomeCliente">Nome completo</label>
+              <input id="nomeCliente" name="nome" type="text" maxlength="150" autocomplete="name" required />
+            </div>
+            <div class="field-group">
+              <label for="telefoneCliente">Telefone / WhatsApp</label>
+              <input id="telefoneCliente" name="celular" type="tel" inputmode="tel" autocomplete="tel" placeholder="(11) 91234-5678" />
+            </div>
             <div class="field-group">
               <label for="emailCliente">E-mail</label>
-              <input id="emailCliente" name="email" type="email" placeholder="cliente@email.com" required />
+              <input id="emailCliente" name="email" type="email" autocomplete="email" placeholder="cliente@email.com" />
             </div>
-
             <div class="field-group field-group--full">
-              <label for="enderecoCliente">Endereço</label>
-              <input id="enderecoCliente" name="endereco" type="text" placeholder="Rua, número, bairro, cidade" required />
+              <label for="logradouroCliente">Rua / Avenida</label>
+              <input id="logradouroCliente" name="logradouro" autocomplete="address-line1" required />
+            </div>
+            <div class="field-group">
+              <label for="numeroCliente">Número</label>
+              <input id="numeroCliente" name="numero" autocomplete="address-line2" required />
+            </div>
+            <div class="field-group">
+              <label for="complementoCliente">Complemento (opcional)</label>
+              <input id="complementoCliente" name="complemento" />
+            </div>
+            <div class="field-group">
+              <label for="bairroCliente">Bairro</label>
+              <input id="bairroCliente" name="bairro" required />
+            </div>
+            <div class="field-group">
+              <label for="cidadeCliente">Cidade</label>
+              <input id="cidadeCliente" name="cidade" autocomplete="address-level2" required />
+            </div>
+            <div class="field-group">
+              <label for="estadoCliente">UF</label>
+              <input id="estadoCliente" name="estado" maxlength="2" autocomplete="address-level1" placeholder="SP" required />
+            </div>
+            <div class="field-group">
+              <label for="cepCliente">CEP</label>
+              <input id="cepCliente" name="cep" inputmode="numeric" autocomplete="postal-code" placeholder="00000-000" required />
             </div>
           </div>
-
           <div class="modal__actions">
-            <button type="button" class="btn btn--secondary" data-close-modal="true">Cancelar</button>
-            <button type="submit" class="btn btn--primary">Salvar Cliente</button>
+            <button type="button" class="btn btn--secondary" data-close-modal>Cancelar</button>
+            <button id="salvarCliente" type="submit" class="btn btn--primary">Salvar cliente</button>
           </div>
         </form>
       </div>
-    </div>
+    </dialog>
+
+    <!-- Confirmação explícita antes de inativar um cliente. -->
+    <dialog id="confirmarInativacao" class="modal modal--clients modal--confirm" aria-labelledby="confirmTitle">
+      <div class="modal__dialog">
+        <div class="modal__header">
+          <h2 id="confirmTitle">Inativar cliente?</h2>
+          <button type="button" class="modal__close" aria-label="Fechar confirmação" data-close-confirm>×</button>
+        </div>
+        <p id="confirmMessage">Confirme a inativação deste cliente.</p>
+        <p class="form-notice">Clientes com locações em andamento ou atrasadas não podem ser inativados.</p>
+        <div class="modal__actions">
+          <button type="button" class="btn btn--secondary" data-close-confirm>Cancelar</button>
+          <button id="confirmarAcaoInativar" type="button" class="btn btn--danger">Inativar cliente</button>
+        </div>
+      </div>
+    </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/clientes.js"></script>
   </body>

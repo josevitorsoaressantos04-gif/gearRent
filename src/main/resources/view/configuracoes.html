@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GearRent | Configurações</title>
+    <meta name="description" content="Configurações da base, operadores e perfil do usuário GearRent." />
+    <link rel="stylesheet" href="css/layout.css" />
+  </head>
+  <body class="dashboard-body settings-dashboard">
+    <div class="app-shell">
+      <!-- Navegação entre as telas da base autenticada. -->
+      <aside class="sidebar" aria-label="Menu lateral da base">
+        <div class="sidebar__profile">
+          <div class="avatar avatar--large" id="avatarSidebar" aria-hidden="true">GR</div>
+          <div class="sidebar__profile-text">
+            <strong id="userNameSidebar">Usuário autenticado</strong>
+            <span id="baseNameSidebar">Base GearRent</span>
+          </div>
+        </div>
+        <nav class="sidebar__nav" aria-label="Menu principal">
+          <a class="nav-item" href="visao-geral.html"><span class="nav-item__icon" aria-hidden="true">📊</span><span>Visão Geral</span></a>
+          <a class="nav-item" href="clientes.html"><span class="nav-item__icon" aria-hidden="true">👥</span><span>Clientes</span></a>
+          <a class="nav-item" href="equipamentos.html"><span class="nav-item__icon" aria-hidden="true">🚜</span><span>Equipamentos</span></a>
+          <a class="nav-item" href="locacoes.html"><span class="nav-item__icon" aria-hidden="true">📄</span><span>Locações</span></a>
+          <a class="nav-item nav-item--active" href="configuracoes.html" aria-current="page"><span class="nav-item__icon" aria-hidden="true">⚙️</span><span>Configurações</span></a>
+          <a class="nav-item" href="configuracoes.html#perfil"><span class="nav-item__icon" aria-hidden="true">👤</span><span>Meu perfil</span></a>
+          <button class="nav-item nav-item--logout" id="btnLogout" type="button"><span class="nav-item__icon" aria-hidden="true">🚪</span><span>Sair</span></button>
+        </nav>
+      </aside>
+
+      <div class="main-panel">
+        <!-- Cabeçalho com a identificação da seção atual. -->
+        <header class="topbar" aria-label="Barra superior do painel">
+          <div class="topbar__heading">
+            <span>Painel da base</span>
+            <h1>Configurações</h1>
+          </div>
+        </header>
+
+        <!-- Abas para administrar operadores, dados da base e perfil pessoal. -->
+        <main class="dashboard-content settings-page">
+          <div id="settingsMessage" class="dashboard-message" role="status" aria-live="polite" hidden></div>
+          <div id="settingsError" class="dashboard-message dashboard-message--error" role="alert" hidden></div>
+          <nav class="settings-tabs" role="tablist" aria-label="Seções de configuração">
+            <button id="tabOperators" class="settings-tab" type="button" role="tab" aria-selected="true" aria-controls="panelOperators" data-tab="operators">Operadores e permissões</button>
+            <button id="tabBase" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="panelBase" data-tab="base" tabindex="-1">Dados e aparência da base</button>
+            <button id="tabProfile" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="panelProfile" data-tab="profile" tabindex="-1">Meu perfil e senha</button>
+          </nav>
+
+          <!-- Gerenciamento dos operadores e permissões de acesso. -->
+          <section id="panelOperators" class="settings-panel" role="tabpanel" aria-labelledby="tabOperators">
+            <div class="settings-panel__header">
+              <div>
+                <h2>Operadores da base</h2>
+                <p>Usuários consultados na base associada à sua sessão autenticada.</p>
+              </div>
+              <button id="openOperatorDialog" class="btn btn--primary" type="button">＋ Adicionar operador</button>
+            </div>
+            <div id="operatorNotice" class="form-notice" role="status" hidden></div>
+            <div class="table-panel settings-table-panel">
+              <div class="table-wrapper">
+                <table class="settings-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Nome</th>
+                      <th scope="col">E-mail</th>
+                      <th scope="col">Permissão</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Gestão de acesso</th>
+                    </tr>
+                  </thead>
+                  <tbody id="operatorsTableBody">
+                    <tr><td class="table-state" colspan="5">Carregando operadores…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- Dados cadastrais e preferência visual da base no navegador. -->
+          <section id="panelBase" class="settings-panel" role="tabpanel" aria-labelledby="tabBase" hidden>
+            <div class="settings-panel__header">
+              <div>
+                <h2>Dados e personalização da base</h2>
+                <p>Identidade visual e dados cadastrais do tenant.</p>
+              </div>
+            </div>
+            <div id="baseNotice" class="form-notice" role="status" hidden></div>
+            <form class="settings-card" id="baseForm">
+              <div class="form-grid">
+                <div class="field-group field-group--full">
+                  <label for="baseDisplayName">Nome da base</label>
+                  <input id="baseDisplayName" type="text" required />
+                </div>
+                <div class="field-group">
+                  <label for="basePhone">Telefone da empresa</label>
+                  <input id="basePhone" type="tel" maxlength="20" required />
+                </div>
+                <div class="field-group">
+                  <label for="baseDocument">CNPJ / CPF da locadora</label>
+                  <input id="baseDocument" type="text" readonly />
+                </div>
+                <div class="field-group">
+                  <label for="baseStreet">Logradouro</label>
+                  <input id="baseStreet" type="text" required />
+                </div>
+                <div class="field-group">
+                  <label for="baseAddressNumber">Número</label>
+                  <input id="baseAddressNumber" type="text" required />
+                </div>
+                <div class="field-group">
+                  <label for="baseComplement">Complemento</label>
+                  <input id="baseComplement" type="text" />
+                </div>
+                <div class="field-group">
+                  <label for="baseNeighborhood">Bairro</label>
+                  <input id="baseNeighborhood" type="text" required />
+                </div>
+                <div class="field-group">
+                  <label for="baseCity">Cidade</label>
+                  <input id="baseCity" type="text" required />
+                </div>
+                <div class="field-group">
+                  <label for="baseState">Estado (UF)</label>
+                  <input id="baseState" type="text" minlength="2" maxlength="2" required />
+                </div>
+                <div class="field-group">
+                  <label for="basePostalCode">CEP</label>
+                  <input id="basePostalCode" type="text" maxlength="9" required />
+                </div>
+                <div class="field-group field-group--full">
+                  <label for="baseTheme">Tema desta instalação</label>
+                  <select id="baseTheme" class="rental-control">
+                    <option value="light">Claro</option>
+                    <option value="dark">Alto contraste escuro</option>
+                  </select>
+                  <small>Preferência visual salva somente neste navegador; não é uma configuração compartilhada da base.</small>
+                </div>
+              </div>
+              <div class="modal__actions">
+                <button id="saveBaseButton" class="btn btn--primary" type="submit">Salvar dados da base</button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Atualização dos dados pessoais e das credenciais do usuário. -->
+          <section id="panelProfile" class="settings-panel" role="tabpanel" aria-labelledby="tabProfile" hidden>
+            <div class="settings-panel__header">
+              <div>
+                <h2>Meu perfil e credenciais</h2>
+                <p>Dados disponíveis do usuário autenticado na base.</p>
+              </div>
+            </div>
+            <div id="profileNotice" class="form-notice" role="status" hidden></div>
+            <section class="settings-card profile-avatar-card" aria-labelledby="profileAvatarTitle">
+              <div class="profile-avatar-card__preview">
+                <div class="avatar avatar--large" id="profileAvatar" aria-hidden="true">GR</div>
+                <div class="profile-avatar-card__description">
+                  <h3 id="profileAvatarTitle">Foto de perfil</h3>
+                  <p>Envie uma imagem JPG, PNG ou WEBP de até 2 MB.</p>
+                </div>
+              </div>
+              <div class="profile-avatar-controls">
+                <label class="profile-avatar-upload" for="profileAvatarFile">Escolher imagem</label>
+                <input
+                  id="profileAvatarFile"
+                  class="profile-avatar-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                />
+                <span id="profileAvatarFileName" class="profile-avatar-file-name">Nenhum arquivo selecionado</span>
+                <button id="removeProfileAvatar" class="profile-avatar-remove" type="button" hidden>
+                  Remover foto
+                </button>
+              </div>
+            </section>
+            <form class="settings-card" id="profileForm">
+              <h3 class="profile-section-title">Informações pessoais</h3>
+              <div class="form-grid">
+                <div class="field-group">
+                  <label for="profileFirstName">Nome</label>
+                  <input id="profileFirstName" type="text" required />
+                </div>
+                <div class="field-group">
+                  <label for="profileLastName">Sobrenome</label>
+                  <input id="profileLastName" type="text" required />
+                </div>
+                <div class="field-group">
+                  <label for="profileEmail">E-mail</label>
+                  <input id="profileEmail" type="email" required />
+                </div>
+                <div class="field-group">
+                  <label for="profileCpf">CPF</label>
+                  <input id="profileCpf" type="text" inputmode="numeric" maxlength="14" required />
+                </div>
+                <div class="field-group">
+                  <label for="profileBirthDate">Data de nascimento</label>
+                  <input id="profileBirthDate" type="date" readonly />
+                </div>
+              </div>
+              <div class="modal__actions">
+                <button id="saveProfileButton" class="btn btn--primary" type="submit">Salvar perfil</button>
+              </div>
+            </form>
+
+            <form class="settings-card password-card" id="passwordForm">
+              <h3>Alterar senha</h3>
+              <p>A senha atual será validada pelo servidor antes de salvar a nova senha.</p>
+              <div class="form-grid">
+                <div class="field-group field-group--full">
+                  <label for="currentPassword">Senha atual</label>
+                  <input id="currentPassword" type="password" autocomplete="current-password" required />
+                </div>
+                <div class="field-group">
+                  <label for="newPassword">Nova senha (mínimo 6 caracteres)</label>
+                  <input id="newPassword" type="password" minlength="6" autocomplete="new-password" required />
+                </div>
+                <div class="field-group">
+                  <label for="confirmPassword">Confirmar nova senha</label>
+                  <input id="confirmPassword" type="password" minlength="6" autocomplete="new-password" required />
+                </div>
+              </div>
+              <div class="modal__actions">
+                <button id="changePasswordButton" class="btn btn--primary" type="submit">Atualizar minha senha</button>
+              </div>
+            </form>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Formulário de inclusão de um operador na base. -->
+    <dialog id="operatorDialog" class="dashboard-dialog rental-dialog" aria-labelledby="operatorDialogTitle">
+      <div class="dashboard-dialog__header">
+        <h2 id="operatorDialogTitle">Adicionar operador</h2>
+        <button class="icon-button" type="button" data-close-operator-dialog aria-label="Fechar">×</button>
+      </div>
+      <div id="operatorFormNotice" class="form-notice" role="status" hidden></div>
+      <form id="operatorForm">
+        <div class="form-grid">
+          <div class="field-group">
+            <label for="operatorName">Nome</label>
+            <input id="operatorName" type="text" required />
+          </div>
+          <div class="field-group">
+            <label for="operatorLastName">Sobrenome</label>
+            <input id="operatorLastName" type="text" required />
+          </div>
+          <div class="field-group">
+            <label for="operatorEmail">E-mail</label>
+            <input id="operatorEmail" type="email" required />
+          </div>
+          <div class="field-group">
+            <label for="operatorRole">Permissão</label>
+            <select id="operatorRole" required>
+              <option value="OPERADOR">Operador</option>
+              <option value="ADMIN">Administrador</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="operatorPassword">Senha inicial</label>
+            <input id="operatorPassword" type="password" minlength="6" autocomplete="new-password" required />
+          </div>
+        </div>
+        <div class="modal__actions">
+          <button class="btn btn--secondary" type="button" data-close-operator-dialog>Fechar</button>
+          <button id="submitOperatorButton" class="btn btn--primary" type="submit">Adicionar operador</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/configuracoes.js"></script>
+  </body>
+</html>

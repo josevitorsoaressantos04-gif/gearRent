@@ -1,20 +1,24 @@
 package com.example.gearrent.infra.exception;
 
-import com.example.gearrent.domain.exceptions.*;
-import com.example.gearrent.domain.exceptions.CredenciaisInvalidasException;
+import com.example.gearrent.domain.exception.*;
+import com.example.gearrent.domain.exception.CredenciaisInvalidasException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestControllerAdvice
@@ -112,5 +116,32 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErroResposta> tratarTokenRecuperacao(TokenRecuperacaoInvalidoException ex) {
         return ResponseEntity.badRequest()
                 .body(ApiErroResposta.de(HttpStatus.BAD_REQUEST, ex.getMessage()));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiErroResposta> acessoNegado(AccessDeniedException ex) {
+        ApiErroResposta erro = new ApiErroResposta(
+                HttpStatus.FORBIDDEN.value(),
+                LocalDateTime.now(),
+                List.of("Você não tem permissão para fazer isso. Peça ao administrador da sua base."));
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(erro);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiErroResposta> arquivoGrande(MaxUploadSizeExceededException ex) {
+        ApiErroResposta erro = new ApiErroResposta(
+                HttpStatus.PAYLOAD_TOO_LARGE.value(),
+                LocalDateTime.now(),
+                List.of("A foto é muito grande. Envie uma imagem de até 2 MB."));
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(erro);
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ApiErroResposta> arquivoAusente(MissingServletRequestPartException ex) {
+        ApiErroResposta erro = new ApiErroResposta(
+                HttpStatus.BAD_REQUEST.value(),
+                LocalDateTime.now(),
+                List.of("Escolha uma foto para enviar."));
+        return ResponseEntity.badRequest().body(erro);
     }
 }

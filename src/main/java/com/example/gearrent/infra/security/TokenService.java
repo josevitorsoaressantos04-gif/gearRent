@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.gearrent.domain.entities.Usuario;
+import com.example.gearrent.domain.enums.PapelUsuario;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -26,10 +27,14 @@ public class TokenService {
 
     public String gerarToken(Usuario usuario) {
         Instant agora = Instant.now();
+        // Usuário antigo sem papel gravado entra como OPERADOR (menor privilégio)
+        PapelUsuario papel = usuario.getRole() == null ? PapelUsuario.OPERADOR : usuario.getRole();
+
         return JWT.create()
                 .withIssuer(emissor)
                 .withSubject(usuario.getId().toString())
                 .withClaim("locadoraId", usuario.getLocadora().getId())
+                .withClaim("role", papel.name())
                 .withIssuedAt(agora)
                 .withExpiresAt(agora.plus(expiracaoMinutos, ChronoUnit.MINUTES))
                 .sign(Algorithm.HMAC256(secret));
@@ -46,9 +51,17 @@ public class TokenService {
             if (locadoraId == null) {
                 return Optional.empty();
             }
-            return Optional.of(new UsuarioAutenticado(Long.valueOf(jwt.getSubject()), locadoraId));
 
-        } catch (JWTVerificationException | NumberFormatException e) {
+            // Token emitido antes dos papéis existirem não tem "role": vira OPERADOR
+            String papelDoToken = jwt.getClaim("role").asString();
+            PapelUsuario papel = papelDoToken == null
+                    ? PapelUsuario.OPERADOR
+                    : PapelUsuario.valueOf(papelDoToken);
+
+            return Optional.of(new UsuarioAutenticado(Long.valueOf(jwt.getSubject()), locadoraId, papel));
+
+        } catch (JWTVerificationException | IllegalArgumentException e) {
+            // IllegalArgumentException cobre id inválido (NumberFormatException) e papel desconhecido
             return Optional.empty();
         }
     }

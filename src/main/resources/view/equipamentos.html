@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GearRent | Equipamentos</title>
+    <meta name="description" content="Gestão do catálogo e disponibilidade de equipamentos da base GearRent." />
+    <link rel="stylesheet" href="css/layout.css" />
+  </head>
+  <body class="dashboard-body equipment-dashboard">
+    <div class="app-shell">
+      <!-- Navegação do painel e informações do usuário da base. -->
+      <aside class="sidebar" aria-label="Menu lateral da base">
+        <div class="sidebar__profile">
+          <div class="avatar avatar--large" id="avatarSidebar" aria-hidden="true">GR</div>
+          <div class="sidebar__profile-text">
+            <strong id="userNameSidebar">Usuário autenticado</strong>
+            <span id="baseNameSidebar">Base GearRent</span>
+          </div>
+        </div>
+        <nav class="sidebar__nav" aria-label="Menu principal">
+          <a class="nav-item" href="visao-geral.html"><span class="nav-item__icon" aria-hidden="true">📊</span><span>Visão Geral</span></a>
+          <a class="nav-item" href="clientes.html"><span class="nav-item__icon" aria-hidden="true">👥</span><span>Clientes</span></a>
+          <a class="nav-item nav-item--active" href="equipamentos.html" aria-current="page"><span class="nav-item__icon" aria-hidden="true">🚜</span><span>Equipamentos</span></a>
+          <a class="nav-item" href="locacoes.html"><span class="nav-item__icon" aria-hidden="true">📄</span><span>Locações</span></a>
+          <a class="nav-item" href="configuracoes.html"><span class="nav-item__icon" aria-hidden="true">⚙️</span><span>Configurações</span></a>
+          <a class="nav-item" href="configuracoes.html#perfil"><span class="nav-item__icon" aria-hidden="true">👤</span><span>Meu perfil</span></a>
+          <button class="nav-item nav-item--logout" id="btnLogout" type="button"><span class="nav-item__icon" aria-hidden="true">🚪</span><span>Sair</span></button>
+        </nav>
+      </aside>
+
+      <div class="main-panel">
+        <!-- Título da página e identidade do usuário autenticado. -->
+        <header class="topbar" aria-label="Barra superior do painel">
+          <div class="topbar__heading">
+            <span>Painel da base</span>
+            <h1>Equipamentos</h1>
+          </div>
+        </header>
+
+        <!-- Busca, filtros, indicadores, catálogo e detalhes dos equipamentos. -->
+        <main class="dashboard-content equipment-page">
+          <section class="toolbar equipment-toolbar" aria-label="Busca, filtros e ações de equipamentos">
+            <div class="toolbar__group equipment-search">
+              <label class="sr-only" for="equipmentSearch">Buscar equipamento por nome, código ou categoria</label>
+              <input id="equipmentSearch" class="toolbar__input" type="search" placeholder="Buscar por nome, código ou categoria" autocomplete="off" />
+            </div>
+            <label class="sr-only" for="equipmentCategory">Filtrar por categoria</label>
+            <select id="equipmentCategory" class="equipment-control">
+              <option value="">Todas as categorias</option>
+              <option value="FERRAMENTA_ELETRICA">Ferramenta elétrica</option>
+              <option value="MAQUINARIO_PESADO">Maquinário pesado</option>
+              <option value="ANDAIME_ESCADA">Andaime / escada</option>
+              <option value="FERRAMENTA_MANUAL">Ferramenta manual</option>
+            </select>
+            <label class="sr-only" for="equipmentStatus">Filtrar por disponibilidade</label>
+            <select id="equipmentStatus" class="equipment-control">
+              <option value="">Todos os status</option>
+              <option value="DISPONIVEL">Disponível</option>
+              <option value="ALUGADO">Alugado</option>
+              <option value="MANUTENCAO">Em manutenção</option>
+            </select>
+            <button id="openEquipmentCreate" class="btn btn--primary" type="button">＋ Novo equipamento</button>
+          </section>
+
+          <div id="equipmentMessage" class="dashboard-message" role="status" aria-live="polite" hidden></div>
+          <div id="equipmentError" class="dashboard-message dashboard-message--error" role="alert" hidden></div>
+
+          <section class="kpis equipment-kpis" aria-label="Resumo do catálogo de equipamentos">
+            <article class="kpi-card">
+              <span class="kpi-card__label">Equipamentos cadastrados</span>
+              <strong class="kpi-card__value" id="equipmentTotal">—</strong>
+            </article>
+            <article class="kpi-card">
+              <span class="kpi-card__label">Disponíveis para locação</span>
+              <strong class="kpi-card__value" id="equipmentAvailable">—</strong>
+            </article>
+            <article class="kpi-card">
+              <span class="kpi-card__label">Em manutenção</span>
+              <strong class="kpi-card__value" id="equipmentMaintenance">—</strong>
+            </article>
+          </section>
+
+          <!-- Catálogo tabular ao lado dos dados do equipamento selecionado. -->
+          <section class="equipment-layout" aria-label="Catálogo e detalhes do equipamento selecionado">
+            <section class="table-panel equipment-list-panel" aria-labelledby="equipmentListTitle">
+              <div class="table-panel__header">
+                <h2 id="equipmentListTitle">Catálogo da base</h2>
+                <span id="equipmentCount" class="table-panel__count" aria-live="polite"></span>
+              </div>
+              <div class="table-wrapper">
+                <table class="equipment-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Código</th>
+                      <th scope="col">Equipamento</th>
+                      <th scope="col">Categoria</th>
+                      <th scope="col">Diária</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="equipmentTableBody">
+                    <tr><td class="table-state" colspan="6">Carregando equipamentos…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="equipment-api-note">Os dados são carregados da locadora associada ao token de sessão.</p>
+            </section>
+
+            <aside class="equipment-detail-panel" aria-labelledby="equipmentDetailTitle" aria-live="polite">
+              <div class="table-panel__header">
+                <h2 id="equipmentDetailTitle">Detalhes do equipamento</h2>
+              </div>
+              <div id="equipmentDetailEmpty" class="equipment-detail-empty">
+                Selecione um equipamento na lista para consultar modelo, patrimônio e situação.
+              </div>
+              <dl id="equipmentDetails" class="equipment-details" hidden>
+                <div><dt>Nome</dt><dd id="detailEquipmentName">—</dd></div>
+                <div><dt>Código sequencial</dt><dd id="detailEquipmentCode">—</dd></div>
+                <div><dt>Modelo</dt><dd id="detailEquipmentModel">—</dd></div>
+                <div><dt>Nº de patrimônio</dt><dd id="detailEquipmentAsset">—</dd></div>
+                <div><dt>Categoria</dt><dd id="detailEquipmentCategory">—</dd></div>
+                <div><dt>Valor da diária</dt><dd id="detailEquipmentRate">—</dd></div>
+                <div><dt>Status</dt><dd id="detailEquipmentStatus">—</dd></div>
+              </dl>
+              <div class="equipment-detail-actions">
+                <button id="editSelectedEquipment" class="btn btn--secondary" type="button" disabled>✏️ Editar</button>
+                <button id="deleteSelectedEquipment" class="btn btn--danger" type="button" disabled>Inativar equipamento</button>
+              </div>
+            </aside>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Formulário modal para cadastrar ou atualizar um equipamento. -->
+    <dialog id="equipmentFormDialog" class="dashboard-dialog equipment-dialog" aria-labelledby="equipmentFormTitle">
+      <div class="dashboard-dialog__header">
+        <div>
+          <p class="eyebrow">Catálogo da base</p>
+          <h2 id="equipmentFormTitle">Novo equipamento</h2>
+        </div>
+        <button class="icon-button" type="button" data-close-equipment-form aria-label="Fechar formulário">×</button>
+      </div>
+      <div id="equipmentFormError" class="dashboard-message dashboard-message--error" role="alert" hidden></div>
+      <form id="equipmentForm">
+        <div class="form-grid">
+          <div class="field-group field-group--full">
+            <label for="equipmentName">Nome do equipamento</label>
+            <input id="equipmentName" name="nome" type="text" maxlength="150" required />
+          </div>
+          <div class="field-group">
+            <label for="equipmentModel">Modelo</label>
+            <input id="equipmentModel" name="modelo" type="text" maxlength="100" />
+          </div>
+          <div class="field-group">
+            <label for="equipmentAssetNumber">Número de patrimônio</label>
+            <input id="equipmentAssetNumber" name="numeroPatrimonio" type="text" maxlength="50" />
+          </div>
+          <div class="field-group">
+            <label for="equipmentFormCategory">Categoria</label>
+            <select id="equipmentFormCategory" name="categoria" required>
+              <option value="">Selecione</option>
+              <option value="FERRAMENTA_ELETRICA">Ferramenta elétrica</option>
+              <option value="MAQUINARIO_PESADO">Maquinário pesado</option>
+              <option value="ANDAIME_ESCADA">Andaime / escada</option>
+              <option value="FERRAMENTA_MANUAL">Ferramenta manual</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="equipmentDailyRate">Valor da diária (R$)</label>
+            <input id="equipmentDailyRate" name="valorDiaria" type="number" min="0.01" step="0.01" inputmode="decimal" required />
+          </div>
+          <div class="field-group field-group--full" id="equipmentStatusField" hidden>
+            <label for="equipmentFormStatus">Status operacional</label>
+            <select id="equipmentFormStatus" name="status">
+              <option value="">Manter status atual</option>
+              <option value="DISPONIVEL">Disponível</option>
+              <option value="MANUTENCAO">Em manutenção</option>
+            </select>
+            <small>Equipamentos alugados têm status controlado pelas locações.</small>
+          </div>
+        </div>
+        <div class="modal__actions">
+          <button class="btn btn--secondary" type="button" data-close-equipment-form>Cancelar</button>
+          <button id="saveEquipment" class="btn btn--primary" type="submit">Salvar equipamento</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Confirmação para inativar o equipamento selecionado. -->
+    <dialog id="equipmentDeleteDialog" class="dashboard-dialog equipment-dialog" aria-labelledby="equipmentDeleteTitle">
+      <div class="dashboard-dialog__header">
+        <h2 id="equipmentDeleteTitle">Inativar equipamento?</h2>
+        <button class="icon-button" type="button" data-close-equipment-delete aria-label="Fechar confirmação">×</button>
+      </div>
+      <p id="equipmentDeleteText">Confirme a inativação do equipamento selecionado.</p>
+      <p class="form-notice">Equipamentos alugados não podem ser inativados. A API preserva o histórico e marca o cadastro como cancelado.</p>
+      <div class="modal__actions">
+        <button class="btn btn--secondary" type="button" data-close-equipment-delete>Voltar</button>
+        <button id="confirmDeleteEquipment" class="btn btn--danger" type="button">Inativar equipamento</button>
+      </div>
+    </dialog>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/equipamentos.js"></script>
+  </body>
+</html>
