@@ -118,35 +118,21 @@
       .join('');
   }
 
-  // Lê o identificador do usuário autenticado no payload do token JWT.
-  function getTokenSubject() {
-    try {
-      const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      return JSON.parse(window.atob(payload)).sub;
-    } catch {
-      return null;
-    }
-  }
-
   // Consulta os usuários e preenche nome, base e avatares do perfil atual.
   async function loadProfile() {
-    const users = await getJSON('/usuarios');
-    if (!Array.isArray(users)) {
-      throw new Error('A resposta de usuários está em um formato inesperado.');
-    }
-
-    const currentUserId = getTokenSubject();
-    const currentUser = users.find((user) => String(user.id) === String(currentUserId));
+    const currentUser = await getJSON('/usuarios/me');
     if (!currentUser || !currentUser.nome) {
       throw new Error('Não foi possível identificar seu perfil autenticado.');
     }
 
     const name = currentUser.nome;
     document.getElementById('userNameSidebar').textContent = name;
-    document.getElementById('userNameTopbar').textContent = name;
     document.getElementById('baseNameSidebar').textContent = `Base de ${name}`;
     document.getElementById('avatarSidebar').textContent = initials(name);
-    document.getElementById('avatarTopbar').textContent = initials(name);
+    await window.GR.avatar.carregar(
+      document.getElementById('avatarSidebar'),
+      currentUser.avatarAtualizadoEm,
+    );
   }
 
   // Transforma valores enumerados em rótulos legíveis para os filtros.

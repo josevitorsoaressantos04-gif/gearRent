@@ -155,29 +155,18 @@
       .map((part) => part.charAt(0).toLocaleUpperCase('pt-BR')).join('') || 'GR';
   }
 
-  // Obtém o identificador do usuário autenticado a partir do token.
-  function tokenSubject() {
-    try {
-      const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      return JSON.parse(window.atob(payload)).sub;
-    } catch {
-      return null;
-    }
-  }
-
   // Carrega o perfil para preencher nome, base e avatares da página.
   async function loadProfile() {
     try {
-      const users = await getJSON('/usuarios');
-      const current = Array.isArray(users)
-        ? users.find((user) => String(user.id) === String(tokenSubject()))
-        : null;
+      const current = await getJSON('/usuarios/me');
       if (!current?.nome) throw new Error('Não foi possível identificar o usuário autenticado.');
       document.getElementById('userNameSidebar').textContent = current.nome;
-      document.getElementById('userNameTopbar').textContent = current.nome;
       document.getElementById('baseNameSidebar').textContent = `Base de ${current.nome}`;
       document.getElementById('avatarSidebar').textContent = initials(current.nome);
-      document.getElementById('avatarTopbar').textContent = initials(current.nome);
+      await window.GR.avatar.carregar(
+        document.getElementById('avatarSidebar'),
+        current.avatarAtualizadoEm,
+      );
     } catch (error) {
       setError(`${getErrorMessage(error)} Não foi possível carregar o perfil da base.`);
     }

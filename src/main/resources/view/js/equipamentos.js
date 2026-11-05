@@ -103,28 +103,19 @@
       .map((part) => part.charAt(0).toLocaleUpperCase('pt-BR')).join('') || 'GR';
   }
 
-  // Obtém a identificação do usuário a partir do token da sessão.
-  function tokenSubject() {
-    try {
-      const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      return JSON.parse(window.atob(payload)).sub;
-    } catch {
-      return null;
-    }
-  }
-
   // Consulta e exibe o perfil autenticado no cabeçalho.
   async function loadProfile() {
     try {
-      const response = await window.apiClient.get('/usuarios');
-      if (!Array.isArray(response.data)) throw new Error('A resposta de usuários veio em formato inesperado.');
-      const current = response.data.find((user) => String(user.id) === String(tokenSubject()));
+      const response = await window.apiClient.get('/usuarios/me');
+      const current = response.data;
       if (!current?.nome) throw new Error('Não foi possível identificar o usuário autenticado.');
       document.getElementById('userNameSidebar').textContent = current.nome;
-      document.getElementById('userNameTopbar').textContent = current.nome;
       document.getElementById('baseNameSidebar').textContent = `Base de ${current.nome}`;
       document.getElementById('avatarSidebar').textContent = initials(current.nome);
-      document.getElementById('avatarTopbar').textContent = initials(current.nome);
+      await window.GR.avatar.carregar(
+        document.getElementById('avatarSidebar'),
+        current.avatarAtualizadoEm,
+      );
     } catch (error) {
       setError(`${getErrorMessage(error)} O perfil da base não pôde ser carregado.`);
     }

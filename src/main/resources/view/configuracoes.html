@@ -30,15 +30,11 @@
       </aside>
 
       <div class="main-panel">
-        <!-- Cabeçalho com a seção atual e o usuário autenticado. -->
+        <!-- Cabeçalho com a identificação da seção atual. -->
         <header class="topbar" aria-label="Barra superior do painel">
           <div class="topbar__heading">
             <span>Painel da base</span>
             <h1>Configurações</h1>
-          </div>
-          <div class="topbar__user" aria-label="Perfil do usuário autenticado">
-            <div class="avatar avatar--small" id="avatarTopbar" aria-hidden="true">GR</div>
-            <span id="userNameTopbar">Usuário autenticado</span>
           </div>
         </header>
 
@@ -157,14 +153,30 @@
               </div>
             </div>
             <div id="profileNotice" class="form-notice" role="status" hidden></div>
-            <form class="settings-card" id="profileForm">
-              <div class="profile-heading">
+            <section class="settings-card profile-avatar-card" aria-labelledby="profileAvatarTitle">
+              <div class="profile-avatar-card__preview">
                 <div class="avatar avatar--large" id="profileAvatar" aria-hidden="true">GR</div>
-                <div>
-                  <strong id="profileDisplayName">Usuário autenticado</strong>
-                  <p>Foto de perfil ainda não é suportada pela API.</p>
+                <div class="profile-avatar-card__description">
+                  <h3 id="profileAvatarTitle">Foto de perfil</h3>
+                  <p>Envie uma imagem JPG, PNG ou WEBP de até 2 MB.</p>
                 </div>
               </div>
+              <div class="profile-avatar-controls">
+                <label class="profile-avatar-upload" for="profileAvatarFile">Escolher imagem</label>
+                <input
+                  id="profileAvatarFile"
+                  class="profile-avatar-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                />
+                <span id="profileAvatarFileName" class="profile-avatar-file-name">Nenhum arquivo selecionado</span>
+                <button id="removeProfileAvatar" class="profile-avatar-remove" type="button" hidden>
+                  Remover foto
+                </button>
+              </div>
+            </section>
+            <form class="settings-card" id="profileForm">
+              <h3 class="profile-section-title">Informações pessoais</h3>
               <div class="form-grid">
                 <div class="field-group">
                   <label for="profileFirstName">Nome</label>

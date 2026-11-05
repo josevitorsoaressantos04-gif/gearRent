@@ -14,8 +14,10 @@
     baseNotice: document.getElementById('baseNotice'),
     operatorNotice: document.getElementById('operatorNotice'),
     operatorFormNotice: document.getElementById('operatorFormNotice'),
-    profileName: document.getElementById('profileDisplayName'),
     profileAvatar: document.getElementById('profileAvatar'),
+    avatarFile: document.getElementById('profileAvatarFile'),
+    avatarFileName: document.getElementById('profileAvatarFileName'),
+    removeAvatar: document.getElementById('removeProfileAvatar'),
     profileFirstName: document.getElementById('profileFirstName'),
     profileLastName: document.getElementById('profileLastName'),
     profileEmail: document.getElementById('profileEmail'),
@@ -33,6 +35,7 @@
   const state = {
     users: [],
     isAdmin: false,
+    avatarUpdatedAt: null,
   };
 
   // Converte respostas de erro HTTP em mensagens adequadas para a interface.
@@ -96,25 +99,28 @@
   }
 
   // Atualiza os dados do usuário e da base no cabeçalho lateral.
-  function updateHeader(user, baseName) {
+  async function updateHeader(user, baseName) {
     const name = user.nome || 'Usuário autenticado';
-    refs.profileName.textContent = [name, user.sobrenome].filter(Boolean).join(' ');
     refs.profileAvatar.textContent = initials(name);
     document.getElementById('userNameSidebar').textContent = name;
-    document.getElementById('userNameTopbar').textContent = name;
     document.getElementById('baseNameSidebar').textContent = baseName || 'Minha base';
     document.getElementById('avatarSidebar').textContent = initials(name);
-    document.getElementById('avatarTopbar').textContent = initials(name);
+    state.avatarUpdatedAt = user.avatarAtualizadoEm || null;
+    refs.removeAvatar.hidden = !state.avatarUpdatedAt;
+    await Promise.all([
+      refs.profileAvatar,
+      document.getElementById('avatarSidebar'),
+    ].map((element) => window.GR.avatar.carregar(element, state.avatarUpdatedAt)));
   }
 
   // Preenche o formulário de perfil com os dados do usuário atual.
-  function populateProfile(user) {
+  async function populateProfile(user) {
     refs.profileFirstName.value = user.nome || '';
     refs.profileLastName.value = user.sobrenome || '';
     refs.profileEmail.value = user.email || '';
     refs.profileCpf.value = user.cpf || '';
     refs.profileBirthDate.value = user.dataNascimento || '';
-    updateHeader(user, document.getElementById('baseNameSidebar').textContent);
+    await updateHeader(user, document.getElementById('baseNameSidebar').textContent);
   }
 
   // Preenche o formulário de configuração com os dados da locadora.
@@ -203,7 +209,7 @@
   async function loadProfile() {
     try {
       const user = await getJSON('/usuarios/me');
-      populateProfile(user);
+      await populateProfile(user);
       if (!user.cpf) setNotice(refs.profileNotice, 'A API não retornou CPF para o perfil. Informe um CPF válido antes de salvar.');
     } catch (error) {
       setNotice(refs.profileNotice, getErrorMessage(error));
@@ -362,12 +368,67 @@
         email: refs.profileEmail.value.trim(),
         cpf: refs.profileCpf.value.trim(),
       });
-      populateProfile(response.data);
+      await populateProfile(response.data);
       setMessage('Perfil atualizado com sucesso.');
     } catch (error) {
       setNotice(refs.profileNotice, getErrorMessage(error));
     } finally {
       setBusy(button, false, 'Salvando…', 'Salvar perfil');
+    }
+  });
+
+  refs.avatarFile.addEventListener('change', async () => {
+    const arquivo = refs.avatarFile.files[0];
+    if (!arquivo) return;
+    refs.avatarFileName.textContent = arquivo.name;
+
+    if (arquivo.size > 2 * 1024 * 1024) {
+      setNotice(refs.profileNotice, 'A foto é muito grande. Envie uma imagem de até 2 MB.');
+      refs.avatarFile.value = '';
+      refs.avatarFileName.textContent = 'Nenhum arquivo selecionado';
+      return;
+    }
+
+    const dados = new FormData();
+    dados.append('arquivo', arquivo);
+    refs.avatarFile.disabled = true;
+    setNotice(refs.profileNotice, '');
+    try {
+      const resposta = await window.apiClient.post('/usuarios/avatar', dados, {
+        headers: { 'Content-Type': null },
+      });
+      state.avatarUpdatedAt = resposta.data.avatarAtualizadoEm;
+      refs.removeAvatar.hidden = !state.avatarUpdatedAt;
+      await Promise.all([
+        refs.profileAvatar,
+        document.getElementById('avatarSidebar'),
+      ].map((element) => window.GR.avatar.carregar(element, state.avatarUpdatedAt)));
+      setNotice(refs.profileNotice, resposta.data.mensagem || 'Foto de perfil atualizada.');
+    } catch (error) {
+      setNotice(refs.profileNotice, getErrorMessage(error));
+    } finally {
+      refs.avatarFile.disabled = false;
+      refs.avatarFile.value = '';
+      refs.avatarFileName.textContent = 'Nenhum arquivo selecionado';
+    }
+  });
+
+  refs.removeAvatar.addEventListener('click', async () => {
+    refs.removeAvatar.disabled = true;
+    setNotice(refs.profileNotice, '');
+    try {
+      const resposta = await window.apiClient.delete('/usuarios/avatar');
+      state.avatarUpdatedAt = null;
+      refs.removeAvatar.hidden = true;
+      await Promise.all([
+        refs.profileAvatar,
+        document.getElementById('avatarSidebar'),
+      ].map((element) => window.GR.avatar.carregar(element, null)));
+      setNotice(refs.profileNotice, resposta.data.mensagem || 'Foto de perfil removida.');
+    } catch (error) {
+      setNotice(refs.profileNotice, getErrorMessage(error));
+    } finally {
+      refs.removeAvatar.disabled = false;
     }
   });
 

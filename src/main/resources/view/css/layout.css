@@ -401,6 +401,8 @@ select {
 }
 
 .avatar {
+  position: relative;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -408,6 +410,19 @@ select {
   background: #dfeaf8;
   color: #173d5e;
   font-weight: 700;
+}
+
+.avatar__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+.avatar--com-foto {
+  color: transparent;
 }
 
 .avatar--large {
@@ -3102,7 +3117,7 @@ body.dashboard-body .modal__close {
 
 .settings-panel__header p,
 .password-card > p,
-.profile-heading p {
+.profile-avatar-card__description p {
   margin: 6px 0 0;
   color: #435364;
   font-size: 17px;
@@ -3133,19 +3148,95 @@ body.dashboard-body .modal__close {
   opacity: 1;
 }
 
-.profile-heading {
+.profile-avatar-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 20px;
+  justify-content: space-between;
+  gap: 24px;
 }
 
-.profile-heading strong {
-  font-size: 20px;
+.profile-avatar-card__preview {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
-.profile-heading .btn {
-  margin-left: auto;
+.profile-avatar-card__preview .avatar--large {
+  width: 144px;
+  height: 144px;
+  flex: 0 0 144px;
+  font-size: 40px;
+}
+
+.profile-avatar-card__description h3,
+.profile-section-title {
+  margin: 0;
+  color: #26394d;
+  font-size: 19px;
+}
+
+.profile-section-title {
+  margin-bottom: 18px;
+}
+
+.profile-avatar-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+body.settings-dashboard .settings-panel #profileAvatarFile {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.profile-avatar-upload,
+.profile-avatar-remove {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border: 1px solid #8797a8;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1f4e79;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.profile-avatar-upload:hover,
+.profile-avatar-remove:hover {
+  background: #edf4fb;
+}
+
+.profile-avatar-controls:focus-within .profile-avatar-upload {
+  outline: 2px solid #1f4e79;
+  outline-offset: 3px;
+}
+
+.profile-avatar-file-name {
+  max-width: min(320px, 100%);
+  overflow: hidden;
+  color: #52606e;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-avatar-remove[hidden] {
+  display: none;
 }
 
 .disabled-control {
@@ -3202,9 +3293,14 @@ body.dashboard-body[data-theme="dark"] .password-card h3,
 body.dashboard-body[data-theme="dark"] .rental-kpis .kpi-card__label,
 body.dashboard-body[data-theme="dark"] .settings-panel__header p,
 body.dashboard-body[data-theme="dark"] .password-card > p,
-body.dashboard-body[data-theme="dark"] .profile-heading p,
+body.dashboard-body[data-theme="dark"] .profile-avatar-card__description p,
 body.dashboard-body[data-theme="dark"] .rental-kpi-note,
 body.dashboard-body[data-theme="dark"] .table-panel__count {
+  color: #f1f5f9;
+}
+
+body.dashboard-body[data-theme="dark"] .profile-avatar-card__description h3,
+body.dashboard-body[data-theme="dark"] .profile-section-title {
   color: #f1f5f9;
 }
 
@@ -3282,14 +3378,14 @@ body.dashboard-body[data-theme="dark"] .settings-tab[aria-selected="true"] {
   }
 
   .settings-panel__header,
-  .profile-heading,
+  .profile-avatar-card,
   .rental-estimate {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .profile-heading .btn {
-    margin-left: 0;
+  .profile-avatar-card__preview {
+    align-items: flex-start;
   }
 
   .settings-dashboard .form-grid,
@@ -3391,7 +3487,7 @@ body.rentals-dashboard .rental-kpi-note,
 body.rentals-dashboard .filter-help,
 body.settings-dashboard .settings-panel__header p,
 body.settings-dashboard .password-card > p,
-body.settings-dashboard .profile-heading p,
+body.settings-dashboard .profile-avatar-card__description p,
 body.settings-dashboard .form-notice,
 body.rentals-dashboard .form-notice {
   font-size: 18px;
