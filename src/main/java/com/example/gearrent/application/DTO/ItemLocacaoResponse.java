@@ -4,8 +4,9 @@ import com.example.gearrent.domain.entities.Equipamento;
 import com.example.gearrent.domain.enums.CategoriaEquipamento;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
-// Um equipamento dentro da locação (usado na resposta de detalhes/contrato)
+// Um equipamento dentro da locação, com o preço combinado e o subtotal dos dias cobrados
 public record ItemLocacaoResponse(
         Long equipamentoId,
         int codigoSequencial,
@@ -13,9 +14,14 @@ public record ItemLocacaoResponse(
         String modelo,
         String numeroPatrimonio,
         CategoriaEquipamento categoria,
-        BigDecimal valorDiaria) {   // valor atual da diária do equipamento
+        BigDecimal valorDiaria,   // preço da diária no momento da locação
+        BigDecimal subtotal) {    // valorDiaria x dias cobrados (antes de desconto e multa)
 
-    public static ItemLocacaoResponse de(Equipamento e) {
+    public static ItemLocacaoResponse de(Equipamento e, BigDecimal valorDiaria, long diasCobrados) {
+        BigDecimal subtotal = valorDiaria
+                .multiply(BigDecimal.valueOf(diasCobrados))
+                .setScale(2, RoundingMode.HALF_UP);
+
         return new ItemLocacaoResponse(
                 e.getId(),
                 e.getCodigoSequencial(),
@@ -23,6 +29,7 @@ public record ItemLocacaoResponse(
                 e.getModelo(),
                 e.getNumeroPatrimonio(),
                 e.getCategoria(),
-                e.getValorDiaria());
+                valorDiaria,
+                subtotal);
     }
 }

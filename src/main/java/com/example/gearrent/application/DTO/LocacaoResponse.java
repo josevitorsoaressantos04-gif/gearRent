@@ -21,6 +21,7 @@ public record LocacaoResponse(
         LocalDateTime dataRetirada,
         LocalDateTime dataPrevista,
         LocalDateTime dataDevolucao,
+        long diasCobrados,
         long diasAtraso,
         BigDecimal valorDiarias,
         BigDecimal valorDesconto,
@@ -37,6 +38,7 @@ public record LocacaoResponse(
         BigDecimal total = dinheiro(l.getValorFinalCobrado());
         // total = diárias - desconto + multa  =>  diárias = total + desconto - multa
         BigDecimal diarias = total.add(desconto).subtract(multa);
+        long diasCobrados = l.calcularDiasCobrados(agora);
 
         return new LocacaoResponse(
                 l.getId(),
@@ -47,11 +49,12 @@ public record LocacaoResponse(
                 l.getCliente().getNome(),
                 l.getEquipamentos().stream()
                         .sorted(Comparator.comparingInt(e -> e.getCodigoSequencial()))
-                        .map(ItemLocacaoResponse::de)
+                        .map(e -> ItemLocacaoResponse.de(e, l.valorDiariaDe(e), diasCobrados))
                         .toList(),
                 l.getDataRetirada(),
                 l.getDataPrevista(),
                 l.getDataDevolucao(),
+                diasCobrados,
                 l.calcularDiasAtraso(agora),
                 diarias,
                 desconto,

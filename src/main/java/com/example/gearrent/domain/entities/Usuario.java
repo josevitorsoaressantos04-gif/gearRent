@@ -30,6 +30,7 @@ public class Usuario {
     private LocalDateTime dataCadastro;
     private LocalDateTime dataAtualizacao;
     private LocalDate data_nascimento;
+    private LocalDateTime avatarAtualizadoEm;
 
     @Enumerated(EnumType.STRING)
     private StatusCadastro status;

@@ -14,7 +14,9 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 @Getter
@@ -74,6 +76,13 @@ public class Locacao {
     )
     private Set<Equipamento> equipamentos = new HashSet<>();
 
+    // PENDÊNCIA 2: preço da diária de cada equipamento NO MOMENTO da locação (equipamentoId -> valor)
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "locacao_valor_item", joinColumns = @JoinColumn(name = "locacao_id"))
+    @MapKeyColumn(name = "equipamento_id")
+    @Column(name = "valor_diaria", nullable = false, precision = 12, scale = 2)
+    private Map<Long, BigDecimal> valorDiariaPorEquipamento = new HashMap<>();
+
     @ManyToOne()
     private Cliente cliente;
 
@@ -115,6 +124,8 @@ public class Locacao {
         for (Equipamento equipamento : equipamentos) {
             equipamento.marcarComoAlugado();   // lança EquipamentoIndisponivelException se já estiver alugado
             locacao.equipamentos.add(equipamento);
+            // PENDÊNCIA 2: congela o preço da diária combinado nesta locação
+            locacao.valorDiariaPorEquipamento.put(equipamento.getId(), equipamento.getValorDiaria());
         }
 
         CalculadoraLocacao.Resultado previsto = locacao.simular(dataPrevista);
@@ -178,6 +189,25 @@ public class Locacao {
         return Math.max(0, ChronoUnit.DAYS.between(dataPrevista.toLocalDate(), referencia.toLocalDate()));
     }
 
+    // PENDÊNCIA 2: preço da diária congelado na locação.
+    // Em locação antiga, sem registro, usa o preço atual do equipamento.
+    public BigDecimal valorDiariaDe(Equipamento equipamento) {
+        BigDecimal congelado = valorDiariaPorEquipamento.get(equipamento.getId());
+        return congelado != null ? congelado : equipamento.getValorDiaria();
+    }
+
+    // PENDÊNCIA 2: dias cobrados. Concluída: até a devolução real.
+    // Aberta: até hoje (se já atrasou) ou até a data prevista.
+    public long calcularDiasCobrados(LocalDateTime agora) {
+        if (status == StatusLocacao.CANCELADA) {
+            return 0;
+        }
+        LocalDateTime referencia = dataReal != null
+                ? dataReal
+                : (agora.isAfter(dataPrevista) ? agora : dataPrevista);
+        return Math.max(1, ChronoUnit.DAYS.between(dataRetirada.toLocalDate(), referencia.toLocalDate()));
+    }
+
     private void exigirTransicao(StatusLocacao destino) {
         if (!status.podeIrPara(destino)) {
             throw new TransicaoStatusInvalidaException(switch (status) {
@@ -189,8 +219,9 @@ public class Locacao {
     }
 
     private CalculadoraLocacao.Resultado simular(LocalDateTime referencia) {
+        // PENDÊNCIA 2: soma usando o preço congelado de cada item
         BigDecimal somaDiarias = equipamentos.stream()
-                .map(Equipamento::getValorDiaria)
+                .map(this::valorDiariaDe)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return CalculadoraLocacao.calcular(
