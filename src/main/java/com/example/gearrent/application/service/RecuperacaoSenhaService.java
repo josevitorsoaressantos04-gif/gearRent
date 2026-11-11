@@ -116,8 +116,23 @@ public class RecuperacaoSenhaService {
         token.setExpiraEm(agora.plusMinutes(expiracaoMinutos));
         tokenRepository.save(token);
 
-        String link = frontendUrl + "/redefinir-senha?token=" + tokenPuro;
+        String link = montarLinkRedefinicao(tokenPuro);
         emailService.enviarRecuperacaoSenha(usuario.getLogin(), usuario.getNome(), link, expiracaoMinutos);
+    }
+
+    private String montarLinkRedefinicao(String token) {
+        String url = frontendUrl.trim();
+        while (url.endsWith("/")) {
+            url = url.substring(0, url.length() - 1);
+        }
+
+        if (url.endsWith("/redefinir-senha")) {
+            url += ".html";
+        } else if (!url.endsWith("/redefinir-senha.html")) {
+            url += "/redefinir-senha.html";
+        }
+
+        return url + (url.contains("?") ? "&" : "?") + "token=" + token;
     }
 
     private String gerarTokenAleatorio() {
