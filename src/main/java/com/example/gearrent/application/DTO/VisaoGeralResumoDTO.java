@@ -6,5 +6,7 @@ public record VisaoGeralResumoDTO(
         long totalLocacoes,
         long emAndamento,
         long atrasadas,
-        BigDecimal faturamentoTotal
+        BigDecimal faturamentoTotal,
+        BigDecimal receitaMensalAcumulada,
+        ValoresEmAbertoResponse valoresEmAberto
 ) {}

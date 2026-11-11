@@ -355,6 +355,64 @@ select {
   margin: 0;
 }
 
+/* Ajustes exclusivos da homepage pública, mantendo o layout compartilhado do painel. */
+.public-home {
+  background:
+    radial-gradient(ellipse at 85% 12%, rgba(223, 234, 248, 0.7), transparent 34rem),
+    var(--page-bg);
+}
+
+.public-home .topbar {
+  position: sticky;
+  top: 0;
+  display: block;
+  min-height: 0;
+  padding: 0;
+  background: var(--surface);
+}
+
+.public-home .brand__tagline,
+.public-home .btn,
+.public-home .contact-item__label,
+.public-home .contact-item strong {
+  font-size: 18px;
+}
+
+.public-home .btn {
+  min-height: 48px;
+}
+
+.public-home .hero {
+  padding: clamp(48px, 7vw, 88px) 0 56px;
+}
+
+.public-home .hero__panel {
+  border-top: 5px solid var(--accent);
+}
+
+.public-home .info-card {
+  min-height: 100%;
+}
+
+.public-home .contact-item a {
+  text-decoration: underline;
+  text-decoration-color: rgba(244, 249, 255, 0.55);
+  text-underline-offset: 4px;
+}
+
+.public-home .contact-item a:hover {
+  text-decoration-color: currentColor;
+}
+
+.public-home a:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.public-home .site-footer {
+  padding-bottom: 8px;
+}
+
 .dashboard-body {
   background: #eef3f8;
 }

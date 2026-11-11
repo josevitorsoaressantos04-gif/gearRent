@@ -37,9 +37,11 @@
     editingId: null,
     pendingDeleteId: null,
     detailRequest: 0,
-    search: '',
-    category: '',
-    status: '',
+    page: 0,
+    pageSize: 10,
+    totalPages: 0,
+    totalElements: 0,
+    listRequest: 0,
   };
   const refs = {
     search: document.getElementById('equipmentSearch'),
@@ -47,6 +49,9 @@
     status: document.getElementById('equipmentStatus'),
     table: document.getElementById('equipmentTableBody'),
     count: document.getElementById('equipmentCount'),
+    previousPage: document.getElementById('previousEquipmentPage'),
+    pageLabel: document.getElementById('equipmentPageLabel'),
+    nextPage: document.getElementById('nextEquipmentPage'),
     message: document.getElementById('equipmentMessage'),
     error: document.getElementById('equipmentError'),
     total: document.getElementById('equipmentTotal'),
@@ -76,6 +81,7 @@
     if (Array.isArray(messages) && messages.length) return messages.join(' ');
     if (error.response?.data?.message) return error.response.data.message;
     if (error.response) return `A solicitação falhou (HTTP ${error.response.status}).`;
+    if (error instanceof Error && !error.isAxiosError) return error.message;
     return 'Não foi possível conectar à API. Verifique a conexão e tente novamente.';
   }
 
@@ -150,31 +156,6 @@
     return state.equipment.find((item) => String(item.id) === String(id));
   }
 
-  // Consolida os campos pesquisáveis de um equipamento em texto normalizado.
-  function searchableText(item) {
-    const detail = state.details.get(String(item.id)) || {};
-    return [
-      item.id,
-      item.codigoSequencial,
-      item.nome,
-      item.modelo || detail.modelo,
-      item.numeroPatrimonio || detail.numeroPatrimonio,
-      item.categoria,
-      item.status,
-    ].filter((value) => value != null).join(' ').toLocaleLowerCase('pt-BR');
-  }
-
-  // Aplica o termo de busca atual aos equipamentos carregados.
-  function filteredEquipment() {
-    const term = state.search.trim().toLocaleLowerCase('pt-BR');
-    return state.equipment.filter((item) => {
-      const matchesTerm = !term || searchableText(item).includes(term);
-      const matchesCategory = !state.category || item.categoria === state.category;
-      const matchesStatus = !state.status || item.status === state.status;
-      return matchesTerm && matchesCategory && matchesStatus;
-    });
-  }
-
   // Cria uma célula da tabela de equipamentos com texto seguro.
   function makeCell(text) {
     const cell = document.createElement('td');
@@ -197,12 +178,13 @@
 
   // Desenha os resultados filtrados na tabela do catálogo.
   function renderTable() {
-    const equipment = filteredEquipment();
+    const equipment = state.equipment;
     refs.table.replaceChildren();
 
     if (!equipment.length) {
       const row = document.createElement('tr');
-      const cell = makeCell(state.equipment.length
+      const hasFilters = refs.search.value.trim() || refs.category.value || refs.status.value;
+      const cell = makeCell(hasFilters
         ? 'Nenhum equipamento corresponde aos filtros selecionados.'
         : 'Nenhum equipamento cadastrado nesta base.');
       cell.colSpan = 6;
@@ -249,10 +231,15 @@
         refs.table.append(row);
       });
     }
-    refs.count.textContent = `${equipment.length} de ${state.equipment.length} equipamento(s)`;
+    refs.count.textContent = `${equipment.length} nesta página de ${state.totalElements} equipamento(s)`;
+    refs.pageLabel.textContent = state.totalPages
+      ? `Página ${state.page + 1} de ${state.totalPages}`
+      : 'Página 0 de 0';
+    refs.previousPage.disabled = state.page === 0;
+    refs.nextPage.disabled = state.totalPages === 0 || state.page >= state.totalPages - 1;
   }
 
-  // Recalcula os indicadores do catálogo com os dados já carregados.
+  // Recalcula os indicadores dos equipamentos exibidos na página atual.
   function updateSummary() {
     refs.total.textContent = String(state.equipment.length);
     refs.available.textContent = String(state.equipment.filter((item) => item.status === 'DISPONIVEL').length);
@@ -309,12 +296,40 @@
 
   // Consulta o catálogo e atualiza tabela, resumo e seleção.
   async function loadEquipment() {
+    const requestId = ++state.listRequest;
     setError('');
     setMessage('Carregando equipamentos…');
     try {
-      const response = await window.apiClient.get('/equipamentos');
-      if (!Array.isArray(response.data)) throw new Error('A resposta de equipamentos veio em formato inesperado.');
-      state.equipment = response.data;
+      const response = await window.apiClient.get('/equipamentos', {
+        params: {
+          page: state.page,
+          size: state.pageSize,
+          sort: 'nome,asc',
+          nome: refs.search.value.trim() || undefined,
+          categoria: refs.category.value || undefined,
+          status: refs.status.value || undefined,
+        },
+      });
+      if (requestId !== state.listRequest) return;
+
+      const pagina = response.data;
+      const equipment = Array.isArray(pagina) ? pagina : pagina?.conteudo;
+      if (!Array.isArray(equipment)) {
+        throw new Error('A resposta paginada de equipamentos veio em formato inesperado.');
+      }
+
+      if (!Array.isArray(pagina) && Number.isInteger(pagina.totalPaginas)) {
+        state.totalPages = pagina.totalPaginas;
+        state.totalElements = pagina.totalElementos;
+        if (state.page >= state.totalPages && state.page > 0) {
+          state.page = Math.max(0, state.totalPages - 1);
+          return loadEquipment();
+        }
+      } else {
+        state.totalPages = equipment.length ? 1 : 0;
+        state.totalElements = equipment.length;
+      }
+      state.equipment = equipment;
       state.details.clear();
       updateSummary();
       renderTable();
@@ -328,13 +343,16 @@
         resetDetails();
       }
     } catch (error) {
+      if (requestId !== state.listRequest) return;
       state.equipment = [];
+      state.totalPages = 0;
+      state.totalElements = 0;
       state.selectedId = null;
       updateSummary();
       renderTable();
       resetDetails();
       setMessage('');
-      setError(`${getErrorMessage(error)} A listagem utiliza GET /equipamentos, limitada à base do token.`);
+      setError(`${getErrorMessage(error)} A listagem utiliza GET /api/equipamentos, limitada à base do token.`);
     }
   }
 
@@ -460,17 +478,29 @@
       selectEquipment(event.target.dataset.equipmentId);
     }
   });
+  let searchTimer;
   refs.search.addEventListener('input', () => {
-    state.search = refs.search.value;
-    renderTable();
+    window.clearTimeout(searchTimer);
+    searchTimer = window.setTimeout(() => {
+      state.page = 0;
+      loadEquipment();
+    }, 250);
   });
-  refs.category.addEventListener('change', () => {
-    state.category = refs.category.value;
-    renderTable();
+  [refs.category, refs.status].forEach((filter) => {
+    filter.addEventListener('change', () => {
+      state.page = 0;
+      loadEquipment();
+    });
   });
-  refs.status.addEventListener('change', () => {
-    state.status = refs.status.value;
-    renderTable();
+  refs.previousPage.addEventListener('click', () => {
+    if (state.page === 0) return;
+    state.page -= 1;
+    loadEquipment();
+  });
+  refs.nextPage.addEventListener('click', () => {
+    if (state.page >= state.totalPages - 1) return;
+    state.page += 1;
+    loadEquipment();
   });
   refs.form.addEventListener('submit', saveEquipment);
   refs.confirmDelete.addEventListener('click', deletePendingEquipment);

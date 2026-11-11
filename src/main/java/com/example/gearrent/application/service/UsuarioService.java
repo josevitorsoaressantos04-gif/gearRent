@@ -134,20 +134,15 @@ public class UsuarioService {
         Usuario usuario = buscarEntidade(locadoraId, idUsuario);
 
         String email = request.email().trim();
-        String cpf = request.cpf().replaceAll("\\D", "");
 
         if (usuarioRepository.existsByLoginAndIdNot(email, idUsuario)) {
             throw new EmailDuplicadoException(
                     "Já existe outro usuário cadastrado com este e-mail. Use um e-mail diferente.");
         }
-        if (usuarioRepository.existsByCpfAndLocadoraIdAndIdNot(cpf, locadoraId, idUsuario)) {
-            throw new RegraDeNegocioException("Este CPF já está cadastrado para outro usuário da sua base.");
-        }
 
         usuario.setNome(request.nome().trim());
         usuario.setSobrenome(request.sobrenome().trim());
         usuario.setLogin(email);
-        usuario.setCpf(cpf);
         usuario.setDataAtualizacao(LocalDateTime.now());
 
         return PerfilConsultaResponse.de(usuario);

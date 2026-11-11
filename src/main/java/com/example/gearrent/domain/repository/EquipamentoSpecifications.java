@@ -33,6 +33,7 @@ public final class EquipamentoSpecifications {
     }
 
     public static Specification<Equipamento> naoCancelado() {
-        return null;
+        return (root, query, cb) ->
+                cb.notEqual(root.get("status"), StatusEquipamento.CANCELADO);
     }
 }

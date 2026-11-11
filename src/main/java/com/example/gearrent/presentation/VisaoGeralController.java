@@ -25,7 +25,7 @@ public class VisaoGeralController {
     @Operation(
             summary = "KPIs consolidados da locadora logada",
             description = "Retorna os indicadores do topo do dashboard: total de locações, em andamento, "
-                    + "atrasadas e faturamento total (excluindo locações canceladas). "
+                    + "atrasadas, faturamento total, receita do mês acumulada e valores em aberto. "
                     + "Os dados são restritos à locadora do usuário autenticado."
     )
     @GetMapping("/resumo")

@@ -33,7 +33,9 @@ public class VisaoGeralQueryService {
     private final LocacaoRepository locacaoRepository;
     private final EquipamentoRepository equipamentoRepository;
     private final ClienteRepository clienteRepository;
+    private final ResumoFinanceiroService resumoFinanceiroService;
 
+    @Transactional
     public VisaoGeralResumoDTO buscarResumo(Long locadoraId) {
         Map<StatusLocacao, Long> porStatus = locacaoRepository.contarPorStatus(locadoraId).stream()
                 .collect(Collectors.toMap(ContagemPorStatus::status, ContagemPorStatus::total));
@@ -43,12 +45,16 @@ public class VisaoGeralQueryService {
         // A query devolve Double (valorFinalCobrado é double na entidade)
         BigDecimal faturamento = BigDecimal.valueOf(
                 locacaoRepository.somarFaturamento(locadoraId, StatusLocacao.CANCELADA));
+        ResumoFinanceiroResponse resumoFinanceiro = resumoFinanceiroService.gerar(
+                locadoraId, null, null);
 
         return new VisaoGeralResumoDTO(
                 total,
                 porStatus.getOrDefault(StatusLocacao.EM_ANDAMENTO, 0L),
                 porStatus.getOrDefault(StatusLocacao.ATRASADA, 0L),
-                faturamento
+                faturamento,
+                resumoFinanceiro.receitaTotal(),
+                resumoFinanceiro.valoresEmAberto()
         );
     }
 

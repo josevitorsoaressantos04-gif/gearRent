@@ -8,11 +8,17 @@ import com.example.gearrent.application.DTO.EquipamentoConsultaResponse;
 import com.example.gearrent.application.DTO.EquipamentoDisponivelResponse;
 import com.example.gearrent.application.DTO.EquipamentoExclusaoResponse;
 import com.example.gearrent.application.DTO.EquipamentoListagemResponse;
+import com.example.gearrent.application.DTO.PaginaResponse;
 import com.example.gearrent.application.service.EquipamentoService;
+import com.example.gearrent.domain.enums.CategoriaEquipamento;
+import com.example.gearrent.domain.enums.StatusEquipamento;
 import com.example.gearrent.infra.security.UsuarioAutenticado;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -41,11 +47,15 @@ public class EquipamentoController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar Todos os Equipamentos", description = "Retorna a lista completa de equipamentos (em qualquer status) pertencentes à locadora do usuário autenticado. Permite filtragem opcional por nome.")
-    public ResponseEntity<List<EquipamentoListagemResponse>> listar(
+    @Operation(summary = "Listar equipamentos", description = "Retorna equipamentos da locadora autenticada com filtros opcionais e paginação.")
+    public ResponseEntity<PaginaResponse<EquipamentoListagemResponse>> listar(
             @AuthenticationPrincipal UsuarioAutenticado usuario,
-            @RequestParam(required = false, defaultValue = "") String nome) {
-        return ResponseEntity.ok(equipamentoService.listar(usuario.locadoraId(), nome));
+            @RequestParam(required = false) String nome,
+            @RequestParam(required = false) CategoriaEquipamento categoria,
+            @RequestParam(required = false) StatusEquipamento status,
+            @ParameterObject @PageableDefault(size = 10, sort = "nome") Pageable pageable) {
+        return ResponseEntity.ok(equipamentoService.listar(
+                usuario.locadoraId(), nome, categoria, status, pageable));
     }
 
     @GetMapping("/disponiveis")

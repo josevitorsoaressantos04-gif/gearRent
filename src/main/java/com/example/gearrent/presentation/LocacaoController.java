@@ -65,9 +65,10 @@ public class LocacaoController {
         return locacaoService.devolver(usuario.locadoraId(), id, request);
     }
 
+    @DeleteMapping("/{id}")
     @PatchMapping("/{id}/cancelamento")
     @Operation(summary = "Cancelar locação",
-            description = "Só funciona enquanto estiver em andamento. Libera os equipamentos.")
+            description = "Só funciona enquanto estiver em andamento e antes da data de retirada. Libera os equipamentos.")
     @ApiResponse(responseCode = "200", description = "Locação cancelada")
     @ApiResponse(responseCode = "404", description = "Locação não encontrada")
     @ApiResponse(responseCode = "422", description = "Locação não pode mais ser cancelada")

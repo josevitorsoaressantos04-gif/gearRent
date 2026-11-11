@@ -43,7 +43,7 @@
           <section class="toolbar equipment-toolbar" aria-label="Busca, filtros e ações de equipamentos">
             <div class="toolbar__group equipment-search">
               <label class="sr-only" for="equipmentSearch">Buscar equipamento por nome, código ou categoria</label>
-              <input id="equipmentSearch" class="toolbar__input" type="search" placeholder="Buscar por nome, código ou categoria" autocomplete="off" />
+              <input id="equipmentSearch" class="toolbar__input" type="search" placeholder="Buscar por nome" autocomplete="off" />
             </div>
             <label class="sr-only" for="equipmentCategory">Filtrar por categoria</label>
             <select id="equipmentCategory" class="equipment-control">
@@ -68,15 +68,15 @@
 
           <section class="kpis equipment-kpis" aria-label="Resumo do catálogo de equipamentos">
             <article class="kpi-card">
-              <span class="kpi-card__label">Equipamentos cadastrados</span>
+              <span class="kpi-card__label">Equipamentos nesta página</span>
               <strong class="kpi-card__value" id="equipmentTotal">—</strong>
             </article>
             <article class="kpi-card">
-              <span class="kpi-card__label">Disponíveis para locação</span>
+              <span class="kpi-card__label">Disponíveis nesta página</span>
               <strong class="kpi-card__value" id="equipmentAvailable">—</strong>
             </article>
             <article class="kpi-card">
-              <span class="kpi-card__label">Em manutenção</span>
+              <span class="kpi-card__label">Em manutenção nesta página</span>
               <strong class="kpi-card__value" id="equipmentMaintenance">—</strong>
             </article>
           </section>
@@ -104,6 +104,11 @@
                     <tr><td class="table-state" colspan="6">Carregando equipamentos…</td></tr>
                   </tbody>
                 </table>
+              </div>
+              <div class="pagination" aria-label="Paginação dos equipamentos">
+                <button id="previousEquipmentPage" class="btn btn--secondary" type="button" disabled>Anterior</button>
+                <span id="equipmentPageLabel" aria-live="polite">Página —</span>
+                <button id="nextEquipmentPage" class="btn btn--secondary" type="button" disabled>Próxima</button>
               </div>
               <p class="equipment-api-note">Os dados são carregados da locadora associada ao token de sessão.</p>
             </section>

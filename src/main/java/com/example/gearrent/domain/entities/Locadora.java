@@ -27,6 +27,9 @@ public class Locadora {
     @Column(length = 20)
     private String telefone;
 
+    @Column(length = 30)
+    private String tema;
+
     @Embedded
     private Endereco endereco;
 

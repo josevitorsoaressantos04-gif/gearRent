@@ -31,8 +31,14 @@ public class LocadoraService {
     public LocadoraConsultaResponse atualizar(Long locadoraId, LocadoraAtualizacaoRequest req) {
         Locadora locadora = buscar(locadoraId);
 
-        locadora.setNomeFantasia(req.nomeFantasia().trim());
+        String nomeFantasia = req.nomeFantasia() == null || req.nomeFantasia().isBlank()
+                ? req.nome()
+                : req.nomeFantasia();
+        locadora.setNomeFantasia(nomeFantasia.trim());
         locadora.setTelefone(req.telefone().trim());
+        if (req.tema() != null) {
+            locadora.setTema(req.tema().trim());
+        }
         locadora.setEndereco(req.endereco().paraEntidade());
         locadora.setDataAtualizacao(LocalDateTime.now(clock));
 

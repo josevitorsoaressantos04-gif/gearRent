@@ -172,6 +172,10 @@ public class Locacao {
             throw new TransicaoStatusInvalidaException(
                     "Só é possível cancelar uma locação que ainda está em andamento.");
         }
+        if (!agora.toLocalDate().isBefore(dataRetirada.toLocalDate())) {
+            throw new RegraDeNegocioException(
+                    "Não é possível cancelar a locação depois que a data de retirada chegou.");
+        }
         this.status = StatusLocacao.CANCELADA;
         this.valorDesconto = 0;
         this.valorMultaPorAtraso = 0;

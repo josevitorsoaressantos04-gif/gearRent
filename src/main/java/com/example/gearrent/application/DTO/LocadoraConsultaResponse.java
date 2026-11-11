@@ -8,12 +8,13 @@ public record LocadoraConsultaResponse(
         String nomeFantasia,
         String cnpj,
         String telefone,
+        String tema,
         EnderecoDTO endereco,
         StatusCadastro status) {
 
     public static LocadoraConsultaResponse de(Locadora l) {
         return new LocadoraConsultaResponse(
-                l.getId(), l.getNomeFantasia(), l.getCnpj(), l.getTelefone(),
+                l.getId(), l.getNomeFantasia(), l.getCnpj(), l.getTelefone(), l.getTema(),
                 EnderecoDTO.de(l.getEndereco()), l.getStatus());
     }
 }

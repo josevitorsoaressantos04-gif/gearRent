@@ -21,6 +21,9 @@ public record LocadoraAtualizacaoRequest(
         @Size(max = 20, message = "O telefone pode ter no máximo 20 caracteres.")
         String telefone,
 
+        @Size(max = 30, message = "O tema pode ter no máximo 30 caracteres.")
+        String tema,
+
         @NotNull(message = "Informe o endereço da sua empresa.")
         @Valid
         EnderecoDTO endereco) {
