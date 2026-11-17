@@ -1,0 +1,56 @@
+package com.example.gearrent.domain.entities;
+
+import com.example.gearrent.domain.enums.StatusCadastro;
+import com.example.gearrent.domain.enums.TipoPessoa;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Table(name = "cliente",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_cliente_locadora_codigo",
+                        columnNames = {"locadora_id", "codigo_sequencial"}),
+                @UniqueConstraint(
+                        name = "uk_cliente_locadora_documento",
+                        columnNames = {"locadora_id", "documento"}) // ✅ Trava isolada por locadora
+        })
+public class Cliente {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "codigo_sequencial", nullable = false, updatable = false)
+    private Long codigoSequencial;
+    @Column(nullable = false)
+    private String nome;
+
+    @Column(nullable = false)
+    private String documento;
+
+    // Nullable: clientes antigos não têm o valor gravado (a aplicação deduz pelo tamanho do documento)
+    @Enumerated(EnumType.STRING)
+    private TipoPessoa tipoPessoa;
+    private String email;
+    private String celular;
+    private String telefone;
+    private LocalDateTime  dataCadastro;
+    private LocalDateTime dataAtualizacao;
+
+    @Enumerated(EnumType.STRING)
+    private StatusCadastro status;
+
+    @Embedded
+    private Endereco enderecoResidencial;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "locadora_id", nullable = false)
+    private Locadora locadora;
+}
