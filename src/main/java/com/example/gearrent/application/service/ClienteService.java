@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -35,19 +36,21 @@ public class ClienteService {
     public ClienteCadastroResponse cadastrar(ClienteCadastroRequest request, Long locadoraId) {
         String documento = limparDocumento(request.documento());
 
-        // Busca SEM olhar o status: ativo, inativo ou cancelado
+        // Busca SEM olhar o status (ATIVO, INATIVO ou CANCELADO) mas restrito À LOCADORA ATUAL
         return clienteRepository.findByLocadoraIdAndDocumento(locadoraId, documento)
                 .map(existente -> reativar(existente, request))
                 .orElseGet(() -> criar(request, locadoraId, documento));
     }
 
     private ClienteCadastroResponse reativar(Cliente existente, ClienteCadastroRequest request) {
+        // Se já existir um cliente ATIVO na mesma locadora, barra com HTTP 409 Conflict
         if (existente.getStatus() == StatusCadastro.ATIVO) {
             throw new DocumentoDuplicadoException(
                     "Já existe um cliente ativo com este CPF ou CNPJ (cliente nº "
                             + existente.getCodigoSequencial() + ").");
         }
-        // Mesmo id e mesmo codigoSequencial; só os dados e o status mudam
+
+        // Se estiver CANCELADO/INATIVO na mesma locadora, reativa e atualiza os dados
         preencherDados(existente, request.nome(), request.email(), request.celular(),
                 request.telefone(), request.endereco());
         existente.setStatus(StatusCadastro.ATIVO);
@@ -129,7 +132,6 @@ public class ClienteService {
     // ---------------------------------------------------------------
     // Auxiliares
     // ---------------------------------------------------------------
-    // Cliente da locadora logada que ainda não foi cancelado
     private Cliente buscarVisivel(Long locadoraId, Long id) {
         Cliente cliente = clienteRepository.findByIdAndLocadoraId(id, locadoraId)
                 .orElseThrow(() -> new RegraDeNegocioException("Cliente não encontrado."));
@@ -150,8 +152,6 @@ public class ClienteService {
         }
     }
 
-    // ⚠️ Ajuste aos nomes reais dos campos de Endereco/EnderecoDTO
-    // (se o EnderecoDTO já tiver um método de conversão, use-o e apague este)
     private Endereco paraEndereco(EnderecoDTO dto) {
         Endereco e = new Endereco();
         e.setCep(dto.cep());

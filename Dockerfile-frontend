@@ -1,0 +1,14 @@
+FROM nginx:alpine
+
+# Remove as páginas padrão da imagem do Nginx
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copia as telas estáticas da pasta view para o Nginx
+COPY src/main/resources/view /usr/share/nginx/html
+
+# Copia a configuração personalizada do Nginx para o contêiner
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

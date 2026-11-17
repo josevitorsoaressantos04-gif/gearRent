@@ -446,7 +446,7 @@
     refs.actionDialog.showModal();
   }
 
-  // Envia a ação confirmada e recarrega locações e indicadores.
+// Envia a ação confirmada e recarrega locações e indicadores.
   async function confirmRentalAction() {
     if (!state.pendingAction) return;
     const { id, action } = state.pendingAction;
@@ -454,11 +454,14 @@
     refs.confirmAction.textContent = 'Processando…';
     try {
       if (action === 'return') {
-        const body = refs.returnDate.value ? { dataDevolucao: refs.returnDate.value } : {};
+        // ✅ Envia 'dataReal' conforme esperado pelo LocacaoDevolucaoRequest no Spring Boot
+        const body = refs.returnDate.value ? { dataReal: refs.returnDate.value } : {};
         await window.apiClient.patch(`/locacoes/${encodeURIComponent(id)}/devolucao`, body);
       } else {
-        await window.apiClient.patch(`/locacoes/${encodeURIComponent(id)}/cancelamento`);
+        // ✅ Cancela utilizando o método DELETE na rota padrão '/locacoes/{id}' (HTTP 200 OK)
+        await window.apiClient.delete(`/locacoes/${encodeURIComponent(id)}`);
       }
+
       refs.actionDialog.close();
       state.pendingAction = null;
       setError('');
