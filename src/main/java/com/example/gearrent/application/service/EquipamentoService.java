@@ -10,6 +10,7 @@ import com.example.gearrent.application.DTO.EquipamentoExclusaoResponse;
 import com.example.gearrent.application.DTO.EquipamentoListagemResponse;
 import com.example.gearrent.domain.entities.Equipamento;
 import com.example.gearrent.domain.enums.StatusEquipamento;
+import com.example.gearrent.domain.exception.ConflitoException;
 import com.example.gearrent.domain.exception.EquipamentoIndisponivelException;
 import com.example.gearrent.domain.exception.PatrimonioDuplicadoException;
 import com.example.gearrent.domain.exception.RecursoNaoEncontradoException;
@@ -54,8 +55,15 @@ public class EquipamentoService {
                     "Já existe um equipamento cadastrado com este número de patrimônio.");
         }
 
+        // Código sequencial é por locadora; a checagem protege contra corrida entre dois cadastros simultâneos
+        int codigo = equipamentoRepository.buscarUltimoCodigo(locadoraId) + 1;
+        if (equipamentoRepository.existsByLocadoraIdAndCodigoSequencial(locadoraId, codigo)) {
+            throw new ConflitoException(
+                    "Outro equipamento acabou de ser cadastrado. Tente salvar novamente.");
+        }
+
         Equipamento equipamento = new Equipamento();
-        equipamento.setCodigoSequencial(equipamentoRepository.buscarUltimoCodigo(locadoraId) + 1);
+        equipamento.setCodigoSequencial(codigo);
         equipamento.setNome(request.nome().trim());
         equipamento.setModelo(limpar(request.modelo()));
         equipamento.setNumeroPatrimonio(patrimonio);

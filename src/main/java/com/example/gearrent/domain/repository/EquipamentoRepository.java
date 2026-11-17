@@ -23,6 +23,8 @@ public interface EquipamentoRepository extends JpaRepository<Equipamento, Long>,
 
     boolean existsByLocadoraIdAndNumeroPatrimonio(Long locadoraId, String numeroPatrimonio);
 
+    boolean existsByLocadoraIdAndCodigoSequencial(Long locadoraId, int codigoSequencial);
+
     boolean existsByLocadoraIdAndNumeroPatrimonioAndIdNot(Long locadoraId, String numeroPatrimonio, Long id);
 
     List<Equipamento> findByLocadoraIdAndStatusNotAndNomeContainingIgnoreCaseOrderByNomeAsc(

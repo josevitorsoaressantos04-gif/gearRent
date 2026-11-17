@@ -316,8 +316,10 @@
         const dayCount = document.createElement('strong');
         dayCount.textContent = `${rental.diarias ?? 0} diária(s)`;
         const dailyValue = document.createElement('span');
-        dailyValue.className = 'unavailable-value';
-        dailyValue.textContent = 'Soma das diárias indisponível';
+        dailyValue.className = rental.valorDiariaSoma == null ? 'unavailable-value' : 'daily-value';
+        dailyValue.textContent = rental.valorDiariaSoma == null
+          ? 'Soma das diárias indisponível'
+          : `Soma das diárias: ${formatCurrency(rental.valorDiariaSoma)}`;
         const chargedValue = document.createElement('small');
         chargedValue.textContent = `Total cobrado: ${formatCurrency(rental.valorFinalCobrado)}`;
         valueCell.append(dayCount, dailyValue, chargedValue);

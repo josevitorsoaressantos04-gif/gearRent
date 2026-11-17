@@ -3,8 +3,10 @@ package com.example.gearrent.application.service;
 import com.example.gearrent.application.DTO.*;
 import com.example.gearrent.domain.entities.Cliente;
 import com.example.gearrent.domain.entities.Endereco;
+import com.example.gearrent.domain.entities.Equipamento;
 import com.example.gearrent.domain.enums.StatusCadastro;
 import com.example.gearrent.domain.enums.StatusLocacao;
+import com.example.gearrent.domain.enums.TipoPessoa;
 import com.example.gearrent.domain.exception.DocumentoDuplicadoException;
 import com.example.gearrent.domain.exception.RegraDeNegocioException;
 import com.example.gearrent.domain.repository.ClienteRepository;
@@ -14,6 +16,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -54,6 +59,7 @@ public class ClienteService {
         preencherDados(existente, request.nome(), request.email(), request.celular(),
                 request.telefone(), request.endereco());
         existente.setStatus(StatusCadastro.ATIVO);
+        existente.setTipoPessoa(TipoPessoa.deduzirDoDocumento(existente.getDocumento()));
         Cliente salvo = clienteRepository.save(existente);
 
         return new ClienteCadastroResponse(salvo.getId(), salvo.getCodigoSequencial(), salvo.getNome(),
@@ -63,6 +69,7 @@ public class ClienteService {
     private ClienteCadastroResponse criar(ClienteCadastroRequest request, Long locadoraId, String documento) {
         Cliente cliente = new Cliente();
         cliente.setDocumento(documento);
+        cliente.setTipoPessoa(TipoPessoa.deduzirDoDocumento(documento));
         cliente.setLocadora(locadoraRepository.getReferenceById(locadoraId));
         cliente.setStatus(StatusCadastro.ATIVO);
         preencherDados(cliente, request.nome(), request.email(), request.celular(),
@@ -96,17 +103,81 @@ public class ClienteService {
     }
 
     // ---------------------------------------------------------------
-    // ATUALIZAR (o documento não muda: o request não o recebe)
+    // ATUALIZAR (tipo de pessoa e documento são opcionais: se vierem, são revalidados)
     // ---------------------------------------------------------------
     @Transactional
     public ClienteAtualizacaoResponse atualizar(Long locadoraId, Long id, ClienteAtualizacaoRequest request) {
         Cliente cliente = buscarVisivel(locadoraId, id);
+
+        String documento = request.documento() == null
+                ? cliente.getDocumento()
+                : limparDocumento(request.documento());
+
+        TipoPessoa tipo = request.tipoPessoa() != null
+                ? request.tipoPessoa()
+                : (request.documento() != null
+                    ? TipoPessoa.deduzirDoDocumento(documento)
+                    : (cliente.getTipoPessoa() != null
+                        ? cliente.getTipoPessoa()
+                        : TipoPessoa.deduzirDoDocumento(documento)));
+
+        if (tipo == null || documento.length() != tipo.tamanhoDocumento()) {
+            throw new RegraDeNegocioException(tipo == TipoPessoa.JURIDICA
+                    ? "Para pessoa jurídica, informe um CNPJ com 14 números."
+                    : "Para pessoa física, informe um CPF com 11 números.");
+        }
+
+        // Só consulta duplicidade se o documento realmente mudou (sempre dentro da locadora do token)
+        if (!documento.equals(cliente.getDocumento())
+                && clienteRepository.existsByLocadoraIdAndDocumentoAndIdNot(locadoraId, documento, id)) {
+            throw new DocumentoDuplicadoException(
+                    "Este CPF ou CNPJ já pertence a outro cliente cadastrado nesta locadora.");
+        }
+
+        cliente.setDocumento(documento);
+        cliente.setTipoPessoa(tipo);
         preencherDados(cliente, request.nome(), request.email(), request.celular(),
                 request.telefone(), request.endereco());
         clienteRepository.save(cliente);
 
         return new ClienteAtualizacaoResponse(cliente.getId(), cliente.getNome(),
                 "Dados de " + cliente.getNome() + " atualizados com sucesso!");
+    }
+
+    // ---------------------------------------------------------------
+    // RESUMO E HISTÓRICO DE LOCAÇÕES DO CLIENTE
+    // ---------------------------------------------------------------
+    @Transactional(readOnly = true)
+    public ClienteResumoDTO resumo(Long locadoraId, Long id) {
+        buscarVisivel(locadoraId, id); // garante que o cliente é desta locadora
+
+        long total = locacaoRepository.contarLocacoesDoCliente(id, locadoraId, StatusLocacao.CANCELADA);
+        long emAndamento = locacaoRepository.contarLocacoesPorStatus(id, locadoraId, LOCACOES_EM_ABERTO);
+        long equipamentos = locacaoRepository.contarEquipamentosEmPosse(id, locadoraId, LOCACOES_EM_ABERTO);
+        BigDecimal emAberto = BigDecimal.valueOf(
+                        locacaoRepository.somarValorEmAbertoDoCliente(id, locadoraId, LOCACOES_EM_ABERTO))
+                .setScale(2, RoundingMode.HALF_UP);
+
+        return new ClienteResumoDTO(total, emAndamento, equipamentos, emAberto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ClienteHistoricoLocacaoDTO> historico(Long locadoraId, Long id) {
+        buscarVisivel(locadoraId, id);
+
+        return locacaoRepository.findByClienteIdAndLocadoraIdOrderByDataRetiradaDescIdDesc(id, locadoraId)
+                .stream()
+                .map(l -> new ClienteHistoricoLocacaoDTO(
+                        l.getId(),
+                        l.getCodigoSequencial(),
+                        l.getEquipamentos().stream()
+                                .sorted(Comparator.comparingInt(Equipamento::getCodigoSequencial))
+                                .map(Equipamento::getNome)
+                                .toList(),
+                        l.getDataRetirada(),
+                        l.getDataPrevista(),
+                        l.getStatus()))
+                .toList();
     }
 
     // ---------------------------------------------------------------

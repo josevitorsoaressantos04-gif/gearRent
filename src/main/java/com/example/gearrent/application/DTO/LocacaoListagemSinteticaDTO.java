@@ -12,6 +12,7 @@ public record LocacaoListagemSinteticaDTO(
         ClienteResumo cliente,
         List<ItemResumo> itens,
         long diarias,
+        BigDecimal valorDiariaSoma,   // soma do valor da diária (congelado na locação) de todos os equipamentos
         StatusLocacao status,
         LocalDateTime dataRetirada,
         LocalDateTime dataPrevista,

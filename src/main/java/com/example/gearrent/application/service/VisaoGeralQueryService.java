@@ -87,11 +87,24 @@ public class VisaoGeralQueryService {
                                 i.equipamentoId(), i.nome(), i.modelo(),
                                 i.categoria(), i.numeroPatrimonio()), Collectors.toList())));
 
-        return pagina.map(l -> paraDTO(l, itensPorLocacao.getOrDefault(l.getId(), List.of())));
+        // Query 3: equipamentos + preços congelados das locações da página (soma das diárias)
+        Map<Long, BigDecimal> somaDiariaPorLocacao = ids.isEmpty()
+                ? Map.of()
+                : locacaoRepository.buscarComValoresDiaria(locadoraId, ids).stream()
+                .collect(Collectors.toMap(
+                        Locacao::getId,
+                        l -> l.getEquipamentos().stream()
+                                .map(l::valorDiariaDe)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add)));
+
+        return pagina.map(l -> paraDTO(l,
+                itensPorLocacao.getOrDefault(l.getId(), List.of()),
+                somaDiariaPorLocacao.getOrDefault(l.getId(), BigDecimal.ZERO)));
     }
 
     private LocacaoListagemSinteticaDTO paraDTO(Locacao l,
-                                                List<LocacaoListagemSinteticaDTO.ItemResumo> itens) {
+                                                List<LocacaoListagemSinteticaDTO.ItemResumo> itens,
+                                                BigDecimal valorDiariaSoma) {
         // Diárias: retirada -> devolução real; se ainda não devolveu, usa a prevista
         LocalDateTime fim = l.getDataReal() != null ? l.getDataReal() : l.getDataPrevista();
         long diarias = (l.getDataRetirada() == null || fim == null)
@@ -104,6 +117,7 @@ public class VisaoGeralQueryService {
                         l.getCliente().getCodigoSequencial(), l.getCliente().getNome()),
                 itens,
                 diarias,
+                valorDiariaSoma.setScale(2, java.math.RoundingMode.HALF_UP),
                 l.getStatus(),
                 l.getDataRetirada(),
                 l.getDataPrevista(),

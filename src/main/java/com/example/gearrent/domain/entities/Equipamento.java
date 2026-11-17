@@ -15,17 +15,25 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@Table(name = "equipamento",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_equipamento_locadora_patrimonio",
+                        columnNames = {"locadora_id", "numero_patrimonio"}),
+                @UniqueConstraint(
+                        name = "uk_equipamento_locadora_codigo",
+                        columnNames = {"locadora_id", "codigo_sequencial"})
+        })
 public class Equipamento {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
+    // Unicidade só por locadora (ver @Table). Nunca use unique = true isolado aqui.
     private int codigoSequencial;
     private String nome;
     private String modelo;
 
-    @Column(unique = true)
     private String numeroPatrimonio;
 
     @Enumerated(EnumType.STRING)

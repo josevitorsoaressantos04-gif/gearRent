@@ -1,6 +1,7 @@
 package com.example.gearrent.domain.entities;
 
 import com.example.gearrent.domain.enums.StatusCadastro;
+import com.example.gearrent.domain.enums.TipoPessoa;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,6 +34,10 @@ public class Cliente {
 
     @Column(nullable = false)
     private String documento;
+
+    // Nullable: clientes antigos não têm o valor gravado (a aplicação deduz pelo tamanho do documento)
+    @Enumerated(EnumType.STRING)
+    private TipoPessoa tipoPessoa;
     private String email;
     private String celular;
     private String telefone;

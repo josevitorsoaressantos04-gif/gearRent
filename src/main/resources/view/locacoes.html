@@ -184,6 +184,37 @@
       </div>
     </dialog>
 
+    <!-- Edição de uma locação em andamento (PUT /api/locacoes/{id}). -->
+    <dialog id="editRentalDialog" class="dashboard-dialog rental-dialog" aria-labelledby="editRentalTitle">
+      <div class="dashboard-dialog__header">
+        <h2 id="editRentalTitle">Editar locação</h2>
+        <button class="icon-button" type="button" data-close-edit-dialog aria-label="Fechar">×</button>
+      </div>
+      <div id="editRentalError" class="dashboard-message dashboard-message--error" role="alert" hidden></div>
+      <form id="editRentalForm">
+        <div class="field-group">
+          <label for="editRentalDue">Nova data prevista de devolução</label>
+          <input id="editRentalDue" class="rental-control" type="date" required />
+        </div>
+        <div class="field-group">
+          <label for="editRentalDiscount">Desconto (R$)</label>
+          <input id="editRentalDiscount" class="rental-control" type="number" min="0" step="0.01" />
+        </div>
+        <div class="field-group">
+          <label for="editRentalResponsible">Responsável pela retirada</label>
+          <input id="editRentalResponsible" class="rental-control" type="text" maxlength="150" />
+        </div>
+        <div class="field-group">
+          <label for="editRentalResponsibleDoc">Documento do responsável</label>
+          <input id="editRentalResponsibleDoc" class="rental-control" type="text" maxlength="20" />
+        </div>
+        <div class="modal__actions">
+          <button class="btn btn--secondary" type="button" data-close-edit-dialog>Cancelar</button>
+          <button id="submitEditRental" class="btn btn--primary" type="submit">Salvar alterações</button>
+        </div>
+      </form>
+    </dialog>
+
     <!-- Fluxo de criação de locação com estimativa informativa de valores. -->
     <dialog id="newRentalDialog" class="dashboard-dialog rental-dialog" aria-labelledby="newRentalTitle">
       <div class="dashboard-dialog__header">

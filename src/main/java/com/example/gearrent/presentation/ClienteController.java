@@ -6,6 +6,8 @@ import com.example.gearrent.application.DTO.ClienteCadastroRequest;
 import com.example.gearrent.application.DTO.ClienteCadastroResponse;
 import com.example.gearrent.application.DTO.ClienteConsultaResponse;
 import com.example.gearrent.application.DTO.ClienteExclusaoResponse;
+import com.example.gearrent.application.DTO.ClienteHistoricoLocacaoDTO;
+import com.example.gearrent.application.DTO.ClienteResumoDTO;
 import com.example.gearrent.application.DTO.ClienteListagemResponse;
 import com.example.gearrent.application.service.ClienteService;
 import com.example.gearrent.infra.security.UsuarioAutenticado;
@@ -64,12 +66,34 @@ public class ClienteController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Atualizar Cliente",
-            description = "Atualiza os dados cadastrais (nome, contatos, endereço) de um cliente existente. O CPF/CNPJ não pode ser alterado.")
+            description = "Atualiza os dados cadastrais (nome, tipo de pessoa, CPF/CNPJ, contatos, endereço) de um cliente existente. "
+                    + "Tipo de pessoa e documento são opcionais (se omitidos, são mantidos). O documento precisa ter "
+                    + "11 números (física) ou 14 (jurídica) e não pode pertencer a outro cliente da mesma locadora (409).")
     public ResponseEntity<ClienteAtualizacaoResponse> atualizar(
             @AuthenticationPrincipal UsuarioAutenticado usuario,
             @PathVariable Long id,
             @Valid @RequestBody ClienteAtualizacaoRequest request) {
         return ResponseEntity.ok(clienteService.atualizar(usuario.locadoraId(), id, request));
+    }
+
+    @GetMapping("/{id}/resumo")
+    @Operation(summary = "Resumo de locações do cliente",
+            description = "Total de locações (sem canceladas), locações em andamento/atrasadas, equipamentos em posse "
+                    + "e valor total em aberto. Restrito à locadora do usuário autenticado.")
+    public ResponseEntity<ClienteResumoDTO> resumo(
+            @AuthenticationPrincipal UsuarioAutenticado usuario,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(clienteService.resumo(usuario.locadoraId(), id));
+    }
+
+    @GetMapping("/{id}/historico")
+    @Operation(summary = "Histórico de locações do cliente",
+            description = "Lista todas as locações do cliente, da mais recente para a mais antiga, com os nomes dos equipamentos. "
+                    + "Restrito à locadora do usuário autenticado.")
+    public ResponseEntity<List<ClienteHistoricoLocacaoDTO>> historico(
+            @AuthenticationPrincipal UsuarioAutenticado usuario,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(clienteService.historico(usuario.locadoraId(), id));
     }
 
     @DeleteMapping("/{id}")

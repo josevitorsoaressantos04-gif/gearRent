@@ -198,15 +198,23 @@ public class UsuarioService {
         Usuario usuario = buscarEntidade(idBase, idUsuario);
         usuario.setStatus(StatusCadastro.CANCELADO);
         usuario.setDataAtualizacao(LocalDateTime.now());
-        return new UsuarioStatusResponse(usuario.getId(), "Usuário excluído com sucesso!");
+        return new UsuarioStatusResponse(usuario.getId(), usuario.getStatus(), "Usuário excluído com sucesso!");
     }
 
+    // solicitanteId vem do token: o admin não pode desativar a si mesmo (ficaria sem acesso à base)
     @Transactional
-    public UsuarioStatusResponse desativar(Long idBase, Long idUsuario) {
+    public UsuarioStatusResponse desativar(Long idBase, Long solicitanteId, Long idUsuario) {
+        if (solicitanteId != null && solicitanteId.equals(idUsuario)) {
+            throw new RegraDeNegocioException("Você não pode desativar o seu próprio acesso.");
+        }
         Usuario usuario = buscarEntidade(idBase, idUsuario);
+        if (usuario.getStatus() == StatusCadastro.INATIVO) {
+            return new UsuarioStatusResponse(usuario.getId(), usuario.getStatus(),
+                    "Este usuário já estava desativado.");
+        }
         usuario.setStatus(StatusCadastro.INATIVO);
         usuario.setDataAtualizacao(LocalDateTime.now());
-        return new UsuarioStatusResponse(usuario.getId(), "Usuário desativado com sucesso!");
+        return new UsuarioStatusResponse(usuario.getId(), usuario.getStatus(), "Usuário desativado com sucesso!");
     }
 
     // Consulta 1: uso interno (log, auditoria)

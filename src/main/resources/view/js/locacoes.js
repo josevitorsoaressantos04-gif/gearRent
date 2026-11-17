@@ -71,6 +71,14 @@
     estimateTotal: document.getElementById('estimatedRentalTotal'),
     submitNewRental: document.getElementById('submitNewRental'),
     confirmAction: document.getElementById('confirmRentalAction'),
+    editDialog: document.getElementById('editRentalDialog'),
+    editForm: document.getElementById('editRentalForm'),
+    editError: document.getElementById('editRentalError'),
+    editDue: document.getElementById('editRentalDue'),
+    editDiscount: document.getElementById('editRentalDiscount'),
+    editResponsible: document.getElementById('editRentalResponsible'),
+    editResponsibleDoc: document.getElementById('editRentalResponsibleDoc'),
+    submitEdit: document.getElementById('submitEditRental'),
   };
 
   // Restaura e salva a preferência de visibilidade de cada indicador.
@@ -255,6 +263,7 @@
         const canReturn = ['EM_ANDAMENTO', 'ATRASADA'].includes(rental.status);
         actions.append(
           makeAction('Ver detalhes do contrato', '👁️', rental, 'details'),
+          makeAction('Editar locação', '✏️', rental, 'edit', !canCancel),
           makeAction('Registrar devolução', '📥', rental, 'return', !canReturn),
           makeAction('Cancelar locação', '🚫', rental, 'cancel', !canCancel),
         );
@@ -427,6 +436,50 @@
     refs.detailsContent.append(note);
   }
 
+  // Abre o formulário de edição já preenchido com os dados atuais do contrato.
+  async function openEditRental(rental) {
+    state.editingRentalId = rental.id;
+    refs.editError.hidden = true;
+    refs.editError.textContent = '';
+    refs.editForm.reset();
+    try {
+      const resposta = await window.apiClient.get(`/locacoes/${encodeURIComponent(rental.id)}`);
+      const data = resposta.data || {};
+      refs.editDue.value = String(data.dataPrevista || rental.dataPrevista || '').slice(0, 10);
+      refs.editDiscount.value = data.valorDesconto ?? '';
+      refs.editResponsible.value = data.responsavelRetirada || '';
+      refs.editResponsibleDoc.value = data.documentoResponsavelRetirada || '';
+      refs.editDialog.showModal();
+    } catch (error) {
+      setError(getErrorMessage(error));
+    }
+  }
+
+  // Envia a edição (PUT /locacoes/{id}) e recarrega a lista e os indicadores.
+  async function submitEditRental(event) {
+    event.preventDefault();
+    refs.editError.hidden = true;
+    refs.submitEdit.disabled = true;
+    try {
+      const body = {
+        dataPrevista: refs.editDue.value || null,
+        valorDesconto: refs.editDiscount.value === '' ? null : Number(refs.editDiscount.value),
+        responsavelRetirada: refs.editResponsible.value.trim() || null,
+        documentoResponsavelRetirada: refs.editResponsibleDoc.value.trim() || null,
+      };
+      await window.apiClient.put(`/locacoes/${encodeURIComponent(state.editingRentalId)}`, body);
+      refs.editDialog.close();
+      setError('');
+      await Promise.all([loadRentals(), loadSummary()]);
+      setMessage('Locação atualizada com sucesso.');
+    } catch (error) {
+      refs.editError.textContent = getErrorMessage(error);
+      refs.editError.hidden = false;
+    } finally {
+      refs.submitEdit.disabled = false;
+    }
+  }
+
   // Prepara a confirmação da ação disponível para a locação.
   function showRentalAction(rental, action) {
     const isReturn = action === 'return';
@@ -454,8 +507,8 @@
     refs.confirmAction.textContent = 'Processando…';
     try {
       if (action === 'return') {
-        // ✅ Envia 'dataReal' conforme esperado pelo LocacaoDevolucaoRequest no Spring Boot
-        const body = refs.returnDate.value ? { dataReal: refs.returnDate.value } : {};
+        // O DTO do back-end (LocacaoDevolucaoRequest) usa o campo 'dataDevolucao'
+        const body = refs.returnDate.value ? { dataDevolucao: refs.returnDate.value } : {};
         await window.apiClient.patch(`/locacoes/${encodeURIComponent(id)}/devolucao`, body);
       } else {
         // ✅ Cancela utilizando o método DELETE na rota padrão '/locacoes/{id}' (HTTP 200 OK)
@@ -615,8 +668,13 @@
     const rental = state.rows.find((item) => String(item.id) === button.dataset.rentalId);
     if (!rental) return;
     if (button.dataset.action === 'details') openDetails(rental);
+    else if (button.dataset.action === 'edit') openEditRental(rental);
     else showRentalAction(rental, button.dataset.action);
   });
+  document.querySelectorAll('[data-close-edit-dialog]').forEach((button) => {
+    button.addEventListener('click', () => refs.editDialog.close());
+  });
+  refs.editForm.addEventListener('submit', submitEditRental);
   document.getElementById('openNewRental').addEventListener('click', async () => {
     document.getElementById('newRentalForm').reset();
     refs.newError.hidden = true;

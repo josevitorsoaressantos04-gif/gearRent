@@ -163,7 +163,15 @@
       const row = document.createElement('tr');
       const status = String(user.status || 'Não informado');
       const actionCell = document.createElement('td');
-      if (state.isAdmin && status === 'INATIVO') {
+      if (state.isAdmin && status === 'ATIVO') {
+        const action = document.createElement('button');
+        action.type = 'button';
+        action.className = 'btn btn--secondary operator-action';
+        action.textContent = 'Desativar';
+        action.dataset.deactivateId = String(user.id);
+        action.setAttribute('aria-label', `Desativar ${user.nome || 'operador'}`);
+        actionCell.append(action);
+      } else if (state.isAdmin && status === 'INATIVO') {
         const action = document.createElement('button');
         action.type = 'button';
         action.className = 'btn btn--secondary operator-action';
@@ -175,9 +183,9 @@
         const action = document.createElement('button');
         action.type = 'button';
         action.className = 'btn btn--secondary operator-action';
-        action.textContent = status === 'ATIVO' ? 'Desativação indisponível' : 'Ação indisponível';
+        action.textContent = 'Ação indisponível';
         action.disabled = true;
-        action.title = 'A API não protege a desativação por papel administrativo.';
+        action.title = 'Somente administradores podem desativar ou reativar operadores.';
         actionCell.append(action);
       }
       row.append(
@@ -255,6 +263,20 @@
     tab.focus();
   }
 
+  // Desativa o operador (PATCH /usuarios/{id}/desativar, exige ROLE_ADMIN) e atualiza a tabela.
+  async function deactivateUser(id, button) {
+    button.disabled = true;
+    try {
+      const resposta = await window.apiClient.patch(`/usuarios/${encodeURIComponent(id)}/desativar`);
+      setError('');
+      setMessage(resposta.data?.mensagem || 'Usuário desativado com sucesso.');
+      await loadUsers();
+    } catch (error) {
+      button.disabled = false;
+      setError(getErrorMessage(error));
+    }
+  }
+
   // Reativa o operador selecionado e atualiza o estado da tabela.
   async function reactivateUser(id, button) {
     button.disabled = true;
@@ -300,6 +322,8 @@
   refs.table.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-reactivate-id]');
     if (button) reactivateUser(button.dataset.reactivateId, button);
+    const off = event.target.closest('button[data-deactivate-id]');
+    if (off) deactivateUser(off.dataset.deactivateId, off);
   });
 
   document.getElementById('operatorForm').addEventListener('submit', async (event) => {
@@ -477,8 +501,8 @@
     input.disabled = !state.isAdmin;
   });
   setNotice(refs.operatorNotice, state.isAdmin
-    ? 'A desativação permanece bloqueada porque a rota existente não exige papel administrativo.'
-    : 'Somente administradores podem cadastrar ou reativar operadores. A desativação está indisponível por segurança.');
+    ? 'Como administrador, você pode cadastrar, desativar e reativar operadores da sua base.'
+    : 'Somente administradores podem cadastrar, desativar ou reativar operadores.');
   if (!state.isAdmin) setNotice(refs.baseNotice, 'Somente administradores podem atualizar os dados da base.');
 
   const initialTab = window.location.hash === '#perfil' ? 'profile'

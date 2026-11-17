@@ -152,7 +152,7 @@
                 <!-- Indicadores associados ao histórico de consumo do cliente. -->
                 <section class="metrics-panel" aria-labelledby="metricsTitle">
                   <h3 id="metricsTitle">Resumo de consumo</h3>
-                  <p class="detail-api-note">Indicadores de locação não são fornecidos pela API atual.</p>
+                  <p class="detail-api-note" hidden>Indicadores carregados do servidor.</p>
                   <div class="metrics-grid">
                     <div class="metric-box">
                       <span>Total de locações</span>
@@ -176,7 +176,7 @@
                 <!-- Histórico de locações do cliente selecionado. -->
                 <section class="history-panel" aria-labelledby="historyTitle">
                   <h3 id="historyTitle">Histórico recente</h3>
-                  <p class="detail-api-note">A API ainda não disponibiliza o histórico de locações por cliente.</p>
+                  <p class="detail-api-note" hidden>Histórico carregado do servidor.</p>
                   <ul id="historicoLocacoes" class="history-list">
                     <li class="history-empty">Selecione um cliente para ver os dados disponíveis.</li>
                   </ul>
@@ -203,7 +203,7 @@
           <button type="button" class="modal__close" aria-label="Fechar formulário" data-close-modal>×</button>
         </div>
         <div id="avisoDocumentoEdicao" class="form-notice" hidden>
-          A API atual não permite alterar tipo de pessoa ou documento após o cadastro.
+          Ao alterar o tipo de pessoa ou o documento, o CPF/CNPJ não pode pertencer a outro cliente da sua locadora.
         </div>
         <div id="erroFormulario" class="clients-message clients-message--error" role="alert" hidden></div>
         <form id="clienteForm" novalidate>

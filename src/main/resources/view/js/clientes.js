@@ -15,6 +15,8 @@
     cadastrar: (payload) => window.apiClient.post('/clientes', payload),
     atualizar: (id, payload) => window.apiClient.put(`/clientes/${encodeURIComponent(id)}`, payload),
     excluir: (id) => window.apiClient.delete(`/clientes/${encodeURIComponent(id)}`),
+    resumo: (id) => window.apiClient.get(`/clientes/${encodeURIComponent(id)}/resumo`),
+    historico: (id) => window.apiClient.get(`/clientes/${encodeURIComponent(id)}/historico`),
   };
   window.GR.auth = window.GR.auth || {};
   if (typeof window.GR.auth.sair !== 'function') {
@@ -347,8 +349,52 @@
       : formatCurrency(client.valorAberto);
     appendHistoryEmpty(historyAvailable
       ? 'Este cliente ainda não possui locações registradas.'
-      : 'O histórico de locações não está disponível na API atual.');
+      : 'O histórico será carregado do servidor.');
     document.getElementById('btnNovaLocacao').disabled = false;
+  }
+
+  // Carrega resumo e histórico de locações do cliente (GET /clientes/{id}/resumo e /historico).
+  async function loadClientExtras(client, requestId) {
+    const stale = () => requestId !== state.detailRequest || String(state.selectedId) !== String(client.id);
+    try {
+      const [resumo, historico] = await Promise.all([
+        window.GR.api.clientes.resumo(client.id),
+        window.GR.api.clientes.historico(client.id),
+      ]);
+      if (stale()) return;
+      document.getElementById('metricTotalLocacoes').textContent = resumo.data.totalLocacoes ?? '—';
+      document.getElementById('metricLocacoesAndamento').textContent = resumo.data.locacoesEmAndamento ?? '—';
+      document.getElementById('metricEquipamentosPosse').textContent = resumo.data.equipamentosEmPosse ?? '—';
+      document.getElementById('metricValorAberto').textContent = resumo.data.valorTotalEmAberto == null
+        ? '—'
+        : formatCurrency(resumo.data.valorTotalEmAberto);
+
+      const lista = Array.isArray(historico.data) ? historico.data : [];
+      if (!lista.length) {
+        appendHistoryEmpty('Este cliente ainda não possui locações registradas.');
+        return;
+      }
+      const statusTexto = {
+        EM_ANDAMENTO: 'Em andamento', ATRASADA: 'Atrasada', CONCLUIDA: 'Concluída', CANCELADA: 'Cancelada',
+      };
+      const dataCurta = (valor) => (valor ? new Date(valor).toLocaleDateString('pt-BR') : '—');
+      refs.history.replaceChildren(...lista.map((item) => {
+        const li = document.createElement('li');
+        li.className = 'history-item';
+        li.textContent = `Locação nº ${item.codigoSequencialLocacao ?? item.idLocacao} · `
+          + `${(item.equipamentos || []).join(', ') || 'Sem equipamentos'} · `
+          + `Retirada ${dataCurta(item.dataRetirada)} · Previsão ${dataCurta(item.dataPrevista)} · `
+          + `${statusTexto[item.status] || item.status}`;
+        return li;
+      }));
+    } catch (error) {
+      if (stale()) return;
+      if (error.response?.status === 401) {
+        window.GR.auth.sair();
+        return;
+      }
+      appendHistoryEmpty(`Não foi possível carregar o histórico. ${getErrorMessage(error)}`);
+    }
   }
 
   // Seleciona o cliente e consulta os detalhes relacionados à sua conta.
@@ -373,6 +419,7 @@
       state.clientes = state.clientes.map((item) => String(item.id) === String(client.id) ? updated : item);
       renderTable();
       renderDetails(updated);
+      loadClientExtras(updated, requestId);
     } catch (error) {
       if (requestId !== state.detailRequest) return;
       if (error.response?.status === 401) {
@@ -509,8 +556,8 @@
     refs.modalTitle.textContent = 'Editar Cliente';
     refs.saveButton.textContent = 'Salvar alterações';
     refs.editNotice.hidden = false;
-    refs.type.disabled = true;
-    refs.document.disabled = true;
+    refs.type.disabled = false;
+    refs.document.disabled = false;
     refs.type.value = client.tipoPessoa || inferPersonType(client.documento) || 'PF';
     setPersonType(refs.type.value);
     refs.document.value = formatDocument(client.documento || '', refs.type.value);
@@ -553,7 +600,9 @@
     const phone = refs.phone.value.trim();
     return {
       nome: refs.name.value.trim(),
-      ...(!state.editingId ? { documento: digits(refs.document.value) } : {}),
+      ...(state.editingId
+        ? { tipoPessoa: refs.type.value === 'PJ' ? 'JURIDICA' : 'FISICA', documento: digits(refs.document.value) }
+        : { documento: digits(refs.document.value) }),
       email: refs.email.value.trim() || null,
       celular: phone || null,
       telefone: phone || null,
@@ -572,7 +621,7 @@
   // Valida campos, documentos e dados obrigatórios antes do envio.
   function validateForm() {
     if (!refs.name.value.trim()) return 'Informe o nome do cliente.';
-    if (!state.editingId) {
+    {
       const valid = refs.type.value === 'PJ'
         ? validCNPJ(refs.document.value)
         : validCPF(refs.document.value);

@@ -1,5 +1,6 @@
 package com.example.gearrent.application.service;
 
+import com.example.gearrent.application.DTO.LocacaoAtualizacaoRequest;
 import com.example.gearrent.application.DTO.LocacaoCadastroRequest;
 import com.example.gearrent.application.DTO.LocacaoDevolucaoRequest;
 import com.example.gearrent.application.DTO.LocacaoResponse;
@@ -119,6 +120,26 @@ public class LocacaoService {
 
         locacao.sincronizarAtraso(agora);
         locacao.devolver(dataDevolucao, agora);
+        return LocacaoResponse.de(locacao, agora);
+    }
+
+    @Transactional
+    public LocacaoResponse atualizar(Long locadoraId, Long id, LocacaoAtualizacaoRequest req) {
+        LocalDateTime agora = LocalDateTime.now(clock);
+        Locacao locacao = locacaoRepository.buscarParaAtualizacao(id, locadoraId)
+                .orElseThrow(this::naoEncontrada);
+
+        // Se já passou da data prevista, vira ATRASADA aqui e a edição é recusada (só EM_ANDAMENTO edita)
+        locacao.sincronizarAtraso(agora);
+
+        Endereco endereco = req.enderecoEntrega() == null ? null : req.enderecoEntrega().paraEntidade();
+        locacao.atualizar(
+                req.dataPrevista() == null ? null : req.dataPrevista().atStartOfDay(),
+                req.valorDesconto(),
+                req.responsavelRetirada(),
+                req.documentoResponsavelRetirada(),
+                endereco,
+                agora);
         return LocacaoResponse.de(locacao, agora);
     }
 
