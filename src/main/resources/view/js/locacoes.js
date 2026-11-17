@@ -5,6 +5,7 @@
     window.location.replace('login.html');
     return;
   }
+  if (localStorage.getItem('gearRentTheme') === 'dark') document.body.dataset.theme = 'dark';
 
   window.GR = window.GR || {};
   window.GR.auth = window.GR.auth || {};
@@ -71,6 +72,14 @@
     estimateTotal: document.getElementById('estimatedRentalTotal'),
     submitNewRental: document.getElementById('submitNewRental'),
     confirmAction: document.getElementById('confirmRentalAction'),
+    editDialog: document.getElementById('editRentalDialog'),
+    editForm: document.getElementById('editRentalForm'),
+    editError: document.getElementById('editRentalError'),
+    editDue: document.getElementById('editRentalDue'),
+    editDiscount: document.getElementById('editRentalDiscount'),
+    editResponsible: document.getElementById('editRentalResponsible'),
+    editResponsibleDoc: document.getElementById('editRentalResponsibleDoc'),
+    submitEdit: document.getElementById('submitEditRental'),
   };
 
   // Restaura e salva a preferência de visibilidade de cada indicador.
@@ -160,9 +169,13 @@
     try {
       const current = await getJSON('/usuarios/me');
       if (!current?.nome) throw new Error('Não foi possível identificar o usuário autenticado.');
-      document.getElementById('userNameSidebar').textContent = current.nome;
-      document.getElementById('baseNameSidebar').textContent = `Base de ${current.nome}`;
-      document.getElementById('avatarSidebar').textContent = initials(current.nome);
+      if (window.GR?.sidebar) {
+        window.GR.sidebar.aplicarNoDom({ nome: current.nome });
+      } else {
+        document.getElementById('userNameSidebar').textContent = current.nome;
+        document.getElementById('baseNameSidebar').textContent = `Base de ${current.nome}`;
+        document.getElementById('avatarSidebar').textContent = initials(current.nome);
+      }
       await window.GR.avatar.carregar(
         document.getElementById('avatarSidebar'),
         current.avatarAtualizadoEm,
@@ -255,6 +268,7 @@
         const canReturn = ['EM_ANDAMENTO', 'ATRASADA'].includes(rental.status);
         actions.append(
           makeAction('Ver detalhes do contrato', '👁️', rental, 'details'),
+          makeAction('Editar locação', '✏️', rental, 'edit', !canCancel),
           makeAction('Registrar devolução', '📥', rental, 'return', !canReturn),
           makeAction('Cancelar locação', '🚫', rental, 'cancel', !canCancel),
         );
@@ -427,6 +441,50 @@
     refs.detailsContent.append(note);
   }
 
+  // Abre o formulário de edição já preenchido com os dados atuais do contrato.
+  async function openEditRental(rental) {
+    state.editingRentalId = rental.id;
+    refs.editError.hidden = true;
+    refs.editError.textContent = '';
+    refs.editForm.reset();
+    try {
+      const resposta = await window.apiClient.get(`/locacoes/${encodeURIComponent(rental.id)}`);
+      const data = resposta.data || {};
+      refs.editDue.value = String(data.dataPrevista || rental.dataPrevista || '').slice(0, 10);
+      refs.editDiscount.value = data.valorDesconto ?? '';
+      refs.editResponsible.value = data.responsavelRetirada || '';
+      refs.editResponsibleDoc.value = data.documentoResponsavelRetirada || '';
+      refs.editDialog.showModal();
+    } catch (error) {
+      setError(getErrorMessage(error));
+    }
+  }
+
+  // Envia a edição (PUT /locacoes/{id}) e recarrega a lista e os indicadores.
+  async function submitEditRental(event) {
+    event.preventDefault();
+    refs.editError.hidden = true;
+    refs.submitEdit.disabled = true;
+    try {
+      const body = {
+        dataPrevista: refs.editDue.value || null,
+        valorDesconto: refs.editDiscount.value === '' ? null : Number(refs.editDiscount.value),
+        responsavelRetirada: refs.editResponsible.value.trim() || null,
+        documentoResponsavelRetirada: refs.editResponsibleDoc.value.trim() || null,
+      };
+      await window.apiClient.put(`/locacoes/${encodeURIComponent(state.editingRentalId)}`, body);
+      refs.editDialog.close();
+      setError('');
+      await Promise.all([loadRentals(), loadSummary()]);
+      setMessage('Locação atualizada com sucesso.');
+    } catch (error) {
+      refs.editError.textContent = getErrorMessage(error);
+      refs.editError.hidden = false;
+    } finally {
+      refs.submitEdit.disabled = false;
+    }
+  }
+
   // Prepara a confirmação da ação disponível para a locação.
   function showRentalAction(rental, action) {
     const isReturn = action === 'return';
@@ -446,7 +504,7 @@
     refs.actionDialog.showModal();
   }
 
-  // Envia a ação confirmada e recarrega locações e indicadores.
+// Envia a ação confirmada e recarrega locações e indicadores.
   async function confirmRentalAction() {
     if (!state.pendingAction) return;
     const { id, action } = state.pendingAction;
@@ -454,11 +512,14 @@
     refs.confirmAction.textContent = 'Processando…';
     try {
       if (action === 'return') {
+        // O DTO do back-end (LocacaoDevolucaoRequest) usa o campo 'dataDevolucao'
         const body = refs.returnDate.value ? { dataDevolucao: refs.returnDate.value } : {};
         await window.apiClient.patch(`/locacoes/${encodeURIComponent(id)}/devolucao`, body);
       } else {
-        await window.apiClient.patch(`/locacoes/${encodeURIComponent(id)}/cancelamento`);
+        // ✅ Cancela utilizando o método DELETE na rota padrão '/locacoes/{id}' (HTTP 200 OK)
+        await window.apiClient.delete(`/locacoes/${encodeURIComponent(id)}`);
       }
+
       refs.actionDialog.close();
       state.pendingAction = null;
       setError('');
@@ -555,16 +616,29 @@
       refs.estimateTotal.textContent = 'Total estimado: —';
       return;
     }
-    const days = Math.max(1, Math.ceil((due - start) / 86400000));
+    // Se a locação for cadastrada de forma retroativa e a data prevista já tiver passado,
+    // considera hoje como referência para estimar os dias de atraso e a multa de 10%.
+    const now = new Date();
+    const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const referenceDay = todayUtc > due ? todayUtc : due;
+    const totalDays = Math.max(1, Math.round((referenceDay - start) / 86400000));
+    const overdueDays = Math.max(0, Math.round((referenceDay - due) / 86400000));
     const dailyValues = selected.map((input) => Number(input.dataset.dailyValue));
     if (dailyValues.some((value) => !Number.isFinite(value))) {
-      refs.estimateDays.textContent = `Diárias estimadas: ${days}`;
+      refs.estimateDays.textContent = `Diárias estimadas: ${totalDays}`;
       refs.estimateTotal.textContent = 'Total estimado: diária não informada';
       return;
     }
     const dailyTotal = dailyValues.reduce((total, value) => total + value, 0);
-    refs.estimateDays.textContent = `Diárias estimadas: ${days}`;
-    refs.estimateTotal.textContent = `Total estimado: ${currency(days * dailyTotal)}`;
+    // Multa de 10% sobre o valor das diárias em atraso (mesma regra de CalculadoraLocacao.java)
+    const fine = overdueDays * dailyTotal * 0.10;
+    const totalAmount = (totalDays * dailyTotal) + fine;
+    refs.estimateDays.textContent = overdueDays > 0
+      ? `Diárias até hoje: ${totalDays} (${overdueDays} dia(s) de atraso)`
+      : `Diárias estimadas: ${totalDays}`;
+    refs.estimateTotal.textContent = overdueDays > 0
+      ? `Total c/ multa (10%): ${currency(totalAmount)} (multa: ${currency(fine)})`
+      : `Total estimado: ${currency(totalAmount)}`;
   }
 
   // Valida filtros de período e solicita novamente a lista de locações.
@@ -612,8 +686,13 @@
     const rental = state.rows.find((item) => String(item.id) === button.dataset.rentalId);
     if (!rental) return;
     if (button.dataset.action === 'details') openDetails(rental);
+    else if (button.dataset.action === 'edit') openEditRental(rental);
     else showRentalAction(rental, button.dataset.action);
   });
+  document.querySelectorAll('[data-close-edit-dialog]').forEach((button) => {
+    button.addEventListener('click', () => refs.editDialog.close());
+  });
+  refs.editForm.addEventListener('submit', submitEditRental);
   document.getElementById('openNewRental').addEventListener('click', async () => {
     document.getElementById('newRentalForm').reset();
     refs.newError.hidden = true;

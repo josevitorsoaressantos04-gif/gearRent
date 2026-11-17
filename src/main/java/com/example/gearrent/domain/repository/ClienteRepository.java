@@ -17,6 +17,9 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
     // Sem filtro de status: enxerga ATIVO, INATIVO e CANCELADO (regra da reativação)
     Optional<Cliente> findByLocadoraIdAndDocumento(Long locadoraId, String documento);
 
+    // Documento já usado por OUTRO cliente da mesma locadora (qualquer status: a trava do banco vale para todos)
+    boolean existsByLocadoraIdAndDocumentoAndIdNot(Long locadoraId, String documento, Long id);
+
     // Busca por id sempre amarrada à locadora (multi-tenant)
     Optional<Cliente> findByIdAndLocadoraId(Long id, Long locadoraId);
 

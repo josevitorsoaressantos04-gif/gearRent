@@ -5,9 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GearRent | Configurações</title>
     <meta name="description" content="Configurações da base, operadores e perfil do usuário GearRent." />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0"
+    />
     <link rel="stylesheet" href="css/layout.css" />
   </head>
-  <body class="dashboard-body settings-dashboard">
+  <body class="dashboard-body settings-dashboard polished-dashboard">
+    <script>if (localStorage.getItem('gearRentTheme') === 'dark') document.body.dataset.theme = 'dark';</script>
     <div class="app-shell">
       <!-- Navegação entre as telas da base autenticada. -->
       <aside class="sidebar" aria-label="Menu lateral da base">
@@ -19,13 +24,12 @@
           </div>
         </div>
         <nav class="sidebar__nav" aria-label="Menu principal">
-          <a class="nav-item" href="visao-geral.html"><span class="nav-item__icon" aria-hidden="true">📊</span><span>Visão Geral</span></a>
-          <a class="nav-item" href="clientes.html"><span class="nav-item__icon" aria-hidden="true">👥</span><span>Clientes</span></a>
-          <a class="nav-item" href="equipamentos.html"><span class="nav-item__icon" aria-hidden="true">🚜</span><span>Equipamentos</span></a>
-          <a class="nav-item" href="locacoes.html"><span class="nav-item__icon" aria-hidden="true">📄</span><span>Locações</span></a>
-          <a class="nav-item nav-item--active" href="configuracoes.html" aria-current="page"><span class="nav-item__icon" aria-hidden="true">⚙️</span><span>Configurações</span></a>
-          <a class="nav-item" href="configuracoes.html#perfil"><span class="nav-item__icon" aria-hidden="true">👤</span><span>Meu perfil</span></a>
-          <button class="nav-item nav-item--logout" id="btnLogout" type="button"><span class="nav-item__icon" aria-hidden="true">🚪</span><span>Sair</span></button>
+          <a class="nav-item" href="visao-geral.html"><span class="nav-item__icon material-symbols-rounded" aria-hidden="true">dashboard</span><span>Visão Geral</span></a>
+          <a class="nav-item" href="clientes.html"><span class="nav-item__icon material-symbols-rounded" aria-hidden="true">group</span><span>Clientes</span></a>
+          <a class="nav-item" href="equipamentos.html"><span class="nav-item__icon material-symbols-rounded" aria-hidden="true">construction</span><span>Equipamentos</span></a>
+          <a class="nav-item" href="locacoes.html"><span class="nav-item__icon material-symbols-rounded" aria-hidden="true">receipt_long</span><span>Locações</span></a>
+          <a class="nav-item nav-item--active" href="configuracoes.html" aria-current="page"><span class="nav-item__icon material-symbols-rounded" aria-hidden="true">settings</span><span>Configurações</span></a>
+          <button class="nav-item nav-item--logout" id="btnLogout" type="button"><span class="nav-item__icon material-symbols-rounded" aria-hidden="true">logout</span><span>Sair</span></button>
         </nav>
       </aside>
 
@@ -46,6 +50,7 @@
             <button id="tabOperators" class="settings-tab" type="button" role="tab" aria-selected="true" aria-controls="panelOperators" data-tab="operators">Operadores e permissões</button>
             <button id="tabBase" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="panelBase" data-tab="base" tabindex="-1">Dados e aparência da base</button>
             <button id="tabProfile" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="panelProfile" data-tab="profile" tabindex="-1">Meu perfil e senha</button>
+            <button id="tabAudit" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="panelAudit" data-tab="audit" tabindex="-1">Logs de auditoria</button>
           </nav>
 
           <!-- Gerenciamento dos operadores e permissões de acesso. -->
@@ -102,6 +107,10 @@
                   <input id="baseDocument" type="text" readonly />
                 </div>
                 <div class="field-group">
+                  <label for="basePostalCode">CEP</label>
+                  <input id="basePostalCode" type="text" inputmode="numeric" autocomplete="postal-code" placeholder="00000-000" maxlength="9" required />
+                </div>
+                <div class="field-group">
                   <label for="baseStreet">Logradouro</label>
                   <input id="baseStreet" type="text" required />
                 </div>
@@ -124,10 +133,6 @@
                 <div class="field-group">
                   <label for="baseState">Estado (UF)</label>
                   <input id="baseState" type="text" minlength="2" maxlength="2" required />
-                </div>
-                <div class="field-group">
-                  <label for="basePostalCode">CEP</label>
-                  <input id="basePostalCode" type="text" maxlength="9" required />
                 </div>
                 <div class="field-group field-group--full">
                   <label for="baseTheme">Tema desta instalação</label>
@@ -225,6 +230,51 @@
                 <button id="changePasswordButton" class="btn btn--primary" type="submit">Atualizar minha senha</button>
               </div>
             </form>
+          </section>
+
+          <!-- Setor de logs de auditoria da base (exclusivo para administradores). -->
+          <section id="panelAudit" class="settings-panel" role="tabpanel" aria-labelledby="tabAudit" hidden>
+            <div class="settings-panel__header">
+              <div>
+                <h2>Logs de auditoria</h2>
+                <p>Histórico das operações realizadas na base, com destaque para cadastros retroativos de locação.</p>
+              </div>
+              <div class="audit-toolbar">
+                <label class="sr-only" for="auditModuleFilter">Filtrar por módulo</label>
+                <select id="auditModuleFilter" class="rental-control" aria-label="Filtrar logs por módulo">
+                  <option value="">Todos os módulos</option>
+                  <option value="LOCACAO">Locações</option>
+                  <option value="CLIENTE">Clientes</option>
+                  <option value="EQUIPAMENTO">Equipamentos</option>
+                  <option value="OPERADOR">Operadores</option>
+                  <option value="LOCADORA">Dados da base</option>
+                </select>
+                <label class="audit-checkbox-label">
+                  <input id="auditRetroactiveOnly" type="checkbox" />
+                  <span>Apenas locações retroativas</span>
+                </label>
+                <button id="refreshAuditButton" class="btn btn--secondary" type="button">Atualizar</button>
+              </div>
+            </div>
+            <div id="auditNotice" class="form-notice" role="status" hidden></div>
+            <div class="table-panel settings-table-panel">
+              <div class="table-wrapper">
+                <table class="settings-table audit-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Data / Hora</th>
+                      <th scope="col">Operador</th>
+                      <th scope="col">Módulo</th>
+                      <th scope="col">Ação</th>
+                      <th scope="col">Detalhes</th>
+                    </tr>
+                  </thead>
+                  <tbody id="auditTableBody">
+                    <tr><td class="table-state" colspan="5">Carregando logs de auditoria…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </section>
         </main>
       </div>

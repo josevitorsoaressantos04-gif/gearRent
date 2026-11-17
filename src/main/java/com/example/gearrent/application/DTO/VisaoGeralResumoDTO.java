@@ -8,5 +8,8 @@ public record VisaoGeralResumoDTO(
         long atrasadas,
         BigDecimal faturamentoTotal,
         BigDecimal receitaMensalAcumulada,
-        ValoresEmAbertoResponse valoresEmAberto
+        ValoresEmAbertoResponse valoresEmAberto,
+        long equipamentosDisponiveis,
+        long equipamentosAlugados,
+        long equipamentosManutencao
 ) {}

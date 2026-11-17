@@ -85,6 +85,65 @@ public interface LocacaoRepository
     @EntityGraph(attributePaths = {"equipamentos", "valorDiariaPorEquipamento"})
     List<Locacao> findByLocadoraIdAndStatusIn(Long locadoraId, Collection<StatusLocacao> status);
 
+    // ------------------------------------------------------------------
+    // Resumo e histórico por cliente (sempre filtrados por cliente E locadora)
+    // ------------------------------------------------------------------
+
+    // Total de locações do cliente, ignorando as canceladas
+    @Query("""
+            SELECT COUNT(l) FROM Locacao l
+            WHERE l.cliente.id = :clienteId
+              AND l.locadora.id = :locadoraId
+              AND l.status <> :statusExcluido
+            """)
+    long contarLocacoesDoCliente(@Param("clienteId") Long clienteId,
+                                 @Param("locadoraId") Long locadoraId,
+                                 @Param("statusExcluido") StatusLocacao statusExcluido);
+
+    // Locações abertas (EM_ANDAMENTO / ATRASADA)
+    @Query("""
+            SELECT COUNT(l) FROM Locacao l
+            WHERE l.cliente.id = :clienteId
+              AND l.locadora.id = :locadoraId
+              AND l.status IN :status
+            """)
+    long contarLocacoesPorStatus(@Param("clienteId") Long clienteId,
+                                 @Param("locadoraId") Long locadoraId,
+                                 @Param("status") Collection<StatusLocacao> status);
+
+    // Equipamentos que o cliente tem em mãos agora
+    @Query("""
+            SELECT COUNT(e) FROM Locacao l
+            JOIN l.equipamentos e
+            WHERE l.cliente.id = :clienteId
+              AND l.locadora.id = :locadoraId
+              AND l.status IN :status
+            """)
+    long contarEquipamentosEmPosse(@Param("clienteId") Long clienteId,
+                                   @Param("locadoraId") Long locadoraId,
+                                   @Param("status") Collection<StatusLocacao> status);
+
+    // Valor acumulado das locações abertas
+    @Query("""
+            SELECT COALESCE(SUM(l.valorFinalCobrado), 0) FROM Locacao l
+            WHERE l.cliente.id = :clienteId
+              AND l.locadora.id = :locadoraId
+              AND l.status IN :status
+            """)
+    double somarValorEmAbertoDoCliente(@Param("clienteId") Long clienteId,
+                                       @Param("locadoraId") Long locadoraId,
+                                       @Param("status") Collection<StatusLocacao> status);
+
+    // Histórico completo (mais recente primeiro), com os equipamentos já carregados
+    @EntityGraph(attributePaths = {"equipamentos"})
+    List<Locacao> findByClienteIdAndLocadoraIdOrderByDataRetiradaDescIdDesc(Long clienteId, Long locadoraId);
+
+    // Traz equipamentos e preços congelados das locações da página (valor das diárias na listagem sintética)
+    @EntityGraph(attributePaths = {"equipamentos", "valorDiariaPorEquipamento"})
+    @Query("select distinct l from Locacao l where l.locadora.id = :locadoraId and l.id in :ids")
+    List<Locacao> buscarComValoresDiaria(@Param("locadoraId") Long locadoraId,
+                                         @Param("ids") Collection<Long> ids);
+
     interface ReceitaMensalLinha {
         Integer getAno();
         Integer getMes();

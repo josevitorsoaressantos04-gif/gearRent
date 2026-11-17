@@ -23,6 +23,8 @@ public interface EquipamentoRepository extends JpaRepository<Equipamento, Long>,
 
     boolean existsByLocadoraIdAndNumeroPatrimonio(Long locadoraId, String numeroPatrimonio);
 
+    boolean existsByLocadoraIdAndCodigoSequencial(Long locadoraId, int codigoSequencial);
+
     boolean existsByLocadoraIdAndNumeroPatrimonioAndIdNot(Long locadoraId, String numeroPatrimonio, Long id);
 
     List<Equipamento> findByLocadoraIdAndStatusNotAndNomeContainingIgnoreCaseOrderByNomeAsc(
@@ -55,6 +57,13 @@ public interface EquipamentoRepository extends JpaRepository<Equipamento, Long>,
         """)
     List<String> listarModelos(@Param("locadoraId") Long locadoraId);
 
-
+    @Query("""
+        SELECT new com.example.gearrent.domain.repository.ContagemPorStatusEquipamento(e.status, COUNT(e))
+        FROM Equipamento e
+        WHERE e.locadora.id = :locadoraId
+          AND e.status <> com.example.gearrent.domain.enums.StatusEquipamento.CANCELADO
+        GROUP BY e.status
+        """)
+    List<ContagemPorStatusEquipamento> contarPorStatus(@Param("locadoraId") Long locadoraId);
 
 }

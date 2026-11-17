@@ -15,10 +15,14 @@ import java.time.LocalDateTime;
 public class LocadoraService {
 
     private final LocadoraRepository locadoraRepository;
+    private final AuditoriaService auditoriaService;
     private final Clock clock;
 
-    public LocadoraService(LocadoraRepository locadoraRepository, Clock clock) {
+    public LocadoraService(LocadoraRepository locadoraRepository,
+                           AuditoriaService auditoriaService,
+                           Clock clock) {
         this.locadoraRepository = locadoraRepository;
+        this.auditoriaService = auditoriaService;
         this.clock = clock;
     }
 
@@ -41,6 +45,12 @@ public class LocadoraService {
         }
         locadora.setEndereco(req.endereco().paraEntidade());
         locadora.setDataAtualizacao(LocalDateTime.now(clock));
+        auditoriaService.registrar(
+                locadoraId,
+                "LOCADORA",
+                "ATUALIZACAO",
+                false,
+                String.format("Dados cadastrais da base (%s) atualizados.", locadora.getNomeFantasia()));
 
         return LocadoraConsultaResponse.de(locadora);
     }

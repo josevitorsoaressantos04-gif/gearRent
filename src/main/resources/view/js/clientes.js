@@ -15,6 +15,8 @@
     cadastrar: (payload) => window.apiClient.post('/clientes', payload),
     atualizar: (id, payload) => window.apiClient.put(`/clientes/${encodeURIComponent(id)}`, payload),
     excluir: (id) => window.apiClient.delete(`/clientes/${encodeURIComponent(id)}`),
+    resumo: (id) => window.apiClient.get(`/clientes/${encodeURIComponent(id)}/resumo`),
+    historico: (id) => window.apiClient.get(`/clientes/${encodeURIComponent(id)}/historico`),
   };
   window.GR.auth = window.GR.auth || {};
   if (typeof window.GR.auth.sair !== 'function') {
@@ -36,6 +38,8 @@
     statusFilter: 'TODOS',
     detailRequest: 0,
     lastFocusedElement: null,
+    lastQueriedCep: '',
+    cepRequestSeq: 0,
   };
 
   const refs = {
@@ -152,9 +156,13 @@
       const currentUser = response.data;
       if (!currentUser?.nome) throw new Error('Não foi possível identificar o usuário autenticado.');
 
-      document.getElementById('userNameSidebar').textContent = currentUser.nome;
-      document.getElementById('baseNameSidebar').textContent = `Base de ${currentUser.nome}`;
-      document.getElementById('avatarSidebar').textContent = initials(currentUser.nome);
+      if (window.GR?.sidebar) {
+        window.GR.sidebar.aplicarNoDom({ nome: currentUser.nome });
+      } else {
+        document.getElementById('userNameSidebar').textContent = currentUser.nome;
+        document.getElementById('baseNameSidebar').textContent = `Base de ${currentUser.nome}`;
+        document.getElementById('avatarSidebar').textContent = initials(currentUser.nome);
+      }
       await window.GR.avatar.carregar(
         document.getElementById('avatarSidebar'),
         currentUser.avatarAtualizadoEm,
@@ -347,8 +355,52 @@
       : formatCurrency(client.valorAberto);
     appendHistoryEmpty(historyAvailable
       ? 'Este cliente ainda não possui locações registradas.'
-      : 'O histórico de locações não está disponível na API atual.');
+      : 'O histórico será carregado do servidor.');
     document.getElementById('btnNovaLocacao').disabled = false;
+  }
+
+  // Carrega resumo e histórico de locações do cliente (GET /clientes/{id}/resumo e /historico).
+  async function loadClientExtras(client, requestId) {
+    const stale = () => requestId !== state.detailRequest || String(state.selectedId) !== String(client.id);
+    try {
+      const [resumo, historico] = await Promise.all([
+        window.GR.api.clientes.resumo(client.id),
+        window.GR.api.clientes.historico(client.id),
+      ]);
+      if (stale()) return;
+      document.getElementById('metricTotalLocacoes').textContent = resumo.data.totalLocacoes ?? '—';
+      document.getElementById('metricLocacoesAndamento').textContent = resumo.data.locacoesEmAndamento ?? '—';
+      document.getElementById('metricEquipamentosPosse').textContent = resumo.data.equipamentosEmPosse ?? '—';
+      document.getElementById('metricValorAberto').textContent = resumo.data.valorTotalEmAberto == null
+        ? '—'
+        : formatCurrency(resumo.data.valorTotalEmAberto);
+
+      const lista = Array.isArray(historico.data) ? historico.data : [];
+      if (!lista.length) {
+        appendHistoryEmpty('Este cliente ainda não possui locações registradas.');
+        return;
+      }
+      const statusTexto = {
+        EM_ANDAMENTO: 'Em andamento', ATRASADA: 'Atrasada', CONCLUIDA: 'Concluída', CANCELADA: 'Cancelada',
+      };
+      const dataCurta = (valor) => (valor ? new Date(valor).toLocaleDateString('pt-BR') : '—');
+      refs.history.replaceChildren(...lista.map((item) => {
+        const li = document.createElement('li');
+        li.className = 'history-item';
+        li.textContent = `Locação nº ${item.codigoSequencialLocacao ?? item.idLocacao} · `
+          + `${(item.equipamentos || []).join(', ') || 'Sem equipamentos'} · `
+          + `Retirada ${dataCurta(item.dataRetirada)} · Previsão ${dataCurta(item.dataPrevista)} · `
+          + `${statusTexto[item.status] || item.status}`;
+        return li;
+      }));
+    } catch (error) {
+      if (stale()) return;
+      if (error.response?.status === 401) {
+        window.GR.auth.sair();
+        return;
+      }
+      appendHistoryEmpty(`Não foi possível carregar o histórico. ${getErrorMessage(error)}`);
+    }
   }
 
   // Seleciona o cliente e consulta os detalhes relacionados à sua conta.
@@ -373,6 +425,7 @@
       state.clientes = state.clientes.map((item) => String(item.id) === String(client.id) ? updated : item);
       renderTable();
       renderDetails(updated);
+      loadClientExtras(updated, requestId);
     } catch (error) {
       if (requestId !== state.detailRequest) return;
       if (error.response?.status === 401) {
@@ -487,6 +540,7 @@
   // Prepara um formulário limpo para cadastrar um novo cliente.
   function openCreateModal() {
     state.editingId = null;
+    state.lastQueriedCep = '';
     refs.form.reset();
     showFormError('');
     refs.modalTitle.textContent = 'Novo Cliente';
@@ -504,13 +558,14 @@
     const client = state.clientes.find((item) => String(item.id) === String(id));
     if (!client) return;
     state.editingId = client.id;
+    state.lastQueriedCep = '';
     refs.form.reset();
     showFormError('');
     refs.modalTitle.textContent = 'Editar Cliente';
     refs.saveButton.textContent = 'Salvar alterações';
     refs.editNotice.hidden = false;
-    refs.type.disabled = true;
-    refs.document.disabled = true;
+    refs.type.disabled = false;
+    refs.document.disabled = false;
     refs.type.value = client.tipoPessoa || inferPersonType(client.documento) || 'PF';
     setPersonType(refs.type.value);
     refs.document.value = formatDocument(client.documento || '', refs.type.value);
@@ -529,6 +584,8 @@
       refs.city.value = address.cidade || '';
       refs.state.value = address.estado || '';
       refs.postalCode.value = address.cep || '';
+      formatPostalCode();
+      state.lastQueriedCep = digits(address.cep || '').slice(0, 8);
     } catch (error) {
       if (error.response?.status === 401) {
         window.GR.auth.sair();
@@ -553,7 +610,9 @@
     const phone = refs.phone.value.trim();
     return {
       nome: refs.name.value.trim(),
-      ...(!state.editingId ? { documento: digits(refs.document.value) } : {}),
+      ...(state.editingId
+        ? { tipoPessoa: refs.type.value === 'PJ' ? 'JURIDICA' : 'FISICA', documento: digits(refs.document.value) }
+        : { documento: digits(refs.document.value) }),
       email: refs.email.value.trim() || null,
       celular: phone || null,
       telefone: phone || null,
@@ -572,7 +631,7 @@
   // Valida campos, documentos e dados obrigatórios antes do envio.
   function validateForm() {
     if (!refs.name.value.trim()) return 'Informe o nome do cliente.';
-    if (!state.editingId) {
+    {
       const valid = refs.type.value === 'PJ'
         ? validCNPJ(refs.document.value)
         : validCPF(refs.document.value);
@@ -701,6 +760,48 @@
     refs.postalCode.value = value.length > 5 ? `${value.slice(0, 5)}-${value.slice(5)}` : value;
   }
 
+  // Consulta o CEP no backend (GET /api/cep/{cep} -> ViaCEP) e preenche os campos de endereço
+  // do formulário de cliente com os dados retornados no EnderecoDTO.
+  async function lookupClientCep(force = false) {
+    if (!window.GR?.cep) return;
+    const cepDigits = digits(refs.postalCode.value).slice(0, 8);
+    // Só consulta quando o CEP possuir exatamente 8 dígitos numéricos
+    if (cepDigits.length !== 8) return;
+    // Evita consultar repetidamente o mesmo CEP se o usuário não alterou o valor
+    if (!force && cepDigits === state.lastQueriedCep) return;
+
+    state.lastQueriedCep = cepDigits;
+    // Controle de sequência para ignorar respostas antigas caso o usuário digite rápido
+    const currentSeq = ++state.cepRequestSeq;
+    showFormError('');
+
+    try {
+      const dto = await window.GR.cep.consultar(cepDigits);
+      if (currentSeq !== state.cepRequestSeq || !dto) return;
+
+      // Preenche os campos do formulário com os atributos do EnderecoDTO
+      if (dto.cep) {
+        refs.postalCode.value = dto.cep;
+        formatPostalCode();
+      }
+      if (dto.logradouro != null) refs.street.value = dto.logradouro;
+      if (dto.bairro != null) refs.neighborhood.value = dto.bairro;
+      if (dto.cidade != null) refs.city.value = dto.cidade;
+      if (dto.estado != null) refs.state.value = dto.estado;
+      if (dto.complemento && !refs.complement.value.trim()) {
+        refs.complement.value = dto.complemento;
+      }
+
+      // Move o foco para o campo Número (ou para Rua caso o CEP seja geral da cidade)
+      const nextFocus = dto.logradouro ? refs.number : refs.street;
+      nextFocus?.focus();
+    } catch (error) {
+      if (currentSeq !== state.cepRequestSeq) return;
+      state.lastQueriedCep = '';
+      showFormError(getErrorMessage(error));
+    }
+  }
+
   // Registra os eventos de busca, formulários, tabela e diálogos.
   function bindEvents() {
     refs.search.addEventListener('input', () => {
@@ -727,7 +828,17 @@
       refs.document.value = formatDocument(refs.document.value, refs.type.value);
     });
     refs.phone.addEventListener('input', formatPhoneInput);
-    refs.postalCode.addEventListener('input', formatPostalCode);
+    refs.postalCode.addEventListener('input', () => {
+      formatPostalCode();
+      if (digits(refs.postalCode.value).length === 8) {
+        lookupClientCep();
+      } else {
+        state.lastQueriedCep = '';
+      }
+    });
+    refs.postalCode.addEventListener('blur', () => {
+      lookupClientCep();
+    });
     refs.state.addEventListener('input', () => {
       refs.state.value = refs.state.value.replace(/[^a-z]/gi, '').slice(0, 2).toUpperCase();
     });
@@ -737,7 +848,12 @@
     document.getElementById('btnNovoCliente').addEventListener('click', openCreateModal);
     document.getElementById('btnNovaLocacao').addEventListener('click', () => {
       if (state.selectedId == null) return;
-      window.location.href = `locacoes.html?clienteId=${encodeURIComponent(state.selectedId)}`;
+      const targetUrl = `locacoes.html?clienteId=${encodeURIComponent(state.selectedId)}`;
+      if (window.GR?.nav?.irPara) {
+        window.GR.nav.irPara(targetUrl);
+      } else {
+        window.location.href = targetUrl;
+      }
     });
     document.getElementById('btnLogout').addEventListener('click', () => window.GR.auth.sair());
     document.querySelectorAll('[data-close-modal]').forEach((button) => button.addEventListener('click', closeModal));

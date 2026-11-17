@@ -3,7 +3,6 @@ package com.example.gearrent.application.DTO;
 import com.example.gearrent.domain.enums.TipoPagamento;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -20,7 +19,6 @@ public record LocacaoCadastroRequest(
         List<@NotNull(message = "Equipamento inválido na lista.") Long> equipamentosIds,
 
         @NotNull(message = "Informe a data de retirada.")
-        @FutureOrPresent(message = "A data de retirada não pode ser no passado.")
         LocalDate dataRetirada,
 
         @NotNull(message = "Informe até quando o equipamento ficará alugado.")

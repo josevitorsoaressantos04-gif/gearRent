@@ -2,6 +2,7 @@ package com.example.gearrent.application.service;
 
 import com.example.gearrent.application.DTO.*;
 import com.example.gearrent.domain.entities.Locacao;
+import com.example.gearrent.domain.enums.StatusEquipamento;
 import com.example.gearrent.domain.enums.StatusLocacao;
 import com.example.gearrent.domain.exception.RegraDeNegocioException;
 import com.example.gearrent.domain.repository.*;
@@ -37,6 +38,9 @@ public class VisaoGeralQueryService {
 
     @Transactional
     public VisaoGeralResumoDTO buscarResumo(Long locadoraId) {
+        ResumoFinanceiroResponse resumoFinanceiro = resumoFinanceiroService.gerar(
+                locadoraId, null, null);
+
         Map<StatusLocacao, Long> porStatus = locacaoRepository.contarPorStatus(locadoraId).stream()
                 .collect(Collectors.toMap(ContagemPorStatus::status, ContagemPorStatus::total));
 
@@ -45,8 +49,9 @@ public class VisaoGeralQueryService {
         // A query devolve Double (valorFinalCobrado é double na entidade)
         BigDecimal faturamento = BigDecimal.valueOf(
                 locacaoRepository.somarFaturamento(locadoraId, StatusLocacao.CANCELADA));
-        ResumoFinanceiroResponse resumoFinanceiro = resumoFinanceiroService.gerar(
-                locadoraId, null, null);
+
+        Map<StatusEquipamento, Long> eqPorStatus = equipamentoRepository.contarPorStatus(locadoraId).stream()
+                .collect(Collectors.toMap(ContagemPorStatusEquipamento::status, ContagemPorStatusEquipamento::total));
 
         return new VisaoGeralResumoDTO(
                 total,
@@ -54,7 +59,10 @@ public class VisaoGeralQueryService {
                 porStatus.getOrDefault(StatusLocacao.ATRASADA, 0L),
                 faturamento,
                 resumoFinanceiro.receitaTotal(),
-                resumoFinanceiro.valoresEmAberto()
+                resumoFinanceiro.valoresEmAberto(),
+                eqPorStatus.getOrDefault(StatusEquipamento.DISPONIVEL, 0L),
+                eqPorStatus.getOrDefault(StatusEquipamento.ALUGADO, 0L),
+                eqPorStatus.getOrDefault(StatusEquipamento.MANUTENCAO, 0L)
         );
     }
 
@@ -87,16 +95,25 @@ public class VisaoGeralQueryService {
                                 i.equipamentoId(), i.nome(), i.modelo(),
                                 i.categoria(), i.numeroPatrimonio()), Collectors.toList())));
 
-        return pagina.map(l -> paraDTO(l, itensPorLocacao.getOrDefault(l.getId(), List.of())));
+        // Query 3: equipamentos + preços congelados das locações da página (soma das diárias)
+        Map<Long, BigDecimal> somaDiariaPorLocacao = ids.isEmpty()
+                ? Map.of()
+                : locacaoRepository.buscarComValoresDiaria(locadoraId, ids).stream()
+                .collect(Collectors.toMap(
+                        Locacao::getId,
+                        l -> l.getEquipamentos().stream()
+                                .map(l::valorDiariaDe)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add)));
+
+        return pagina.map(l -> paraDTO(l,
+                itensPorLocacao.getOrDefault(l.getId(), List.of()),
+                somaDiariaPorLocacao.getOrDefault(l.getId(), BigDecimal.ZERO)));
     }
 
     private LocacaoListagemSinteticaDTO paraDTO(Locacao l,
-                                                List<LocacaoListagemSinteticaDTO.ItemResumo> itens) {
-        // Diárias: retirada -> devolução real; se ainda não devolveu, usa a prevista
-        LocalDateTime fim = l.getDataReal() != null ? l.getDataReal() : l.getDataPrevista();
-        long diarias = (l.getDataRetirada() == null || fim == null)
-                ? 1
-                : Math.max(1, ChronoUnit.DAYS.between(l.getDataRetirada(), fim));
+                                                List<LocacaoListagemSinteticaDTO.ItemResumo> itens,
+                                                BigDecimal valorDiariaSoma) {
+        long diarias = l.calcularDiasCobrados(LocalDateTime.now());
 
         return new LocacaoListagemSinteticaDTO(
                 l.getId(),
@@ -104,6 +121,7 @@ public class VisaoGeralQueryService {
                         l.getCliente().getCodigoSequencial(), l.getCliente().getNome()),
                 itens,
                 diarias,
+                valorDiariaSoma.setScale(2, java.math.RoundingMode.HALF_UP),
                 l.getStatus(),
                 l.getDataRetirada(),
                 l.getDataPrevista(),

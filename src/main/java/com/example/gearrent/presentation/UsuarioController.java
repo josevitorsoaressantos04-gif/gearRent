@@ -6,6 +6,7 @@ import com.example.gearrent.application.service.UsuarioService;
 import com.example.gearrent.infra.security.UsuarioAutenticado;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.CacheControl;
@@ -24,6 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/usuarios")
 @Tag(name = "Usuario Controller", description = "Classe responsavel por fazer o controle do CRUD de usuarios")
+@SecurityRequirement(name = "bearerAuth")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
@@ -96,12 +98,20 @@ public class UsuarioController {
 
     @PatchMapping("/{id}/desativar")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Desativar Usuário", description = "Altera o status do usuário para inativo, impedindo futuros logins, sem remover o registro histórico do banco de dados. Somente administradores, restrito à mesma locadora (tenant).")
-    @ApiResponse(responseCode = "403", description = "Somente administradores")
+    @Operation(summary = "Desativar Usuário (ROLE_ADMIN)",
+            description = "Papel necessário: ROLE_ADMIN (token de operador recebe 403). Altera o status do usuário para INATIVO, "
+                    + "impedindo novos logins, sem apagar o registro histórico. O usuário precisa pertencer à locadora "
+                    + "do token (senão 404) e o administrador não pode desativar a si mesmo (422). "
+                    + "Sem corpo na requisição. Resposta 200: {\"id\", \"status\": \"INATIVO\", \"mensagem\"}. "
+                    + "Para voltar o acesso use PATCH /api/usuarios/{id}/reativar.")
+    @ApiResponse(responseCode = "200", description = "Usuário desativado")
+    @ApiResponse(responseCode = "403", description = "Somente administradores (ROLE_ADMIN)")
+    @ApiResponse(responseCode = "404", description = "Usuário não encontrado nesta locadora")
+    @ApiResponse(responseCode = "422", description = "Administrador tentando desativar o próprio acesso")
     public ResponseEntity<UsuarioStatusResponse> desativar(
             @AuthenticationPrincipal UsuarioAutenticado usuario,
             @PathVariable Long id) {
-        return ResponseEntity.ok(usuarioService.desativar(usuario.locadoraId(), id));
+        return ResponseEntity.ok(usuarioService.desativar(usuario.locadoraId(), usuario.id(), id));
     }
 
     @PatchMapping("/{id}/reativar")

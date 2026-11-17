@@ -1,6 +1,7 @@
 package com.example.gearrent.domain.entities;
 
 import com.example.gearrent.domain.enums.StatusCadastro;
+import com.example.gearrent.domain.enums.TipoPessoa;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,9 +14,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "cliente",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_cliente_locadora_codigo",
-                columnNames = {"locadora_id", "codigo_sequencial"}))
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_cliente_locadora_codigo",
+                        columnNames = {"locadora_id", "codigo_sequencial"}),
+                @UniqueConstraint(
+                        name = "uk_cliente_locadora_documento",
+                        columnNames = {"locadora_id", "documento"}) // ✅ Trava isolada por locadora
+        })
 public class Cliente {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,8 +32,12 @@ public class Cliente {
     @Column(nullable = false)
     private String nome;
 
-    @Column(unique = true)
+    @Column(nullable = false)
     private String documento;
+
+    // Nullable: clientes antigos não têm o valor gravado (a aplicação deduz pelo tamanho do documento)
+    @Enumerated(EnumType.STRING)
+    private TipoPessoa tipoPessoa;
     private String email;
     private String celular;
     private String telefone;

@@ -10,6 +10,7 @@ import com.example.gearrent.application.DTO.EquipamentoExclusaoResponse;
 import com.example.gearrent.application.DTO.EquipamentoListagemResponse;
 import com.example.gearrent.domain.entities.Equipamento;
 import com.example.gearrent.domain.enums.StatusEquipamento;
+import com.example.gearrent.domain.exception.ConflitoException;
 import com.example.gearrent.domain.exception.EquipamentoIndisponivelException;
 import com.example.gearrent.domain.exception.PatrimonioDuplicadoException;
 import com.example.gearrent.domain.exception.RecursoNaoEncontradoException;
@@ -37,11 +38,14 @@ public class EquipamentoService {
 
     private final EquipamentoRepository equipamentoRepository;
     private final LocadoraRepository locadoraRepository;
+    private final AuditoriaService auditoriaService;
 
     public EquipamentoService(EquipamentoRepository equipamentoRepository,
-                              LocadoraRepository locadoraRepository) {
+                              LocadoraRepository locadoraRepository,
+                              AuditoriaService auditoriaService) {
         this.equipamentoRepository = equipamentoRepository;
         this.locadoraRepository = locadoraRepository;
+        this.auditoriaService = auditoriaService;
     }
 
     @Transactional
@@ -54,8 +58,15 @@ public class EquipamentoService {
                     "Já existe um equipamento cadastrado com este número de patrimônio.");
         }
 
+        // Código sequencial é por locadora; a checagem protege contra corrida entre dois cadastros simultâneos
+        int codigo = equipamentoRepository.buscarUltimoCodigo(locadoraId) + 1;
+        if (equipamentoRepository.existsByLocadoraIdAndCodigoSequencial(locadoraId, codigo)) {
+            throw new ConflitoException(
+                    "Outro equipamento acabou de ser cadastrado. Tente salvar novamente.");
+        }
+
         Equipamento equipamento = new Equipamento();
-        equipamento.setCodigoSequencial(equipamentoRepository.buscarUltimoCodigo(locadoraId) + 1);
+        equipamento.setCodigoSequencial(codigo);
         equipamento.setNome(request.nome().trim());
         equipamento.setModelo(limpar(request.modelo()));
         equipamento.setNumeroPatrimonio(patrimonio);
@@ -66,6 +77,12 @@ public class EquipamentoService {
         equipamento.setLocadora(locadoraRepository.getReferenceById(locadoraId));
 
         Equipamento salvo = equipamentoRepository.save(equipamento);
+        auditoriaService.registrar(
+                locadoraId,
+                "EQUIPAMENTO",
+                "CADASTRO",
+                false,
+                String.format("Equipamento nº %d (%s) cadastrado.", salvo.getCodigoSequencial(), salvo.getNome()));
 
         return new EquipamentoCadastroResponse(
                 salvo.getId(), salvo.getCodigoSequencial(), salvo.getNome(),
@@ -128,6 +145,13 @@ public class EquipamentoService {
         equipamento.setCategoria(request.categoria());
         equipamento.setValorDiaria(request.valorDiaria());
         equipamento.setDataAtualizacao(LocalDateTime.now());
+        auditoriaService.registrar(
+                locadoraId,
+                "EQUIPAMENTO",
+                "ATUALIZACAO",
+                false,
+                String.format("Equipamento nº %d (%s) atualizado (status: %s).",
+                        equipamento.getCodigoSequencial(), equipamento.getNome(), equipamento.getStatus()));
 
         return new EquipamentoAtualizacaoResponse(
                 equipamento.getId(), equipamento.getNome(), "Equipamento atualizado com sucesso!");
@@ -144,6 +168,12 @@ public class EquipamentoService {
 
         equipamento.setStatus(StatusEquipamento.CANCELADO);
         equipamento.setDataAtualizacao(LocalDateTime.now());
+        auditoriaService.registrar(
+                locadoraId,
+                "EQUIPAMENTO",
+                "INATIVACAO",
+                false,
+                String.format("Equipamento nº %d (%s) inativado.", equipamento.getCodigoSequencial(), equipamento.getNome()));
 
         return new EquipamentoExclusaoResponse(equipamento.getId(), "Equipamento excluído com sucesso!");
     }

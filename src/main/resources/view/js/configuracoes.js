@@ -5,6 +5,7 @@
     window.location.replace('login.html');
     return;
   }
+  if (localStorage.getItem('gearRentTheme') === 'dark') document.body.dataset.theme = 'dark';
 
   const refs = {
     table: document.getElementById('operatorsTableBody'),
@@ -26,16 +27,23 @@
     theme: document.getElementById('baseTheme'),
     operatorDialog: document.getElementById('operatorDialog'),
     settingsNavLink: document.querySelector('.sidebar__nav a[href="configuracoes.html"]'),
-    profileNavLink: document.querySelector('.sidebar__nav a[href="configuracoes.html#perfil"]'),
     saveBaseButton: document.getElementById('saveBaseButton'),
     saveProfileButton: document.getElementById('saveProfileButton'),
     changePasswordButton: document.getElementById('changePasswordButton'),
     submitOperatorButton: document.getElementById('submitOperatorButton'),
+    auditTable: document.getElementById('auditTableBody'),
+    auditNotice: document.getElementById('auditNotice'),
+    auditModuleFilter: document.getElementById('auditModuleFilter'),
+    auditRetroactiveOnly: document.getElementById('auditRetroactiveOnly'),
+    refreshAuditButton: document.getElementById('refreshAuditButton'),
   };
   const state = {
     users: [],
+    auditLogs: [],
     isAdmin: false,
     avatarUpdatedAt: null,
+    lastQueriedCep: '',
+    cepRequestSeq: 0,
   };
 
   // Converte respostas de erro HTTP em mensagens adequadas para a interface.
@@ -101,10 +109,19 @@
   // Atualiza os dados do usuário e da base no cabeçalho lateral.
   async function updateHeader(user, baseName) {
     const name = user.nome || 'Usuário autenticado';
-    refs.profileAvatar.textContent = initials(name);
-    document.getElementById('userNameSidebar').textContent = name;
-    document.getElementById('baseNameSidebar').textContent = baseName || 'Minha base';
-    document.getElementById('avatarSidebar').textContent = initials(name);
+    if (!refs.profileAvatar.querySelector('img')) {
+      refs.profileAvatar.textContent = initials(name);
+    }
+    if (window.GR?.sidebar) {
+      window.GR.sidebar.aplicarNoDom({
+        nome: name,
+        ...(baseName && baseName !== 'Base GearRent' ? { baseName } : {}),
+      });
+    } else {
+      document.getElementById('userNameSidebar').textContent = name;
+      document.getElementById('baseNameSidebar').textContent = baseName || 'Minha base';
+      document.getElementById('avatarSidebar').textContent = initials(name);
+    }
     state.avatarUpdatedAt = user.avatarAtualizadoEm || null;
     refs.removeAvatar.hidden = !state.avatarUpdatedAt;
     await Promise.all([
@@ -135,8 +152,59 @@
     document.getElementById('baseNeighborhood').value = address.bairro || '';
     document.getElementById('baseCity').value = address.cidade || '';
     document.getElementById('baseState').value = address.estado || '';
-    document.getElementById('basePostalCode').value = address.cep || '';
-    document.getElementById('baseNameSidebar').textContent = base.nomeFantasia || 'Minha base';
+    document.getElementById('basePostalCode').value = window.GR.cep
+      ? window.GR.cep.formatar(address.cep || '')
+      : (address.cep || '');
+    state.lastQueriedCep = window.GR.cep ? window.GR.cep.digitos(address.cep || '') : '';
+    const displayBaseName = base.nomeFantasia || 'Minha base';
+    if (window.GR?.sidebar) {
+      window.GR.sidebar.aplicarNoDom({ baseName: displayBaseName });
+    } else {
+      document.getElementById('baseNameSidebar').textContent = displayBaseName;
+    }
+  }
+
+  // Consulta o CEP no backend (GET /api/cep/{cep} -> ViaCEP) e preenche os campos de endereço
+  // da base com os dados retornados no EnderecoDTO.
+  async function lookupBaseCep(force = false) {
+    if (!state.isAdmin || !window.GR?.cep) return;
+    const postalCodeInput = document.getElementById('basePostalCode');
+    const cepDigits = window.GR.cep.digitos(postalCodeInput.value);
+    // Só dispara a busca quando os 8 números do CEP foram digitados
+    if (cepDigits.length !== 8) return;
+    // Evita repetir a requisição se o CEP não mudou desde a última consulta
+    if (!force && cepDigits === state.lastQueriedCep) return;
+
+    state.lastQueriedCep = cepDigits;
+    const currentSeq = ++state.cepRequestSeq;
+    setNotice(refs.baseNotice, 'Consultando CEP…');
+
+    try {
+      const dto = await window.GR.cep.consultar(cepDigits);
+      if (currentSeq !== state.cepRequestSeq || !dto) return;
+
+      // Atualiza os campos do formulário da base com os valores do EnderecoDTO
+      if (dto.cep) postalCodeInput.value = window.GR.cep.formatar(dto.cep);
+      if (dto.logradouro != null) document.getElementById('baseStreet').value = dto.logradouro;
+      if (dto.bairro != null) document.getElementById('baseNeighborhood').value = dto.bairro;
+      if (dto.cidade != null) document.getElementById('baseCity').value = dto.cidade;
+      if (dto.estado != null) document.getElementById('baseState').value = dto.estado;
+      const complementInput = document.getElementById('baseComplement');
+      if (dto.complemento && !complementInput.value.trim()) {
+        complementInput.value = dto.complemento;
+      }
+      setNotice(refs.baseNotice, '');
+
+      // Posiciona o cursor no campo Número (ou Logradouro se o CEP não tiver rua específica)
+      const nextFocus = dto.logradouro
+        ? document.getElementById('baseAddressNumber')
+        : document.getElementById('baseStreet');
+      nextFocus?.focus();
+    } catch (error) {
+      if (currentSeq !== state.cepRequestSeq) return;
+      state.lastQueriedCep = '';
+      setNotice(refs.baseNotice, getErrorMessage(error));
+    }
   }
 
   // Cria uma célula de tabela com texto inserido sem interpretar HTML.
@@ -163,7 +231,15 @@
       const row = document.createElement('tr');
       const status = String(user.status || 'Não informado');
       const actionCell = document.createElement('td');
-      if (state.isAdmin && status === 'INATIVO') {
+      if (state.isAdmin && status === 'ATIVO') {
+        const action = document.createElement('button');
+        action.type = 'button';
+        action.className = 'btn btn--secondary operator-action';
+        action.textContent = 'Desativar';
+        action.dataset.deactivateId = String(user.id);
+        action.setAttribute('aria-label', `Desativar ${user.nome || 'operador'}`);
+        actionCell.append(action);
+      } else if (state.isAdmin && status === 'INATIVO') {
         const action = document.createElement('button');
         action.type = 'button';
         action.className = 'btn btn--secondary operator-action';
@@ -175,9 +251,9 @@
         const action = document.createElement('button');
         action.type = 'button';
         action.className = 'btn btn--secondary operator-action';
-        action.textContent = status === 'ATIVO' ? 'Desativação indisponível' : 'Ação indisponível';
+        action.textContent = 'Ação indisponível';
         action.disabled = true;
-        action.title = 'A API não protege a desativação por papel administrativo.';
+        action.title = 'Somente administradores podem desativar ou reativar operadores.';
         actionCell.append(action);
       }
       row.append(
@@ -226,20 +302,108 @@
     }
   }
 
+  // Formata data e hora dos logs de auditoria no padrão brasileiro.
+  function formatAuditDateTime(value) {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return new Intl.DateTimeFormat('pt-BR', {
+      dateStyle: 'short',
+      timeStyle: 'medium',
+    }).format(date);
+  }
+
+  // Renderiza a tabela de logs de auditoria.
+  function renderAuditLogs() {
+    if (!refs.auditTable) return;
+    refs.auditTable.replaceChildren();
+
+    if (!state.isAdmin) {
+      const row = document.createElement('tr');
+      const cell = createCell('Acesso restrito a administradores da base.');
+      cell.colSpan = 5;
+      cell.className = 'table-state';
+      row.append(cell);
+      refs.auditTable.append(row);
+      return;
+    }
+
+    if (!state.auditLogs.length) {
+      const row = document.createElement('tr');
+      const cell = createCell('Nenhum registro de auditoria encontrado para os filtros selecionados.');
+      cell.colSpan = 5;
+      cell.className = 'table-state';
+      row.append(cell);
+      refs.auditTable.append(row);
+      return;
+    }
+
+    const acaoLabels = {
+      CADASTRO_RETROATIVO: 'Cadastro retroativo',
+      CADASTRO: 'Cadastro',
+      ATUALIZACAO: 'Atualização',
+      DEVOLUCAO: 'Devolução',
+      CANCELAMENTO: 'Cancelamento',
+      INATIVACAO: 'Inativação',
+      DESATIVACAO: 'Desativação',
+      REATIVACAO: 'Reativação',
+    };
+
+    state.auditLogs.forEach((item) => {
+      const row = document.createElement('tr');
+      if (item.retroativo) row.classList.add('audit-row--retroactive');
+
+      const actionCell = document.createElement('td');
+      const badge = document.createElement('span');
+      badge.className = item.retroativo ? 'audit-badge audit-badge--retroactive' : 'audit-badge';
+      badge.textContent = acaoLabels[item.acao] || item.acao || '—';
+      actionCell.append(badge);
+
+      row.append(
+        createCell(formatAuditDateTime(item.dataHora)),
+        createCell(item.usuarioNome || 'Sistema'),
+        createCell(item.modulo || '—'),
+        actionCell,
+        createCell(item.detalhes || '—'),
+      );
+      refs.auditTable.append(row);
+    });
+  }
+
+  // Consulta os logs de auditoria da base (exclusivo para administradores).
+  async function loadAuditLogs() {
+    if (!refs.auditTable) return;
+    if (!state.isAdmin) {
+      renderAuditLogs();
+      return;
+    }
+    try {
+      const params = new URLSearchParams();
+      if (refs.auditModuleFilter?.value) {
+        params.set('modulo', refs.auditModuleFilter.value);
+      }
+      if (refs.auditRetroactiveOnly?.checked) {
+        params.set('apenasRetroativos', 'true');
+      }
+      const query = params.toString();
+      const logs = await getJSON(`/auditoria${query ? `?${query}` : ''}`);
+      state.auditLogs = Array.isArray(logs) ? logs : [];
+      renderAuditLogs();
+    } catch (error) {
+      state.auditLogs = [];
+      renderAuditLogs();
+      setNotice(refs.auditNotice, getErrorMessage(error));
+    }
+  }
+
   // Alterna os painéis de configuração e sincroniza a aba com a URL.
   function activateTab(name, updateHash = true) {
     const tab = document.querySelector(`[data-tab="${name}"]`);
     const panel = document.getElementById(`panel${name.charAt(0).toUpperCase()}${name.slice(1)}`);
     if (!tab || !panel) return;
-    const profileSelected = name === 'profile';
-    refs.settingsNavLink.classList.toggle('nav-item--active', !profileSelected);
-    refs.profileNavLink.classList.toggle('nav-item--active', profileSelected);
-    if (profileSelected) {
-      refs.profileNavLink.setAttribute('aria-current', 'page');
-      refs.settingsNavLink.removeAttribute('aria-current');
-    } else {
+    if (refs.settingsNavLink) {
+      refs.settingsNavLink.classList.add('nav-item--active');
       refs.settingsNavLink.setAttribute('aria-current', 'page');
-      refs.profileNavLink.removeAttribute('aria-current');
     }
     document.querySelectorAll('.settings-tab').forEach((item) => {
       const selected = item === tab;
@@ -255,6 +419,20 @@
     tab.focus();
   }
 
+  // Desativa o operador (PATCH /usuarios/{id}/desativar, exige ROLE_ADMIN) e atualiza a tabela.
+  async function deactivateUser(id, button) {
+    button.disabled = true;
+    try {
+      const resposta = await window.apiClient.patch(`/usuarios/${encodeURIComponent(id)}/desativar`);
+      setError('');
+      setMessage(resposta.data?.mensagem || 'Usuário desativado com sucesso.');
+      await Promise.all([loadUsers(), loadAuditLogs()]);
+    } catch (error) {
+      button.disabled = false;
+      setError(getErrorMessage(error));
+    }
+  }
+
   // Reativa o operador selecionado e atualiza o estado da tabela.
   async function reactivateUser(id, button) {
     button.disabled = true;
@@ -262,7 +440,7 @@
       await window.apiClient.patch(`/usuarios/${encodeURIComponent(id)}/reativar`);
       setError('');
       setMessage('Usuário reativado com sucesso.');
-      await loadUsers();
+      await Promise.all([loadUsers(), loadAuditLogs()]);
     } catch (error) {
       button.disabled = false;
       setError(getErrorMessage(error));
@@ -283,11 +461,17 @@
       activateTab(tabs[targetIndex].dataset.tab);
     });
   });
-  window.addEventListener('hashchange', () => {
+  if (window._grSettingsHashHandler) {
+    window.removeEventListener('hashchange', window._grSettingsHashHandler);
+  }
+  window._grSettingsHashHandler = () => {
+    if (!document.getElementById('panelOperators')) return;
     const tabName = window.location.hash === '#perfil' ? 'profile'
-      : window.location.hash === '#base' ? 'base' : 'operators';
+      : window.location.hash === '#base' ? 'base'
+      : window.location.hash === '#audit' ? 'audit' : 'operators';
     activateTab(tabName, false);
-  });
+  };
+  window.addEventListener('hashchange', window._grSettingsHashHandler);
 
   document.getElementById('openOperatorDialog').addEventListener('click', () => {
     document.getElementById('operatorForm').reset();
@@ -300,6 +484,8 @@
   refs.table.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-reactivate-id]');
     if (button) reactivateUser(button.dataset.reactivateId, button);
+    const off = event.target.closest('button[data-deactivate-id]');
+    if (off) deactivateUser(off.dataset.deactivateId, off);
   });
 
   document.getElementById('operatorForm').addEventListener('submit', async (event) => {
@@ -317,12 +503,30 @@
       });
       refs.operatorDialog.close();
       setMessage('Operador criado com sucesso.');
-      await loadUsers();
+      await Promise.all([loadUsers(), loadAuditLogs()]);
     } catch (error) {
       setNotice(refs.operatorFormNotice, getErrorMessage(error));
     } finally {
       setBusy(button, false, 'Criando…', 'Adicionar operador');
     }
+  });
+
+  document.getElementById('basePostalCode').addEventListener('input', (event) => {
+    const input = event.target;
+    if (window.GR?.cep) {
+      input.value = window.GR.cep.formatar(input.value);
+      if (window.GR.cep.digitos(input.value).length === 8) {
+        lookupBaseCep();
+      } else {
+        state.lastQueriedCep = '';
+      }
+    }
+  });
+  document.getElementById('basePostalCode').addEventListener('blur', () => {
+    lookupBaseCep();
+  });
+  document.getElementById('baseState').addEventListener('input', (event) => {
+    event.target.value = event.target.value.replace(/[^a-z]/gi, '').slice(0, 2).toUpperCase();
   });
 
   document.getElementById('baseForm').addEventListener('submit', async (event) => {
@@ -349,6 +553,7 @@
       });
       populateBase(response.data);
       setMessage('Dados da base atualizados com sucesso.');
+      await loadAuditLogs();
     } catch (error) {
       setNotice(refs.baseNotice, getErrorMessage(error));
     } finally {
@@ -476,15 +681,26 @@
   document.querySelectorAll('#baseForm input:not([readonly])').forEach((input) => {
     input.disabled = !state.isAdmin;
   });
+  if (refs.auditModuleFilter) refs.auditModuleFilter.disabled = !state.isAdmin;
+  if (refs.auditRetroactiveOnly) refs.auditRetroactiveOnly.disabled = !state.isAdmin;
+  if (refs.refreshAuditButton) refs.refreshAuditButton.disabled = !state.isAdmin;
+  refs.auditModuleFilter?.addEventListener('change', loadAuditLogs);
+  refs.auditRetroactiveOnly?.addEventListener('change', loadAuditLogs);
+  refs.refreshAuditButton?.addEventListener('click', loadAuditLogs);
   setNotice(refs.operatorNotice, state.isAdmin
-    ? 'A desativação permanece bloqueada porque a rota existente não exige papel administrativo.'
-    : 'Somente administradores podem cadastrar ou reativar operadores. A desativação está indisponível por segurança.');
+    ? 'Como administrador, você pode cadastrar, desativar e reativar operadores da sua base.'
+    : 'Somente administradores podem cadastrar, desativar ou reativar operadores.');
   if (!state.isAdmin) setNotice(refs.baseNotice, 'Somente administradores podem atualizar os dados da base.');
+  setNotice(refs.auditNotice, state.isAdmin
+    ? 'Registros de auditoria das ações executadas na base. Locações cadastradas de forma retroativa aparecem em destaque.'
+    : 'Somente administradores podem visualizar os logs de auditoria da base.');
 
   const initialTab = window.location.hash === '#perfil' ? 'profile'
-    : window.location.hash === '#base' ? 'base' : 'operators';
+    : window.location.hash === '#base' ? 'base'
+    : window.location.hash === '#audit' ? 'audit' : 'operators';
   activateTab(initialTab, false);
   loadUsers();
   loadProfile();
   loadBase();
+  loadAuditLogs();
 })();

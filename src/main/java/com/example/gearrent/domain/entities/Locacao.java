@@ -134,6 +134,7 @@ public class Locacao {
                     "O desconto não pode ser maior que o valor das diárias.");
         }
         locacao.aplicar(previsto);
+        locacao.sincronizarAtraso(agora);
         return locacao;
     }
 
@@ -182,6 +183,50 @@ public class Locacao {
         this.valorFinalCobrado = 0;
         this.dataAtualizacao = agora;
         equipamentos.forEach(Equipamento::marcarComoDisponivel);
+    }
+
+    /**
+     * Edita um contrato EM_ANDAMENTO. Campos null são mantidos. Se a data prevista ou o desconto mudarem,
+     * as diárias e a multa são recalculadas (com os preços congelados de cada equipamento).
+     */
+    public void atualizar(LocalDateTime novaDataPrevista, BigDecimal novoDesconto, String novoResponsavel,
+                          String novoDocumentoResponsavel, Endereco novoEndereco, LocalDateTime agora) {
+        if (status != StatusLocacao.EM_ANDAMENTO) {
+            throw new TransicaoStatusInvalidaException(
+                    "Só é possível editar uma locação que está em andamento.");
+        }
+
+        LocalDateTime prevista = novaDataPrevista != null ? novaDataPrevista : this.dataPrevista;
+        if (!prevista.toLocalDate().isAfter(dataRetirada.toLocalDate())) {
+            throw new RegraDeNegocioException(
+                    "A data de devolução prevista precisa ser depois da data de retirada.");
+        }
+        BigDecimal desconto = novoDesconto != null ? novoDesconto : BigDecimal.valueOf(this.valorDesconto);
+
+        // Recalcula ANTES de gravar nos campos, para não deixar o objeto pela metade se a regra falhar
+        CalculadoraLocacao.Resultado previsto = CalculadoraLocacao.calcular(
+                dataRetirada.toLocalDate(),
+                prevista.toLocalDate(),
+                prevista.toLocalDate(),
+                equipamentos.stream().map(this::valorDiariaDe).reduce(BigDecimal.ZERO, BigDecimal::add),
+                desconto);
+        if (previsto.valorDesconto().compareTo(desconto) < 0) {
+            throw new RegraDeNegocioException("O desconto não pode ser maior que o valor das diárias.");
+        }
+
+        this.dataPrevista = prevista;
+        this.valorDesconto = desconto.doubleValue();
+        if (novoResponsavel != null) {
+            this.responsavelRetirada = novoResponsavel;
+        }
+        if (novoDocumentoResponsavel != null) {
+            this.documentoResponsavelRetirada = novoDocumentoResponsavel;
+        }
+        if (novoEndereco != null) {
+            this.enderecoEntrega = novoEndereco;
+        }
+        aplicar(previsto);
+        this.dataAtualizacao = agora;
     }
 
     /** Dias de atraso apurados (para exibir na tela). */
