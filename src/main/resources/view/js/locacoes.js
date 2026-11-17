@@ -5,6 +5,7 @@
     window.location.replace('login.html');
     return;
   }
+  if (localStorage.getItem('gearRentTheme') === 'dark') document.body.dataset.theme = 'dark';
 
   window.GR = window.GR || {};
   window.GR.auth = window.GR.auth || {};
@@ -168,9 +169,13 @@
     try {
       const current = await getJSON('/usuarios/me');
       if (!current?.nome) throw new Error('Não foi possível identificar o usuário autenticado.');
-      document.getElementById('userNameSidebar').textContent = current.nome;
-      document.getElementById('baseNameSidebar').textContent = `Base de ${current.nome}`;
-      document.getElementById('avatarSidebar').textContent = initials(current.nome);
+      if (window.GR?.sidebar) {
+        window.GR.sidebar.aplicarNoDom({ nome: current.nome });
+      } else {
+        document.getElementById('userNameSidebar').textContent = current.nome;
+        document.getElementById('baseNameSidebar').textContent = `Base de ${current.nome}`;
+        document.getElementById('avatarSidebar').textContent = initials(current.nome);
+      }
       await window.GR.avatar.carregar(
         document.getElementById('avatarSidebar'),
         current.avatarAtualizadoEm,
@@ -611,16 +616,29 @@
       refs.estimateTotal.textContent = 'Total estimado: —';
       return;
     }
-    const days = Math.max(1, Math.ceil((due - start) / 86400000));
+    // Se a locação for cadastrada de forma retroativa e a data prevista já tiver passado,
+    // considera hoje como referência para estimar os dias de atraso e a multa de 10%.
+    const now = new Date();
+    const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const referenceDay = todayUtc > due ? todayUtc : due;
+    const totalDays = Math.max(1, Math.round((referenceDay - start) / 86400000));
+    const overdueDays = Math.max(0, Math.round((referenceDay - due) / 86400000));
     const dailyValues = selected.map((input) => Number(input.dataset.dailyValue));
     if (dailyValues.some((value) => !Number.isFinite(value))) {
-      refs.estimateDays.textContent = `Diárias estimadas: ${days}`;
+      refs.estimateDays.textContent = `Diárias estimadas: ${totalDays}`;
       refs.estimateTotal.textContent = 'Total estimado: diária não informada';
       return;
     }
     const dailyTotal = dailyValues.reduce((total, value) => total + value, 0);
-    refs.estimateDays.textContent = `Diárias estimadas: ${days}`;
-    refs.estimateTotal.textContent = `Total estimado: ${currency(days * dailyTotal)}`;
+    // Multa de 10% sobre o valor das diárias em atraso (mesma regra de CalculadoraLocacao.java)
+    const fine = overdueDays * dailyTotal * 0.10;
+    const totalAmount = (totalDays * dailyTotal) + fine;
+    refs.estimateDays.textContent = overdueDays > 0
+      ? `Diárias até hoje: ${totalDays} (${overdueDays} dia(s) de atraso)`
+      : `Diárias estimadas: ${totalDays}`;
+    refs.estimateTotal.textContent = overdueDays > 0
+      ? `Total c/ multa (10%): ${currency(totalAmount)} (multa: ${currency(fine)})`
+      : `Total estimado: ${currency(totalAmount)}`;
   }
 
   // Valida filtros de período e solicita novamente a lista de locações.

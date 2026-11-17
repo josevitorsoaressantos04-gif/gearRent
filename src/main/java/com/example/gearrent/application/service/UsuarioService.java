@@ -35,13 +35,16 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final LocadoraRepository locadoraRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditoriaService auditoriaService;
 
     public UsuarioService(UsuarioRepository usuarioRepository,
                           LocadoraRepository locadoraRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          AuditoriaService auditoriaService) {
         this.usuarioRepository = usuarioRepository;
         this.locadoraRepository = locadoraRepository;
         this.passwordEncoder = passwordEncoder;
+        this.auditoriaService = auditoriaService;
     }
 
     @Transactional
@@ -100,7 +103,16 @@ public class UsuarioService {
         // A base vem do administrador logado (token), nunca do corpo da requisição
         operador.setLocadora(locadoraRepository.getReferenceById(locadoraId));
 
-        return OperadorCadastroResponse.de(usuarioRepository.save(operador));
+        Usuario salvo = usuarioRepository.save(operador);
+        auditoriaService.registrar(
+                locadoraId,
+                "OPERADOR",
+                "CADASTRO",
+                false,
+                String.format("Operador %s %s (%s) cadastrado com permissão %s.",
+                        salvo.getNome(), salvo.getSobrenome(), salvo.getLogin(), salvo.getRole()));
+
+        return OperadorCadastroResponse.de(salvo);
     }
 
     @Transactional
@@ -114,6 +126,12 @@ public class UsuarioService {
 
         usuario.setStatus(StatusCadastro.ATIVO);
         usuario.setDataAtualizacao(LocalDateTime.now());
+        auditoriaService.registrar(
+                locadoraId,
+                "OPERADOR",
+                "REATIVACAO",
+                false,
+                String.format("Acesso do operador %s (%s) reativado.", usuario.getNome(), usuario.getLogin()));
 
         return new UsuarioReativacaoResponse(
                 usuario.getId(),
@@ -214,6 +232,12 @@ public class UsuarioService {
         }
         usuario.setStatus(StatusCadastro.INATIVO);
         usuario.setDataAtualizacao(LocalDateTime.now());
+        auditoriaService.registrar(
+                idBase,
+                "OPERADOR",
+                "DESATIVACAO",
+                false,
+                String.format("Acesso do operador %s (%s) desativado.", usuario.getNome(), usuario.getLogin()));
         return new UsuarioStatusResponse(usuario.getId(), usuario.getStatus(), "Usuário desativado com sucesso!");
     }
 

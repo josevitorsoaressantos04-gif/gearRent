@@ -126,9 +126,15 @@
     }
 
     const name = currentUser.nome;
-    document.getElementById('userNameSidebar').textContent = name;
-    document.getElementById('baseNameSidebar').textContent = `Base de ${name}`;
-    document.getElementById('avatarSidebar').textContent = initials(name);
+    // Utiliza o gerenciador compartilhado da sidebar (api.js) para atualizar o nome
+    // sem sobrescrever nem destruir a tag <img> do avatar caso ela já esteja carregada.
+    if (window.GR?.sidebar) {
+      window.GR.sidebar.aplicarNoDom({ nome: name });
+    } else {
+      document.getElementById('userNameSidebar').textContent = name;
+      document.getElementById('baseNameSidebar').textContent = `Base de ${name}`;
+      document.getElementById('avatarSidebar').textContent = initials(name);
+    }
     await window.GR.avatar.carregar(
       document.getElementById('avatarSidebar'),
       currentUser.avatarAtualizadoEm,
@@ -189,11 +195,15 @@
       : '—';
   }
 
-  // Carrega os indicadores operacionais gerais exibidos nos cards.
+  // Carrega os indicadores operacionais gerais exibidos nos cards (locações e status dos equipamentos).
   async function loadSummary() {
     const summary = await getJSON('/visao-geral/resumo');
     document.getElementById('kpiTotal').textContent = formatCount(summary.totalLocacoes);
     document.getElementById('kpiAtrasadas').textContent = formatCount(summary.atrasadas);
+    // Preenche os cards informativos com a contagem de equipamentos por status retornada pelo backend
+    document.getElementById('kpiEquipamentosDisponiveis').textContent = formatCount(summary.equipamentosDisponiveis);
+    document.getElementById('kpiEquipamentosAlugados').textContent = formatCount(summary.equipamentosAlugados);
+    document.getElementById('kpiEquipamentosManutencao').textContent = formatCount(summary.equipamentosManutencao);
   }
 
   // Consulta o resumo financeiro usando o período atualmente aplicado.
@@ -435,10 +445,12 @@
     }
 
     state.page = 0;
+    // Inclui também o filtro statusEquipamento (DISPONIVEL, ALUGADO, MANUTENCAO) na consulta da listagem
     state.filters = {
       categoria: elements.category.value,
       modelo: elements.model.value,
       numeroPatrimonio: elements.assetNumber.value.trim(),
+      statusEquipamento: elements.equipmentStatus.value,
       status: elements.rentalStatus.value,
       clienteId: elements.client.value,
       dataInicio: elements.startDate.value,

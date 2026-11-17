@@ -1,6 +1,7 @@
 package com.example.gearrent.application.DTO;
 
 import com.example.gearrent.domain.enums.CategoriaEquipamento;
+import com.example.gearrent.domain.enums.StatusEquipamento;
 import com.example.gearrent.domain.enums.StatusLocacao;
 import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDate;
@@ -8,6 +9,7 @@ import java.time.LocalDate;
 /** Filtros vindos dos query params. Note: NÃO existe locadoraId aqui, de propósito. */
 public record FiltroLocacaoDTO(
         StatusLocacao status,
+        StatusEquipamento statusEquipamento,
         Long clienteId,
         CategoriaEquipamento categoria,
         String modelo,

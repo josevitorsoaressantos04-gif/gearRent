@@ -12,6 +12,8 @@ import com.example.gearrent.application.DTO.ClienteListagemResponse;
 import com.example.gearrent.application.service.ClienteService;
 import com.example.gearrent.infra.security.UsuarioAutenticado;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -24,6 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/clientes")
 @Tag(name = "Cliente Controller", description = "Classe responsável pelo gerenciamento de clientes (Pessoa Física e Jurídica) da locadora")
+@SecurityRequirement(name = "bearerAuth")
 public class ClienteController {
 
     private final ClienteService clienteService;

@@ -4,6 +4,8 @@ import com.example.gearrent.application.DTO.*;
 import com.example.gearrent.application.service.VisaoGeralQueryService;
 import com.example.gearrent.infra.security.UsuarioAutenticado;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/visao-geral")
 @RequiredArgsConstructor
 @Tag(name = "Visão Geral", description = "Consultas otimizadas para o dashboard (CQRS - somente leitura)")
+@SecurityRequirement(name = "bearerAuth")
 public class VisaoGeralController {
 
     private final VisaoGeralQueryService queryService;
@@ -25,9 +28,12 @@ public class VisaoGeralController {
     @Operation(
             summary = "KPIs consolidados da locadora logada",
             description = "Retorna os indicadores do topo do dashboard: total de locações, em andamento, "
-                    + "atrasadas, faturamento total, receita do mês acumulada e valores em aberto. "
+                    + "atrasadas, faturamento total, receita do mês acumulada, valores em aberto e "
+                    + "contagem de equipamentos por status (disponíveis, alugados e em manutenção). "
                     + "Os dados são restritos à locadora do usuário autenticado."
     )
+    @ApiResponse(responseCode = "200", description = "Indicadores retornados com sucesso")
+    @ApiResponse(responseCode = "401", description = "Sessão inválida ou expirada")
     @GetMapping("/resumo")
     public ResponseEntity<VisaoGeralResumoDTO> resumo(@AuthenticationPrincipal UsuarioAutenticado usuario) {
         return ResponseEntity.ok(queryService.buscarResumo(usuario.locadoraId()));
@@ -38,6 +44,8 @@ public class VisaoGeralController {
             description = "Retorna, em uma única chamada, as categorias e modelos de equipamentos cadastrados "
                     + "e a lista enxuta de clientes (id, código sequencial e nome) da locadora do usuário autenticado."
     )
+    @ApiResponse(responseCode = "200", description = "Opções de filtro retornadas com sucesso")
+    @ApiResponse(responseCode = "401", description = "Sessão inválida ou expirada")
     @GetMapping("/filtros-opcoes")
     public ResponseEntity<OpcoesFiltrosDTO> filtrosOpcoes(@AuthenticationPrincipal UsuarioAutenticado usuario) {
         return ResponseEntity.ok(queryService.buscarOpcoesFiltros(usuario.locadoraId()));
@@ -46,11 +54,14 @@ public class VisaoGeralController {
     @Operation(
             summary = "Listagem sintética de locações com filtros combinados",
             description = "Retorna a tabela do dashboard de forma paginada. Todos os filtros são opcionais e "
-                    + "combinados entre si: status, clienteId, categoria, modelo, numeroPatrimonio e período "
+                    + "combinados entre si: status, statusEquipamento, clienteId, categoria, modelo, numeroPatrimonio e período "
                     + "(dataInicio e dataFim, aplicados sobre a data de retirada). "
                     + "Ordenação permitida: dataRetirada, dataPrevista, status e valorFinalCobrado "
                     + "(padrão: dataRetirada decrescente). Tamanho máximo da página: 50."
     )
+    @ApiResponse(responseCode = "200", description = "Página de locações retornada com sucesso")
+    @ApiResponse(responseCode = "401", description = "Sessão inválida ou expirada")
+    @ApiResponse(responseCode = "422", description = "Período inválido (dataInicio posterior a dataFim)")
     @GetMapping("/locacoes")
     public ResponseEntity<Page<LocacaoListagemSinteticaDTO>> locacoes(
             @AuthenticationPrincipal UsuarioAutenticado usuario,

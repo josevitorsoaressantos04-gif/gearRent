@@ -134,6 +134,7 @@ public class Locacao {
                     "O desconto não pode ser maior que o valor das diárias.");
         }
         locacao.aplicar(previsto);
+        locacao.sincronizarAtraso(agora);
         return locacao;
     }
 

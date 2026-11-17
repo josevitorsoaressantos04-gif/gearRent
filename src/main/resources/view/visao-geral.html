@@ -8,9 +8,14 @@
       name="description"
       content="Painel geral de visão de locações, clientes e equipamentos da GearRent."
     />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0"
+    />
     <link rel="stylesheet" href="css/layout.css" />
   </head>
-  <body class="dashboard-body">
+  <body class="dashboard-body overview-dashboard polished-dashboard">
+    <script>if (localStorage.getItem('gearRentTheme') === 'dark') document.body.dataset.theme = 'dark';</script>
     <div class="app-shell">
       <!-- Navegação do painel e identificação da base autenticada. -->
       <aside class="sidebar" aria-label="Menu lateral da base">
@@ -24,34 +29,27 @@
 
         <nav class="sidebar__nav" aria-label="Menu principal">
           <a class="nav-item nav-item--active" href="visao-geral.html" aria-current="page">
-            <span class="nav-item__icon" aria-hidden="true">📊</span>
+            <span class="nav-item__icon material-symbols-rounded" aria-hidden="true">dashboard</span>
             <span>Visão Geral</span>
           </a>
           <a class="nav-item" href="clientes.html">
-            <span class="nav-item__icon" aria-hidden="true">👥</span>
+            <span class="nav-item__icon material-symbols-rounded" aria-hidden="true">group</span>
             <span>Clientes</span>
           </a>
           <a class="nav-item" href="equipamentos.html">
-            <span class="nav-item__icon" aria-hidden="true">🚜</span>
+            <span class="nav-item__icon material-symbols-rounded" aria-hidden="true">construction</span>
             <span>Equipamentos</span>
           </a>
           <a class="nav-item" href="locacoes.html">
-            <span class="nav-item__icon" aria-hidden="true">📄</span>
+            <span class="nav-item__icon material-symbols-rounded" aria-hidden="true">receipt_long</span>
             <span>Locações</span>
           </a>
           <a class="nav-item" href="configuracoes.html">
-            <span class="nav-item__icon" aria-hidden="true">⚙️</span>
-            <span class="nav-item__label">
-              <span>Configurações</span>
-              <small>Operadores, base e credenciais</small>
-            </span>
-          </a>
-          <a class="nav-item" href="configuracoes.html#perfil">
-            <span class="nav-item__icon" aria-hidden="true">👤</span>
-            <span>Meu perfil</span>
+            <span class="nav-item__icon material-symbols-rounded" aria-hidden="true">settings</span>
+            <span>Configurações</span>
           </a>
           <button class="nav-item nav-item--logout" id="btnLogout" type="button">
-            <span class="nav-item__icon" aria-hidden="true">🚪</span>
+            <span class="nav-item__icon material-symbols-rounded" aria-hidden="true">logout</span>
             <span>Sair</span>
           </button>
         </nav>
@@ -126,10 +124,12 @@
             <div class="filter-panel__row">
               <label>
                 Status do Equipamento
-                <select id="filtroStatusEquipamento" aria-label="Selecionar status do equipamento" disabled>
-                  <option value="">Indisponível na API atual</option>
+                <select id="filtroStatusEquipamento" name="statusEquipamento" aria-label="Selecionar status do equipamento">
+                  <option value="">Todos</option>
+                  <option value="DISPONIVEL">Disponível</option>
+                  <option value="ALUGADO">Alugado</option>
+                  <option value="MANUTENCAO">Em manutenção</option>
                 </select>
-                <small class="filter-help">A consulta atual não filtra pelo status do equipamento.</small>
               </label>
 
               <label>
@@ -188,11 +188,14 @@
               <label><input type="checkbox" data-kpi-visibility="andamento" checked /> Locações Em Andamento</label>
               <label><input type="checkbox" data-kpi-visibility="atrasadas" checked /> Locações Atrasadas</label>
               <label><input type="checkbox" data-kpi-visibility="faturamento" checked /> Receita do período</label>
+              <label><input type="checkbox" data-kpi-visibility="equipamentosDisponiveis" checked /> Equipamentos Disponíveis</label>
+              <label><input type="checkbox" data-kpi-visibility="equipamentosAlugados" checked /> Equipamentos Alugados</label>
+              <label><input type="checkbox" data-kpi-visibility="equipamentosManutencao" checked /> Equipamentos em Manutenção</label>
             </div>
           </details>
 
-          <!-- Indicadores operacionais da base e receita do período. -->
-          <section class="kpis" aria-label="Resumo financeiro e operacional">
+          <!-- Indicadores operacionais da base, receita do período e status dos equipamentos. -->
+          <section class="kpis" aria-label="Resumo financeiro, operacional e status dos equipamentos">
             <article class="kpi-card" data-kpi-card="total">
               <span class="kpi-card__label">Total de Locações</span>
               <strong class="kpi-card__value" id="kpiTotal">—</strong>
@@ -203,7 +206,7 @@
               <strong class="kpi-card__value" id="kpiAndamento">—</strong>
             </article>
 
-            <article class="kpi-card" data-kpi-card="atrasadas">
+            <article class="kpi-card kpi-card--alert" data-kpi-card="atrasadas">
               <span class="kpi-card__label">Locações Atrasadas</span>
               <strong class="kpi-card__value" id="kpiAtrasadas">—</strong>
             </article>
@@ -211,6 +214,21 @@
             <article class="kpi-card kpi-card--highlight" data-kpi-card="faturamento">
               <span class="kpi-card__label">Receita do período</span>
               <strong class="kpi-card__value" id="kpiFaturamento">—</strong>
+            </article>
+
+            <article class="kpi-card" data-kpi-card="equipamentosDisponiveis">
+              <span class="kpi-card__label">Equipamentos Disponíveis</span>
+              <strong class="kpi-card__value" id="kpiEquipamentosDisponiveis">—</strong>
+            </article>
+
+            <article class="kpi-card" data-kpi-card="equipamentosAlugados">
+              <span class="kpi-card__label">Equipamentos Alugados</span>
+              <strong class="kpi-card__value" id="kpiEquipamentosAlugados">—</strong>
+            </article>
+
+            <article class="kpi-card" data-kpi-card="equipamentosManutencao">
+              <span class="kpi-card__label">Equipamentos em Manutenção</span>
+              <strong class="kpi-card__value" id="kpiEquipamentosManutencao">—</strong>
             </article>
           </section>
           <p class="kpi-hint">Os indicadores operacionais são gerais da base; a receita acompanha o período selecionado.</p>
@@ -223,7 +241,7 @@
             </div>
 
             <div class="table-wrapper">
-              <table>
+              <table class="overview-table">
                 <thead>
                   <tr>
                     <th scope="col">Nome do Cliente</th>

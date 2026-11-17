@@ -38,11 +38,14 @@ public class EquipamentoService {
 
     private final EquipamentoRepository equipamentoRepository;
     private final LocadoraRepository locadoraRepository;
+    private final AuditoriaService auditoriaService;
 
     public EquipamentoService(EquipamentoRepository equipamentoRepository,
-                              LocadoraRepository locadoraRepository) {
+                              LocadoraRepository locadoraRepository,
+                              AuditoriaService auditoriaService) {
         this.equipamentoRepository = equipamentoRepository;
         this.locadoraRepository = locadoraRepository;
+        this.auditoriaService = auditoriaService;
     }
 
     @Transactional
@@ -74,6 +77,12 @@ public class EquipamentoService {
         equipamento.setLocadora(locadoraRepository.getReferenceById(locadoraId));
 
         Equipamento salvo = equipamentoRepository.save(equipamento);
+        auditoriaService.registrar(
+                locadoraId,
+                "EQUIPAMENTO",
+                "CADASTRO",
+                false,
+                String.format("Equipamento nº %d (%s) cadastrado.", salvo.getCodigoSequencial(), salvo.getNome()));
 
         return new EquipamentoCadastroResponse(
                 salvo.getId(), salvo.getCodigoSequencial(), salvo.getNome(),
@@ -136,6 +145,13 @@ public class EquipamentoService {
         equipamento.setCategoria(request.categoria());
         equipamento.setValorDiaria(request.valorDiaria());
         equipamento.setDataAtualizacao(LocalDateTime.now());
+        auditoriaService.registrar(
+                locadoraId,
+                "EQUIPAMENTO",
+                "ATUALIZACAO",
+                false,
+                String.format("Equipamento nº %d (%s) atualizado (status: %s).",
+                        equipamento.getCodigoSequencial(), equipamento.getNome(), equipamento.getStatus()));
 
         return new EquipamentoAtualizacaoResponse(
                 equipamento.getId(), equipamento.getNome(), "Equipamento atualizado com sucesso!");
@@ -152,6 +168,12 @@ public class EquipamentoService {
 
         equipamento.setStatus(StatusEquipamento.CANCELADO);
         equipamento.setDataAtualizacao(LocalDateTime.now());
+        auditoriaService.registrar(
+                locadoraId,
+                "EQUIPAMENTO",
+                "INATIVACAO",
+                false,
+                String.format("Equipamento nº %d (%s) inativado.", equipamento.getCodigoSequencial(), equipamento.getNome()));
 
         return new EquipamentoExclusaoResponse(equipamento.getId(), "Equipamento excluído com sucesso!");
     }

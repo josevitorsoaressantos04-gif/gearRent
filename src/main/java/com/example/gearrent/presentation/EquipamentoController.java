@@ -14,6 +14,7 @@ import com.example.gearrent.domain.enums.CategoriaEquipamento;
 import com.example.gearrent.domain.enums.StatusEquipamento;
 import com.example.gearrent.infra.security.UsuarioAutenticado;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
@@ -29,6 +30,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/equipamentos")
 @Tag(name = "Equipamento Controller", description = "Classe responsável pelo gerenciamento do catálogo e estoque de equipamentos da locadora")
+@SecurityRequirement(name = "bearerAuth")
 public class EquipamentoController {
 
     private final EquipamentoService equipamentoService;

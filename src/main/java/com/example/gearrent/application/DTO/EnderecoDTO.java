@@ -43,6 +43,29 @@ public record EnderecoDTO(
                 endereco.getCep());
     }
 
+    /**
+     * Converte os dados retornados pelo ViaCEP para o formato do EnderecoDTO usado no sistema.
+     * Mapeia "localidade" para "cidade", "uf" para "estado" e deixa "numero" em branco
+     * para ser preenchido pelo usuário na tela.
+     */
+    public static EnderecoDTO deViaCep(ViaCepResponseDTO viaCep) {
+        if (viaCep == null) {
+            return null;
+        }
+        return new EnderecoDTO(
+                limparTexto(viaCep.logradouro()),
+                "",
+                limparTexto(viaCep.complemento()),
+                limparTexto(viaCep.bairro()),
+                limparTexto(viaCep.localidade()),
+                limparTexto(viaCep.uf()).toUpperCase(),
+                limparTexto(viaCep.cep()));
+    }
+
+    private static String limparTexto(String valor) {
+        return valor == null ? "" : valor.trim();
+    }
+
     public Endereco paraEntidade() {
         return new Endereco(
                 logradouro.trim(),

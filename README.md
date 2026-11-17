@@ -17,7 +17,17 @@ O GearRent simplifica o ciclo de locação: cadastro de clientes e equipamentos,
 
 A aplicação web foi pensada prioritariamente para uso em desktop. A interface privilegia contraste entre fundos claros e texto escuro, hierarquia visual evidente, controles espaçosos e linguagem direta em português. O estilo base usa tipografia de 18 px; alguns componentes específicos do painel podem ter dimensões diferentes.
 
+O painel também oferece um tema escuro, salvo localmente no navegador, com superfícies grafite, texto cinza claro e acentos azuis inspirados em editores de código. A escolha de tema não altera os dados nem as regras dos módulos.
+
 Erros de validação e regras de negócio são apresentados por mensagens compreensíveis, sem depender de alertas nativos do navegador. O projeto também utiliza rótulos e estados de foco visíveis para apoiar a navegação por teclado.
+
+### Painel administrativo
+
+O painel segue a arquitetura MPA, com páginas HTML independentes para Visão Geral, Clientes, Equipamentos, Locações e Configurações. Essas telas compartilham `src/main/resources/view/css/layout.css`, sem frameworks de CSS, e mantêm a lógica de cada módulo em seus respectivos arquivos JavaScript Vanilla.
+
+As telas administrativas usam tipografia base de 16 px e componentes visuais consistentes: navegação lateral, cartões, tabelas com rolagem horizontal quando necessário, campos e botões com áreas de interação amplas e badges de status. Os rótulos dos status são apresentados em português, sem alterar os valores internos usados pelas regras do sistema. O módulo Configurações inclui as seções de operadores, dados da base e perfil do usuário.
+
+Os ícones da navegação e das ações nas tabelas usam Material Symbols Rounded, carregados pelo Google Fonts. O layout também possui ajustes para telas menores e mantém indicadores visíveis de foco para navegação por teclado.
 
 ## Arquitetura e decisões técnicas
 

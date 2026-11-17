@@ -31,11 +31,15 @@ public class LocacaoController {
     }
 
     @PostMapping
-    @Operation(summary = "Cadastrar locação",
-            description = "Cria o contrato, reserva os equipamentos e calcula o valor previsto.")
+    @Operation(summary = "Cadastrar locação (inclusive retroativa)",
+            description = "Cria o contrato, reserva os equipamentos e calcula o valor previsto. "
+                    + "Permite data de retirada retroativa: caso a data prevista de devolução já tenha passado, "
+                    + "a locação já nasce com status ATRASADA e com a multa de 10% sobre as diárias em atraso calculada. "
+                    + "Cadastros retroativos são destacados automaticamente nos logs de auditoria.")
     @ApiResponse(responseCode = "201", description = "Locação criada")
     @ApiResponse(responseCode = "404", description = "Cliente ou equipamento não encontrado")
     @ApiResponse(responseCode = "409", description = "Equipamento indisponível")
+    @ApiResponse(responseCode = "422", description = "Regra de negócio violada (ex.: cliente inativo, desconto inválido ou data prevista anterior/igual à retirada)")
     public ResponseEntity<LocacaoResponse> cadastrar(
             @AuthenticationPrincipal UsuarioAutenticado usuario,
             @Valid @RequestBody LocacaoCadastroRequest request) {

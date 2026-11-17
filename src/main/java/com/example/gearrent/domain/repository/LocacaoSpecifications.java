@@ -64,9 +64,10 @@ public final class LocacaoSpecifications {
         return (root, query, cb) -> cb.equal(root.get("cliente").get("id"), f.clienteId());
     }
 
-    // categoria, modelo e patrimônio compartilham UM join com equipamentos
+    // categoria, status do equipamento, modelo e patrimônio compartilham UM join com equipamentos
     static Specification<Locacao> comEquipamento(Long locadoraId, FiltroLocacaoDTO f) {
         boolean semFiltro = f.categoria() == null
+                && f.statusEquipamento() == null
                 && !temTexto(f.modelo())
                 && !temTexto(f.numeroPatrimonio());
         if (semFiltro) return null;
@@ -79,6 +80,9 @@ public final class LocacaoSpecifications {
             p.add(cb.equal(eq.get("locadora").get("id"), locadoraId)); // defesa em profundidade
             if (f.categoria() != null) {
                 p.add(cb.equal(eq.get("categoria"), f.categoria()));
+            }
+            if (f.statusEquipamento() != null) {
+                p.add(cb.equal(eq.get("status"), f.statusEquipamento()));
             }
             if (temTexto(f.modelo())) {
                 p.add(cb.equal(cb.lower(eq.get("modelo")), f.modelo().trim().toLowerCase()));

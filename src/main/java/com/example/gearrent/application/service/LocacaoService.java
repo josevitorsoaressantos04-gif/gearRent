@@ -22,17 +22,21 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 
 @Service
 public class LocacaoService {
 
+    private static final DateTimeFormatter DATA_BR = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     private final LocacaoRepository locacaoRepository;
     private final ClienteRepository clienteRepository;
     private final EquipamentoRepository equipamentoRepository;
     private final LocadoraRepository locadoraRepository;
     private final UsuarioRepository usuarioRepository;
+    private final AuditoriaService auditoriaService;
     private final Clock clock;
 
     public LocacaoService(LocacaoRepository locacaoRepository,
@@ -40,12 +44,14 @@ public class LocacaoService {
                           EquipamentoRepository equipamentoRepository,
                           LocadoraRepository locadoraRepository,
                           UsuarioRepository usuarioRepository,
+                          AuditoriaService auditoriaService,
                           Clock clock) {
         this.locacaoRepository = locacaoRepository;
         this.clienteRepository = clienteRepository;
         this.equipamentoRepository = equipamentoRepository;
         this.locadoraRepository = locadoraRepository;
         this.usuarioRepository = usuarioRepository;
+        this.auditoriaService = auditoriaService;
         this.clock = clock;
     }
 
@@ -95,7 +101,21 @@ public class LocacaoService {
                 endereco,
                 agora);
 
-        return LocacaoResponse.de(locacaoRepository.save(locacao), agora);
+        Locacao salva = locacaoRepository.save(locacao);
+        boolean retroativa = req.dataRetirada().isBefore(agora.toLocalDate());
+        String acao = retroativa ? "CADASTRO_RETROATIVO" : "CADASTRO";
+        String textoStatus = salva.getStatus().name();
+        String detalhes = String.format(
+                "%s da locação nº %d para %s (retirada: %s, prevista: %s, status inicial: %s).",
+                retroativa ? "Cadastro retroativo" : "Cadastro",
+                salva.getCodigoSequencial(),
+                cliente.getNome(),
+                req.dataRetirada().format(DATA_BR),
+                req.dataPrevista().format(DATA_BR),
+                textoStatus);
+        auditoriaService.registrar(locadoraId, "LOCACAO", acao, retroativa, detalhes);
+
+        return LocacaoResponse.de(salva, agora);
     }
 
     // Não é readOnly porque pode gravar a mudança para ATRASADA
@@ -120,6 +140,17 @@ public class LocacaoService {
 
         locacao.sincronizarAtraso(agora);
         locacao.devolver(dataDevolucao, agora);
+        auditoriaService.registrar(
+                locadoraId,
+                "LOCACAO",
+                "DEVOLUCAO",
+                false,
+                String.format("Devolução da locação nº %d (%s) em %s. Multa: R$ %.2f · Total: R$ %.2f.",
+                        locacao.getCodigoSequencial(),
+                        locacao.getCliente().getNome(),
+                        dataDevolucao.toLocalDate().format(DATA_BR),
+                        locacao.getValorMultaPorAtraso(),
+                        locacao.getValorFinalCobrado()));
         return LocacaoResponse.de(locacao, agora);
     }
 
@@ -140,6 +171,15 @@ public class LocacaoService {
                 req.documentoResponsavelRetirada(),
                 endereco,
                 agora);
+        auditoriaService.registrar(
+                locadoraId,
+                "LOCACAO",
+                "ATUALIZACAO",
+                false,
+                String.format("Atualização da locação nº %d (%s). Nova previsão: %s.",
+                        locacao.getCodigoSequencial(),
+                        locacao.getCliente().getNome(),
+                        locacao.getDataPrevista().toLocalDate().format(DATA_BR)));
         return LocacaoResponse.de(locacao, agora);
     }
 
@@ -151,6 +191,14 @@ public class LocacaoService {
 
         locacao.sincronizarAtraso(agora);
         locacao.cancelar(agora);
+        auditoriaService.registrar(
+                locadoraId,
+                "LOCACAO",
+                "CANCELAMENTO",
+                false,
+                String.format("Cancelamento da locação nº %d (%s).",
+                        locacao.getCodigoSequencial(),
+                        locacao.getCliente().getNome()));
         return LocacaoResponse.de(locacao, agora);
     }
 

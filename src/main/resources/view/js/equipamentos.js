@@ -115,9 +115,13 @@
       const response = await window.apiClient.get('/usuarios/me');
       const current = response.data;
       if (!current?.nome) throw new Error('Não foi possível identificar o usuário autenticado.');
-      document.getElementById('userNameSidebar').textContent = current.nome;
-      document.getElementById('baseNameSidebar').textContent = `Base de ${current.nome}`;
-      document.getElementById('avatarSidebar').textContent = initials(current.nome);
+      if (window.GR?.sidebar) {
+        window.GR.sidebar.aplicarNoDom({ nome: current.nome });
+      } else {
+        document.getElementById('userNameSidebar').textContent = current.nome;
+        document.getElementById('baseNameSidebar').textContent = `Base de ${current.nome}`;
+        document.getElementById('avatarSidebar').textContent = initials(current.nome);
+      }
       await window.GR.avatar.carregar(
         document.getElementById('avatarSidebar'),
         current.avatarAtualizadoEm,

@@ -5,9 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GearRent | Clientes</title>
     <meta name="description" content="Gerenciamento de clientes da base GearRent." />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0"
+    />
     <link rel="stylesheet" href="css/layout.css" />
   </head>
-  <body class="dashboard-body clients-dashboard">
+  <body class="dashboard-body clients-dashboard polished-dashboard">
+    <script>if (localStorage.getItem('gearRentTheme') === 'dark') document.body.dataset.theme = 'dark';</script>
     <div class="app-shell">
       <!-- Menu de navegação e identificação da base autenticada. -->
       <aside class="sidebar" aria-label="Menu lateral da base">
@@ -21,34 +26,27 @@
 
         <nav class="sidebar__nav" aria-label="Menu principal">
           <a class="nav-item" href="visao-geral.html">
-            <span class="nav-item__icon" aria-hidden="true">📊</span>
+            <span class="nav-item__icon material-symbols-rounded" aria-hidden="true">dashboard</span>
             <span>Visão Geral</span>
           </a>
           <a class="nav-item nav-item--active" href="clientes.html" aria-current="page">
-            <span class="nav-item__icon" aria-hidden="true">👥</span>
+            <span class="nav-item__icon material-symbols-rounded" aria-hidden="true">group</span>
             <span>Clientes</span>
           </a>
           <a class="nav-item" href="equipamentos.html">
-            <span class="nav-item__icon" aria-hidden="true">🚜</span>
+            <span class="nav-item__icon material-symbols-rounded" aria-hidden="true">construction</span>
             <span>Equipamentos</span>
           </a>
           <a class="nav-item" href="locacoes.html">
-            <span class="nav-item__icon" aria-hidden="true">📄</span>
+            <span class="nav-item__icon material-symbols-rounded" aria-hidden="true">receipt_long</span>
             <span>Locações</span>
           </a>
           <a class="nav-item" href="configuracoes.html">
-            <span class="nav-item__icon" aria-hidden="true">⚙️</span>
-            <span class="nav-item__label">
-              <span>Configurações</span>
-              <small>Operadores, base e credenciais</small>
-            </span>
-          </a>
-          <a class="nav-item" href="configuracoes.html#perfil">
-            <span class="nav-item__icon" aria-hidden="true">👤</span>
-            <span>Meu perfil</span>
+            <span class="nav-item__icon material-symbols-rounded" aria-hidden="true">settings</span>
+            <span>Configurações</span>
           </a>
           <button class="nav-item nav-item--logout" id="btnLogout" type="button">
-            <span class="nav-item__icon" aria-hidden="true">🚪</span>
+            <span class="nav-item__icon material-symbols-rounded" aria-hidden="true">logout</span>
             <span>Sair</span>
           </button>
         </nav>
@@ -122,9 +120,6 @@
                   </tbody>
                 </table>
               </div>
-              <p class="clients-api-note">
-                Os clientes e seus dados cadastrais são carregados da base autenticada.
-              </p>
             </section>
 
             <aside class="client-detail-panel" aria-labelledby="detailPanelTitle" aria-live="polite">
@@ -231,6 +226,10 @@
               <label for="emailCliente">E-mail</label>
               <input id="emailCliente" name="email" type="email" autocomplete="email" placeholder="cliente@email.com" />
             </div>
+            <div class="field-group">
+              <label for="cepCliente">CEP</label>
+              <input id="cepCliente" name="cep" inputmode="numeric" maxlength="9" autocomplete="postal-code" placeholder="00000-000" required />
+            </div>
             <div class="field-group field-group--full">
               <label for="logradouroCliente">Rua / Avenida</label>
               <input id="logradouroCliente" name="logradouro" autocomplete="address-line1" required />
@@ -254,10 +253,6 @@
             <div class="field-group">
               <label for="estadoCliente">UF</label>
               <input id="estadoCliente" name="estado" maxlength="2" autocomplete="address-level1" placeholder="SP" required />
-            </div>
-            <div class="field-group">
-              <label for="cepCliente">CEP</label>
-              <input id="cepCliente" name="cep" inputmode="numeric" autocomplete="postal-code" placeholder="00000-000" required />
             </div>
           </div>
           <div class="modal__actions">

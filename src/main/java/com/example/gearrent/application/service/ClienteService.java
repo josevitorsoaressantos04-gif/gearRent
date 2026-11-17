@@ -33,6 +33,7 @@ public class ClienteService {
     private final ClienteRepository clienteRepository;
     private final LocadoraRepository locadoraRepository;
     private final LocacaoRepository locacaoRepository;
+    private final AuditoriaService auditoriaService;
 
     // ---------------------------------------------------------------
     // CADASTRAR (Estratégia 1: reativação automática)
@@ -61,6 +62,12 @@ public class ClienteService {
         existente.setStatus(StatusCadastro.ATIVO);
         existente.setTipoPessoa(TipoPessoa.deduzirDoDocumento(existente.getDocumento()));
         Cliente salvo = clienteRepository.save(existente);
+        auditoriaService.registrar(
+                salvo.getLocadora().getId(),
+                "CLIENTE",
+                "REATIVACAO",
+                false,
+                String.format("Cliente nº %d (%s) reativado.", salvo.getCodigoSequencial(), salvo.getNome()));
 
         return new ClienteCadastroResponse(salvo.getId(), salvo.getCodigoSequencial(), salvo.getNome(),
                 "O cadastro de " + salvo.getNome() + " já existia e foi reativado com os dados novos.");
@@ -79,6 +86,12 @@ public class ClienteService {
         cliente.setCodigoSequencial(locadoraRepository.proximoCodigoCliente(locadoraId));
 
         Cliente salvo = clienteRepository.save(cliente);
+        auditoriaService.registrar(
+                locadoraId,
+                "CLIENTE",
+                "CADASTRO",
+                false,
+                String.format("Cliente nº %d (%s) cadastrado.", salvo.getCodigoSequencial(), salvo.getNome()));
         return new ClienteCadastroResponse(salvo.getId(), salvo.getCodigoSequencial(), salvo.getNome(),
                 "Cliente " + salvo.getNome() + " cadastrado com sucesso!");
     }
@@ -139,6 +152,12 @@ public class ClienteService {
         preencherDados(cliente, request.nome(), request.email(), request.celular(),
                 request.telefone(), request.endereco());
         clienteRepository.save(cliente);
+        auditoriaService.registrar(
+                locadoraId,
+                "CLIENTE",
+                "ATUALIZACAO",
+                false,
+                String.format("Dados do cliente nº %d (%s) atualizados.", cliente.getCodigoSequencial(), cliente.getNome()));
 
         return new ClienteAtualizacaoResponse(cliente.getId(), cliente.getNome(),
                 "Dados de " + cliente.getNome() + " atualizados com sucesso!");
@@ -196,6 +215,12 @@ public class ClienteService {
         }
 
         cliente.setStatus(StatusCadastro.CANCELADO); // nada é apagado do banco
+        auditoriaService.registrar(
+                locadoraId,
+                "CLIENTE",
+                "INATIVACAO",
+                false,
+                String.format("Cliente nº %d (%s) inativado.", cliente.getCodigoSequencial(), cliente.getNome()));
         return new ClienteExclusaoResponse(cliente.getId(),
                 "Cliente " + cliente.getNome() + " removido. O histórico de locações foi preservado.");
     }
