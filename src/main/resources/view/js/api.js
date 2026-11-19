@@ -1,6 +1,6 @@
 // Cria o cliente HTTP compartilhado para as rotas da API.
 const apiClient = axios.create({
-  baseURL: 'http:/https://gearrent-eo3x.onrender.com/api',
+  baseURL: 'https://gearrent-eo3x.onrender.com/api',
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
