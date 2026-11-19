@@ -1,23 +1,4 @@
 services:
-  # Servidor de Banco de Dados PostgreSQL (com healthcheck ativado)
-  postgres-db:
-    image: postgres:16-alpine
-    container_name: gearrent-db
-    restart: always
-    environment:
-      POSTGRES_DB: gearrent
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespassword
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d gearrent"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
   # Back-end Java 17 / Spring Boot 4.1.1
   backend:
     build:
@@ -28,14 +9,12 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/gearrent
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgrespassword
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://dpg-dbv2b7c9v7es738f76sg-a.oregon-postgres.render.com:5432/gearrent_db_hdfx
+      - SPRING_DATASOURCE_USERNAME=gearrent_db_hdfx_user
+      - SPRING_DATASOURCE_PASSWORD=ZW5gJSHI62HfDyis4Ye6m0nKpdMjni3L
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - JWT_SECRET=SuaChaveSecretaMuitoForteGearRent2026
-    depends_on:
-      postgres-db:
-        condition: service_healthy
+
 
   # Front-end Nginx (Vanilla JS)
   frontend:
