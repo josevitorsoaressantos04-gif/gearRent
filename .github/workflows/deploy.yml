@@ -54,9 +54,10 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-frontend:${{ github.sha }}
 
-      # 4. Inicializar os Contêineres no Docker via Docker Compose
+      # 4. Pull e Inicialização dos Contêineres no Docker via Docker Compose
       - name: Subir Aplicação no Docker
         run: |
           docker-compose down || true
-          docker-compose up -d --build
+          docker-compose pull
+          docker-compose up -d
           docker-compose ps
