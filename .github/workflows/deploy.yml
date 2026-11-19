@@ -12,6 +12,7 @@ jobs:
       - name: Checkout do Código
         uses: actions/checkout@v4
 
+      # 🔐 Passo de Autenticação no Docker Hub
       - name: Autenticar no Docker Hub
         uses: docker/login-action@v3
         with:
@@ -21,40 +22,25 @@ jobs:
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 1. Build e Push da Imagem do Banco PostgreSQL
-      - name: Build & Push - Banco PostgreSQL
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile-db
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-db:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-db:${{ github.sha }}
-
-      # 2. Build e Push da Imagem do Back-end (Spring Boot)
+      # 1. Build & Push do Back-end Java Spring Boot
       - name: Build & Push - Back-end
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-backend:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-backend:${{ github.sha }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-backend:latest
 
-      # 3. Build e Push da Imagem do Front-end (Nginx)
+      # 2. Build & Push do Front-end Nginx
       - name: Build & Push - Front-end
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile-frontend
           push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-frontend:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-frontend:${{ github.sha }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-frontend:latest
 
-      # 4. Pull e Inicialização dos Contêineres no Docker via Docker Compose
+      # 3. Baixar Imagens e Subir Contêineres no Docker
       - name: Subir Aplicação no Docker
         run: |
           docker-compose down || true
