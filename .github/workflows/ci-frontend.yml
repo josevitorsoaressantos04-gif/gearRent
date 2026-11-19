@@ -1,0 +1,25 @@
+name: CI - Front-end Nginx & Vanilla JS
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+    paths:
+      - 'src/main/resources/view/**'
+      - 'Dockerfile-frontend'
+      - 'nginx.conf'
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  validate-frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: Validar Estrutura do Front-end
+        run: |
+          test -f src/main/resources/view/index.html || (echo "ERRO: index.html não encontrado" && exit 1)
+          test -f nginx.conf || (echo "ERRO: nginx.conf não encontrado na raiz" && exit 1)
+          echo "✓ Arquivos estáticos e Nginx validados!"

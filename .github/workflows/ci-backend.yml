@@ -1,0 +1,32 @@
+name: CI - Back-end Java Spring Boot
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+    paths:
+      - 'src/main/java/**'
+      - 'src/main/resources/application*.properties'
+      - 'pom.xml'
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Executar Testes Unitários
+        run: mvn clean test
+
+      - name: Compilar Pacote JAR
+        run: mvn package -DskipTests
