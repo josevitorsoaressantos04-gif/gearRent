@@ -2,6 +2,7 @@ package com.example.gearrent.infra.email;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -21,13 +22,13 @@ public class EmailService {
     @Value("${app.email.envio-habilitado}")
     private boolean envioHabilitado;
 
-    public EmailService(JavaMailSender mailSender) {
+    public EmailService(@Autowired(required = false) JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
 
     @Async
     public void enviarRecuperacaoSenha(String destinatario, String nome, String link, long validadeMinutos) {
-        if (!envioHabilitado) {
+        if (!envioHabilitado || mailSender == null) {
             log.warn("[DESENVOLVIMENTO] Envio de e-mail desabilitado. Link de recuperação para {}: {}",
                     destinatario, link);
             return;
