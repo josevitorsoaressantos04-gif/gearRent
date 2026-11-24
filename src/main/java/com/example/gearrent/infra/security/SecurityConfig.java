@@ -1,5 +1,7 @@
 package com.example.gearrent.infra.security;
 
+import com.example.gearrent.infra.uptime.HealthRateLimitFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,10 +15,18 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.time.Clock;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity   // ativa o @PreAuthorize
 public class SecurityConfig {
+
+    @Value("${app.uptimerobot.health.rate-limit.requisicoes-por-minuto:10}")
+    private int healthRateLimitPorMinuto;
+
+    @Value("${app.uptimerobot.health.rate-limit.max-ips-cache:10000}")
+    private int healthRateLimitMaxIps;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -24,7 +34,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, TokenService tokenService) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http,
+                                           TokenService tokenService,
+                                           Clock clock) throws Exception {
+        HealthRateLimitFilter healthRateLimitFilter =
+                new HealthRateLimitFilter(clock, healthRateLimitPorMinuto, healthRateLimitMaxIps);
+
         http
                 .cors(Customizer.withDefaults())      // <- nova linha
                 .csrf(csrf -> csrf.disable())
@@ -50,7 +65,8 @@ public class SecurityConfig {
                             res.setContentType("application/json;charset=UTF-8");
                             res.getWriter().write("{\"status\":403,\"mensagens\":[\"Você não tem permissão para fazer isso.\"]}");
                         }))
-                .addFilterBefore(new JwtFilter(tokenService), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtFilter(tokenService), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(healthRateLimitFilter, JwtFilter.class);
 
         return http.build();
     }

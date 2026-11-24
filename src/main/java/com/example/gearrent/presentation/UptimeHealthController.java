@@ -38,9 +38,10 @@ public class UptimeHealthController {
     @GetMapping({"/health", "/ping"})
     @Operation(
             summary = "Teste de conexão e UptimeRobot (Keep-Alive)",
-            description = "Retorna o status UP do servidor e do banco de dados e registra o resultado UP no log interno do sistema."
+            description = "Retorna o status UP do servidor e do banco de dados e registra o resultado UP no log interno do sistema. Protegido por rate limit por IP."
     )
     @ApiResponse(responseCode = "200", description = "Servidor ativo (UP)")
+    @ApiResponse(responseCode = "429", description = "Limite de requisições excedido para este IP")
     public ResponseEntity<Map<String, Object>> verificarConexao() {
         String dbStatus = "UP";
         try {
