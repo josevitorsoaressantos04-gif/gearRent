@@ -5,10 +5,14 @@ import com.example.gearrent.application.DTO.LocacaoCadastroRequest;
 import com.example.gearrent.application.DTO.LocacaoDevolucaoRequest;
 import com.example.gearrent.application.DTO.LocacaoResponse;
 import com.example.gearrent.application.service.LocacaoService;
-// import do UsuarioAutenticado: use o pacote onde ele está no seu projeto
+import com.example.gearrent.infra.exception.ApiErroResposta;
 import com.example.gearrent.infra.security.UsuarioAutenticado;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -20,7 +24,10 @@ import java.net.URI;
 
 @RestController
 @RequestMapping("/api/locacoes")
-@Tag(name = "Locações", description = "Contratos de locação da sua locadora")
+@Tag(
+        name = "Locações",
+        description = "Gerenciamento completo de contratos de locação (abertura, consulta, edição, devolução e cancelamento) com isolamento por locadora."
+)
 @SecurityRequirement(name = "bearerAuth")
 public class LocacaoController {
 
@@ -31,15 +38,30 @@ public class LocacaoController {
     }
 
     @PostMapping
-    @Operation(summary = "Cadastrar locação (inclusive retroativa)",
-            description = "Cria o contrato, reserva os equipamentos e calcula o valor previsto. "
-                    + "Permite data de retirada retroativa: caso a data prevista de devolução já tenha passado, "
-                    + "a locação já nasce com status ATRASADA e com a multa de 10% sobre as diárias em atraso calculada. "
-                    + "Cadastros retroativos são destacados automaticamente nos logs de auditoria.")
-    @ApiResponse(responseCode = "201", description = "Locação criada")
-    @ApiResponse(responseCode = "404", description = "Cliente ou equipamento não encontrado")
-    @ApiResponse(responseCode = "409", description = "Equipamento indisponível")
-    @ApiResponse(responseCode = "422", description = "Regra de negócio violada (ex.: cliente inativo, desconto inválido ou data prevista anterior/igual à retirada)")
+    @Operation(
+            summary = "Cadastrar locação (inclusive retroativa)",
+            description = "Requer autenticação via token JWT (`Authorization: Bearer <token>`).\n\n"
+                    + "Etapas e regras de negócio:\n"
+                    + "1. O `locadoraId` nunca é enviado pelo cliente HTTP, sendo resolvido internamente a partir do usuário autenticado.\n"
+                    + "2. Valida que a data prevista de devolução é posterior à data de retirada.\n"
+                    + "3. Checa a existência do cliente na locadora autenticada e exige status `ATIVO`.\n"
+                    + "4. Ordena os IDs e aplica bloqueio pessimista (`lock`) nos equipamentos para evitar locação concorrente, validando disponibilidade.\n"
+                    + "5. Gera código sequencial atômico por locadora, calcula diárias previstas, desconto e eventual multa retroativa (10% sobre diárias em atraso quando a data prevista já passou, nascendo com status `ATRASADA`).\n"
+                    + "6. Registra evento na auditoria (destacando cadastros retroativos)."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Locação criada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class))),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class))),
+            @ApiResponse(responseCode = "404", description = "Cliente ou equipamento não encontrado na locadora autenticada",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class))),
+            @ApiResponse(responseCode = "409", description = "Um ou mais equipamentos indisponíveis para locação",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class))),
+            @ApiResponse(responseCode = "422", description = "Regra de negócio violada (cliente inativo, desconto inválido ou data prevista anterior/igual à retirada)",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class)))
+    })
     public ResponseEntity<LocacaoResponse> cadastrar(
             @AuthenticationPrincipal UsuarioAutenticado usuario,
             @Valid @RequestBody LocacaoCadastroRequest request) {
@@ -49,63 +71,133 @@ public class LocacaoController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Consultar locação (detalhes e contrato)",
-            description = "Se estiver atrasada, mostra o valor acumulado até hoje.")
-    @ApiResponse(responseCode = "200", description = "Locação encontrada")
-    @ApiResponse(responseCode = "404", description = "Locação não encontrada")
-    public LocacaoResponse consultar(@AuthenticationPrincipal UsuarioAutenticado usuario,
-                                     @PathVariable Long id) {
+    @Operation(
+            summary = "Consultar locação por ID",
+            description = "Requer autenticação via token JWT (`Authorization: Bearer <token>`).\n\n"
+                    + "Etapas e regras de negócio:\n"
+                    + "1. O `locadoraId` nunca é enviado pelo cliente HTTP, sendo resolvido internamente a partir do usuário autenticado.\n"
+                    + "2. Checa a existência do contrato dentro da locadora autenticada (isolamento multi-tenant).\n"
+                    + "3. Caso a locação esteja em atraso, calcula e exibe o valor acumulado atualizado até a data corrente."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Locação encontrada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Identificador inválido",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class))),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class))),
+            @ApiResponse(responseCode = "404", description = "Locação não encontrada na locadora autenticada",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class)))
+    })
+    public LocacaoResponse consultar(
+            @AuthenticationPrincipal UsuarioAutenticado usuario,
+            @Parameter(description = "ID da locação", example = "1") @PathVariable Long id) {
         return locacaoService.consultar(usuario.locadoraId(), id);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Editar locação",
-            description = "Só funciona com a locação EM_ANDAMENTO. Permite alterar data prevista de devolução, desconto, "
-                    + "responsável pela retirada e endereço de entrega (campos não enviados são mantidos). "
-                    + "Se a data prevista ou o desconto mudarem, diárias e multa são recalculadas.")
-    @ApiResponse(responseCode = "200", description = "Locação atualizada")
-    @ApiResponse(responseCode = "404", description = "Locação não encontrada")
-    @ApiResponse(responseCode = "422", description = "Locação não está em andamento ou dados inválidos")
-    public LocacaoResponse atualizar(@AuthenticationPrincipal UsuarioAutenticado usuario,
-                                     @PathVariable Long id,
-                                     @Valid @RequestBody LocacaoAtualizacaoRequest request) {
+    @Operation(
+            summary = "Editar locação em andamento",
+            description = "Requer autenticação via token JWT (`Authorization: Bearer <token>`).\n\n"
+                    + "Etapas e regras de negócio:\n"
+                    + "1. O `locadoraId` nunca é enviado pelo cliente HTTP, sendo resolvido internamente a partir do usuário autenticado.\n"
+                    + "2. Checa a existência da locação na locadora autenticada e exige que o status seja `EM_ANDAMENTO`.\n"
+                    + "3. Atualiza data prevista de devolução, desconto, responsável pela retirada e endereço de entrega (campos omitidos são preservados).\n"
+                    + "4. Recalcula automaticamente diárias e eventual multa caso a data prevista ou o desconto sejam alterados."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Locação atualizada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class))),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class))),
+            @ApiResponse(responseCode = "404", description = "Locação não encontrada na locadora autenticada",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class))),
+            @ApiResponse(responseCode = "422", description = "Locação não está em andamento ou regra de negócio violada",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class)))
+    })
+    public LocacaoResponse atualizar(
+            @AuthenticationPrincipal UsuarioAutenticado usuario,
+            @Parameter(description = "ID da locação", example = "1") @PathVariable Long id,
+            @Valid @RequestBody LocacaoAtualizacaoRequest request) {
         return locacaoService.atualizar(usuario.locadoraId(), id, request);
     }
 
     @PatchMapping("/{id}/devolucao")
-    @Operation(summary = "Registrar devolução",
-            description = "Libera os equipamentos e fixa o valor final, com multa se houve atraso. "
-                    + "Corpo opcional: {\"dataDevolucao\": \"yyyy-MM-dd\"}; sem corpo, usa a data de hoje.")
-    @ApiResponse(responseCode = "200", description = "Devolução registrada")
-    @ApiResponse(responseCode = "404", description = "Locação não encontrada")
-    @ApiResponse(responseCode = "422", description = "Locação não pode mais ser devolvida")
-    public LocacaoResponse devolver(@AuthenticationPrincipal UsuarioAutenticado usuario,
-                                    @PathVariable Long id,
-                                    @Valid @RequestBody(required = false) LocacaoDevolucaoRequest request) {
+    @Operation(
+            summary = "Registrar devolução de locação",
+            description = "Requer autenticação via token JWT (`Authorization: Bearer <token>`).\n\n"
+                    + "Etapas e regras de negócio:\n"
+                    + "1. O `locadoraId` nunca é enviado pelo cliente HTTP, sendo resolvido internamente a partir do usuário autenticado.\n"
+                    + "2. Checa a existência da locação na locadora autenticada e valida se pode ser devolvida.\n"
+                    + "3. Utiliza a `dataDevolucao` informada no corpo (opcional; padrão: data atual), calcula diárias efetivas, aplica multa de atraso quando cabível e fixa o valor final.\n"
+                    + "4. Libera os equipamentos vinculados para o status `DISPONIVEL` e registra a operação na auditoria."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Devolução registrada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class))),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class))),
+            @ApiResponse(responseCode = "404", description = "Locação não encontrada na locadora autenticada",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class))),
+            @ApiResponse(responseCode = "422", description = "Locação já concluída/cancelada ou data de devolução inválida",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class)))
+    })
+    public LocacaoResponse devolver(
+            @AuthenticationPrincipal UsuarioAutenticado usuario,
+            @Parameter(description = "ID da locação", example = "1") @PathVariable Long id,
+            @Valid @RequestBody(required = false) LocacaoDevolucaoRequest request) {
         return locacaoService.devolver(usuario.locadoraId(), id, request);
     }
 
     // Contrato oficial usado pela interface: PATCH /api/locacoes/{id}/cancelamento
     @PatchMapping("/{id}/cancelamento")
-    @Operation(summary = "Cancelar locação",
-            description = "Só funciona enquanto estiver em andamento e antes da data de retirada. Libera os equipamentos.")
-    @ApiResponse(responseCode = "200", description = "Locação cancelada")
-    @ApiResponse(responseCode = "404", description = "Locação não encontrada")
-    @ApiResponse(responseCode = "422", description = "Locação não pode mais ser cancelada")
-    public LocacaoResponse cancelar(@AuthenticationPrincipal UsuarioAutenticado usuario,
-                                    @PathVariable Long id) {
+    @Operation(
+            summary = "Cancelar locação",
+            description = "Requer autenticação via token JWT (`Authorization: Bearer <token>`).\n\n"
+                    + "Etapas e regras de negócio:\n"
+                    + "1. O `locadoraId` nunca é enviado pelo cliente HTTP, sendo resolvido internamente a partir do usuário autenticado.\n"
+                    + "2. Checa a existência da locação na locadora autenticada.\n"
+                    + "3. Permite cancelamento apenas enquanto a locação estiver `EM_ANDAMENTO` e antes da data de retirada.\n"
+                    + "4. Altera o status do contrato para `CANCELADA` (exclusão lógica), libera os equipamentos e registra na auditoria."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Locação cancelada com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class))),
+            @ApiResponse(responseCode = "404", description = "Locação não encontrada na locadora autenticada",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class))),
+            @ApiResponse(responseCode = "422", description = "Locação não pode mais ser cancelada",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class)))
+    })
+    public LocacaoResponse cancelar(
+            @AuthenticationPrincipal UsuarioAutenticado usuario,
+            @Parameter(description = "ID da locação", example = "1") @PathVariable Long id) {
         return locacaoService.cancelar(usuario.locadoraId(), id);
     }
 
     // Alias mantido por compatibilidade com clientes antigos (mesmo comportamento do PATCH)
     @DeleteMapping("/{id}")
-    @Operation(summary = "Cancelar locação (alias legado)",
-            description = "Equivalente a PATCH /api/locacoes/{id}/cancelamento. Prefira o PATCH.")
-    @ApiResponse(responseCode = "200", description = "Locação cancelada")
-    @ApiResponse(responseCode = "404", description = "Locação não encontrada")
-    @ApiResponse(responseCode = "422", description = "Locação não pode mais ser cancelada")
-    public LocacaoResponse cancelarLegado(@AuthenticationPrincipal UsuarioAutenticado usuario,
-                                          @PathVariable Long id) {
+    @Operation(
+            summary = "Cancelar locação (alias legado)",
+            description = "Requer autenticação via token JWT (`Authorization: Bearer <token>`). "
+                    + "Equivalente a `PATCH /api/locacoes/{id}/cancelamento` (mantido por compatibilidade; prefira o PATCH).\n\n"
+                    + "Etapas e regras de negócio:\n"
+                    + "1. O `locadoraId` nunca é enviado pelo cliente HTTP, sendo resolvido internamente a partir do usuário autenticado.\n"
+                    + "2. Checa existência, valida se está `EM_ANDAMENTO` antes da retirada, marca como `CANCELADA` e libera os equipamentos."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Locação cancelada com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente, inválido ou expirado",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class))),
+            @ApiResponse(responseCode = "404", description = "Locação não encontrada na locadora autenticada",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class))),
+            @ApiResponse(responseCode = "422", description = "Locação não pode mais ser cancelada",
+                    content = @Content(schema = @Schema(implementation = ApiErroResposta.class)))
+    })
+    public LocacaoResponse cancelarLegado(
+            @AuthenticationPrincipal UsuarioAutenticado usuario,
+            @Parameter(description = "ID da locação", example = "1") @PathVariable Long id) {
         return locacaoService.cancelar(usuario.locadoraId(), id);
     }
 }
