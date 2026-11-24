@@ -8,10 +8,14 @@
   --primary-dark: #173d5e;
   --success-bg: #eaf7ee;
   --success-text: #1f5f3d;
+  --success-border: #b9e4c4;
   --error-bg: #fdecec;
   --error-text: #8a1f1f;
+  --error-border: #f1b3b3;
   --text-main: #1f2933;
   --text-soft: #52606d;
+  --text: #1f2933;
+  --muted: #52606d;
   --border: #d9e2ec;
   --shadow: rgba(15, 23, 42, 0.12);
 }

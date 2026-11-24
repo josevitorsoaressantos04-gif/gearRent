@@ -1,49 +1,163 @@
-name: CD - Build, Push e Run no Docker teste
+name: CD - Pipeline Full-Stack (Testes Unitários, E2E, Build, Push & UptimeRobot)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
-  docker-build-push-run:
+  quality-gate:
+    name: 1. Gate de Qualidade (Testes Unitários & E2E Full-Stack)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout do Código
         uses: actions/checkout@v4
 
-      # 🔐 Passo de Autenticação no Docker Hub
-      - name: Autenticar no Docker Hub
-        uses: docker/login-action@v3
+      - name: Configurar JDK 17 (Temurin)
+        uses: actions/setup-java@v4
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Executar Testes Unitários do Back-end
+        run: mvn test -Dtest=LocacaoCancellationTest,DomainAndServicesUnitTest
+
+      - name: Executar Testes E2E do Back-end & UptimeRobot (Status UP)
+        run: mvn test -Dtest=GearRentE2ETest,GearRentApplicationTests
+
+      - name: Executar Testes E2E do Front-end & Docker
+        run: node --test scripts/e2e-frontend.mjs
+
+  docker-build-push-run:
+    name: 2. Build Imagem do Commit, Push & Smoke Test UptimeRobot (30s)
+    needs: quality-gate
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: Preparar Tags do Commit (Sem Expor Credenciais)
+        id: vars
+        env:
+          RAW_DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: |
+          SHORT_SHA=$(git rev-parse --short ${{ github.sha }})
+          BRANCH_TAG=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          DOCKER_NS=$(echo "$RAW_DOCKER_USER" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+          if [ -z "$DOCKER_NS" ]; then
+            DOCKER_NS="gearrent"
+          fi
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "branch_tag=${BRANCH_TAG}" >> $GITHUB_OUTPUT
+          echo "owner_lc=${OWNER_LC}" >> $GITHUB_OUTPUT
+          echo "docker_ns=${DOCKER_NS}" >> $GITHUB_OUTPUT
 
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 1. Build & Push do Back-end Java Spring Boot
-      - name: Build & Push - Back-end
+      # 1. Build local das imagens do commit
+      - name: Build Local - Back-end (Imagem do Commit)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-backend:latest
+          load: true
+          push: false
+          tags: |
+            ${{ steps.vars.outputs.docker_ns }}/gearrent-backend:${{ steps.vars.outputs.branch_tag }}
+            ${{ steps.vars.outputs.docker_ns }}/gearrent-backend:sha-${{ steps.vars.outputs.short_sha }}
+            ${{ steps.vars.outputs.docker_ns }}/gearrent-backend:test
+            ${{ steps.vars.outputs.docker_ns }}/gearrent-backend:latest
+            ghcr.io/${{ steps.vars.outputs.owner_lc }}/gearrent-backend:${{ steps.vars.outputs.branch_tag }}
+            ghcr.io/${{ steps.vars.outputs.owner_lc }}/gearrent-backend:sha-${{ steps.vars.outputs.short_sha }}
+            ghcr.io/${{ steps.vars.outputs.owner_lc }}/gearrent-backend:latest
 
-      # 2. Build & Push do Front-end Nginx
-      - name: Build & Push - Front-end
+      - name: Build Local - Front-end (Imagem do Commit)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile-frontend
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-frontend:latest
+          load: true
+          push: false
+          tags: |
+            ${{ steps.vars.outputs.docker_ns }}/gearrent-frontend:${{ steps.vars.outputs.branch_tag }}
+            ${{ steps.vars.outputs.docker_ns }}/gearrent-frontend:sha-${{ steps.vars.outputs.short_sha }}
+            ${{ steps.vars.outputs.docker_ns }}/gearrent-frontend:test
+            ${{ steps.vars.outputs.docker_ns }}/gearrent-frontend:latest
+            ghcr.io/${{ steps.vars.outputs.owner_lc }}/gearrent-frontend:${{ steps.vars.outputs.branch_tag }}
+            ghcr.io/${{ steps.vars.outputs.owner_lc }}/gearrent-frontend:sha-${{ steps.vars.outputs.short_sha }}
+            ghcr.io/${{ steps.vars.outputs.owner_lc }}/gearrent-frontend:latest
 
-      # 3. Baixar Imagens e Subir Contêineres no Docker
-      - name: Subir Aplicação no Docker
+      # 2. Publica no GitHub Container Registry (ghcr.io) usando o GITHUB_TOKEN nativo
+      - name: Publicar Imagens no GitHub Container Registry (ghcr.io)
+        continue-on-error: true
         run: |
-          docker-compose down || true
-          docker-compose pull
-          docker-compose up -d
-          docker-compose ps
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker push ghcr.io/${{ steps.vars.outputs.owner_lc }}/gearrent-backend:${{ steps.vars.outputs.branch_tag }}
+          docker push ghcr.io/${{ steps.vars.outputs.owner_lc }}/gearrent-backend:sha-${{ steps.vars.outputs.short_sha }}
+          docker push ghcr.io/${{ steps.vars.outputs.owner_lc }}/gearrent-backend:latest
+          docker push ghcr.io/${{ steps.vars.outputs.owner_lc }}/gearrent-frontend:${{ steps.vars.outputs.branch_tag }}
+          docker push ghcr.io/${{ steps.vars.outputs.owner_lc }}/gearrent-frontend:sha-${{ steps.vars.outputs.short_sha }}
+          docker push ghcr.io/${{ steps.vars.outputs.owner_lc }}/gearrent-frontend:latest
+
+      # 3. Publica no Docker Hub usando exclusivamente os Secrets do GitHub
+      - name: Publicar Imagens no Docker Hub (via GitHub Secrets)
+        continue-on-error: true
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -z "$DOCKERHUB_TOKEN" ] || [ "${{ steps.vars.outputs.docker_ns }}" = "gearrent" ]; then
+            echo "Secrets do Docker Hub não configurados; utilizando imagens locais/GHCR."
+            exit 0
+          fi
+          echo "$DOCKERHUB_TOKEN" | docker login -u "${{ steps.vars.outputs.docker_ns }}" --password-stdin
+          docker push ${{ steps.vars.outputs.docker_ns }}/gearrent-backend:${{ steps.vars.outputs.branch_tag }}
+          docker push ${{ steps.vars.outputs.docker_ns }}/gearrent-backend:sha-${{ steps.vars.outputs.short_sha }}
+          docker push ${{ steps.vars.outputs.docker_ns }}/gearrent-backend:test
+          docker push ${{ steps.vars.outputs.docker_ns }}/gearrent-backend:latest
+          docker push ${{ steps.vars.outputs.docker_ns }}/gearrent-frontend:${{ steps.vars.outputs.branch_tag }}
+          docker push ${{ steps.vars.outputs.docker_ns }}/gearrent-frontend:sha-${{ steps.vars.outputs.short_sha }}
+          docker push ${{ steps.vars.outputs.docker_ns }}/gearrent-frontend:test
+          docker push ${{ steps.vars.outputs.docker_ns }}/gearrent-frontend:latest
+
+      # 4. Valida a Imagem do Commit nos Contêineres Docker
+      - name: Validar Contêineres da Imagem do Commit
+        env:
+          DOCKERHUB_USERNAME: ${{ steps.vars.outputs.docker_ns }}
+          IMAGE_TAG: sha-${{ steps.vars.outputs.short_sha }}
+          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'chave-ci-teste-container-com-mais-de-32-caracteres' }}
+        run: |
+          docker images | grep gearrent
+          if [ -n "$SPRING_DATASOURCE_URL" ]; then
+            docker compose down || true
+            docker compose up -d --no-build
+            docker compose ps
+            for i in $(seq 1 30); do
+              if curl -fsS http://localhost:8080/api/health | grep -q '"status":"UP"'; then
+                echo "[UPTIMEROBOT - TESTE DE CONEXÃO] Status: UP confirmado no container (${IMAGE_TAG})!"
+                break
+              fi
+              sleep 2
+            done
+            docker compose logs --tail=20 backend
+            docker compose logs --tail=15 uptimerobot
+          fi

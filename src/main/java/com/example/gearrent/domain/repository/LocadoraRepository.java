@@ -8,30 +8,39 @@ import org.springframework.data.repository.query.Param;
 
 public interface LocadoraRepository extends JpaRepository<Locadora, Long> {
 
-    @Query(value = """
-            UPDATE locadora SET ultimo_codigo_cliente = ultimo_codigo_cliente + 1
-            WHERE id = :locadoraId RETURNING ultimo_codigo_cliente
-            """, nativeQuery = true)
-    Long proximoCodigoCliente(@Param("locadoraId") Long locadoraId);
+    @Modifying
+    @Query("update Locadora l set l.ultimoCodigoCliente = l.ultimoCodigoCliente + 1 where l.id = :id")
+    int incrementarUltimoCodigoCliente(@Param("id") Long id);
 
-    @Query(value = """
-            UPDATE locadora SET ultimo_codigo_equipamento = ultimo_codigo_equipamento + 1
-            WHERE id = :locadoraId RETURNING ultimo_codigo_equipamento
-            """, nativeQuery = true)
-    Long proximoCodigoEquipamento(@Param("locadoraId") Long locadoraId);
+    @Query("select l.ultimoCodigoCliente from Locadora l where l.id = :id")
+    Long buscarUltimoCodigoCliente(@Param("id") Long id);
 
-    @Query(value = """
-            UPDATE locadora SET ultimo_codigo_locacao = ultimo_codigo_locacao + 1
-            WHERE id = :locadoraId RETURNING ultimo_codigo_locacao
-            """, nativeQuery = true)
-    Long proximoCodigoLocacao(@Param("locadoraId") Long locadoraId);
+    default Long proximoCodigoCliente(Long locadoraId) {
+        incrementarUltimoCodigoCliente(locadoraId);
+        return buscarUltimoCodigoCliente(locadoraId);
+    }
 
-    // UPDATE atômico: a linha da locadora fica travada até o commit, então não há número repetido
-// nem pulado. Funciona mesmo com updatable = false na entidade.
+    @Modifying
+    @Query("update Locadora l set l.ultimoCodigoEquipamento = l.ultimoCodigoEquipamento + 1 where l.id = :id")
+    int incrementarUltimoCodigoEquipamento(@Param("id") Long id);
+
+    @Query("select l.ultimoCodigoEquipamento from Locadora l where l.id = :id")
+    Long buscarUltimoCodigoEquipamento(@Param("id") Long id);
+
+    default Long proximoCodigoEquipamento(Long locadoraId) {
+        incrementarUltimoCodigoEquipamento(locadoraId);
+        return buscarUltimoCodigoEquipamento(locadoraId);
+    }
+
     @Modifying
     @Query("update Locadora l set l.ultimoCodigoLocacao = l.ultimoCodigoLocacao + 1 where l.id = :id")
     int incrementarUltimoCodigoLocacao(@Param("id") Long id);
 
     @Query("select l.ultimoCodigoLocacao from Locadora l where l.id = :id")
     Long buscarUltimoCodigoLocacao(@Param("id") Long id);
+
+    default Long proximoCodigoLocacao(Long locadoraId) {
+        incrementarUltimoCodigoLocacao(locadoraId);
+        return buscarUltimoCodigoLocacao(locadoraId);
+    }
 }

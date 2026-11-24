@@ -58,11 +58,13 @@ public class EquipamentoService {
                     "Já existe um equipamento cadastrado com este número de patrimônio.");
         }
 
-        // Código sequencial é por locadora; a checagem protege contra corrida entre dois cadastros simultâneos
-        int codigo = equipamentoRepository.buscarUltimoCodigo(locadoraId) + 1;
+        // Código sequencial por locadora via UPDATE atômico na tabela locadora
+        Long proximoCodigo = locadoraRepository.proximoCodigoEquipamento(locadoraId);
+        int codigo = proximoCodigo != null
+                ? proximoCodigo.intValue()
+                : equipamentoRepository.buscarUltimoCodigo(locadoraId) + 1;
         if (equipamentoRepository.existsByLocadoraIdAndCodigoSequencial(locadoraId, codigo)) {
-            throw new ConflitoException(
-                    "Outro equipamento acabou de ser cadastrado. Tente salvar novamente.");
+            codigo = equipamentoRepository.buscarUltimoCodigo(locadoraId) + 1;
         }
 
         Equipamento equipamento = new Equipamento();

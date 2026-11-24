@@ -89,8 +89,13 @@ function validarCamposAntesDoEnvio() {
   return null;
 }
 
+const RESET_TOKEN_STORAGE_KEY = 'gearrent_reset_token';
+
 // Envia a nova senha com o token e trata sucesso, expiração ou falha.
-async function redefinirSenha() {
+async function redefinirSenha(event) {
+  if (event && typeof event.preventDefault === 'function') {
+    event.preventDefault();
+  }
   limparMensagens();
 
   const erroValidacao = validarCamposAntesDoEnvio();
@@ -108,12 +113,16 @@ async function redefinirSenha() {
   setBotaoSalvar(false, 'Salvando...');
 
   try {
-    const resposta = await axios.post(`${API_URL}/api/auth/redefinir-senha`, {
+    const payload = {
       token: tokenAtual,
       novaSenha: document.getElementById('novaSenha').value,
       confirmacaoSenha: document.getElementById('confirmacaoSenha').value,
-    });
+    };
+    const resposta = window.apiClient
+      ? await window.apiClient.post('/auth/redefinir-senha', payload)
+      : await axios.post(`${API_URL}/api/auth/redefinir-senha`, payload);
 
+    sessionStorage.removeItem(RESET_TOKEN_STORAGE_KEY);
     mostrarSucesso(`${resposta.data.mensagem} Você será levado para a tela de entrada em 3 segundos...`);
     document.getElementById('novaSenha').value = '';
     document.getElementById('confirmacaoSenha').value = '';
@@ -134,7 +143,8 @@ async function redefinirSenha() {
     const mensagem = mensagens[0] || 'Algo deu errado. Tente novamente em instantes.';
     mostrarErro(mensagem);
 
-    if (erro?.response?.status === 400 && /link inválido|expirado|já usado/i.test(mensagem)) {
+    if (erro?.response?.status === 400 && /não é mais válido|link inválido|expirado|já usado/i.test(mensagem)) {
+      sessionStorage.removeItem(RESET_TOKEN_STORAGE_KEY);
       document.getElementById('areaLinkNovo').hidden = false;
     }
 
@@ -142,12 +152,18 @@ async function redefinirSenha() {
   }
 }
 
-// Lê o token do link, remove-o da barra de endereço e prepara o formulário.
+// Lê o token do link (ou do sessionStorage em caso de F5), remove-o da barra de endereço e prepara o formulário.
 function inicializarPaginaRedefinicao() {
   const params = new URLSearchParams(window.location.search);
-  tokenAtual = params.get('token') || '';
+  const tokenDaUrl = params.get('token') || '';
 
-  window.history.replaceState(null, '', window.location.pathname);
+  if (tokenDaUrl) {
+    tokenAtual = tokenDaUrl;
+    sessionStorage.setItem(RESET_TOKEN_STORAGE_KEY, tokenDaUrl);
+    window.history.replaceState(null, '', window.location.pathname);
+  } else {
+    tokenAtual = sessionStorage.getItem(RESET_TOKEN_STORAGE_KEY) || '';
+  }
 
   if (!tokenAtual) {
     mostrarErro('Este link não é válido. Peça um novo link para criar a sua senha.');
@@ -157,6 +173,8 @@ function inicializarPaginaRedefinicao() {
 
   document.getElementById('novaSenha').focus();
 }
+
+document.getElementById('formRedefinir')?.addEventListener('submit', redefinirSenha);
 
 // Inicializa a tela ao carregar e expõe as ações usadas pelo HTML.
 window.onload = inicializarPaginaRedefinicao;

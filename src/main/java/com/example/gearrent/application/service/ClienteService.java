@@ -8,6 +8,7 @@ import com.example.gearrent.domain.enums.StatusCadastro;
 import com.example.gearrent.domain.enums.StatusLocacao;
 import com.example.gearrent.domain.enums.TipoPessoa;
 import com.example.gearrent.domain.exception.DocumentoDuplicadoException;
+import com.example.gearrent.domain.exception.RecursoNaoEncontradoException;
 import com.example.gearrent.domain.exception.RegraDeNegocioException;
 import com.example.gearrent.domain.repository.ClienteRepository;
 import com.example.gearrent.domain.repository.LocacaoRepository;
@@ -230,9 +231,9 @@ public class ClienteService {
     // ---------------------------------------------------------------
     private Cliente buscarVisivel(Long locadoraId, Long id) {
         Cliente cliente = clienteRepository.findByIdAndLocadoraId(id, locadoraId)
-                .orElseThrow(() -> new RegraDeNegocioException("Cliente não encontrado."));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado."));
         if (cliente.getStatus() == StatusCadastro.CANCELADO) {
-            throw new RegraDeNegocioException("Cliente não encontrado.");
+            throw new RecursoNaoEncontradoException("Cliente não encontrado.");
         }
         return cliente;
     }

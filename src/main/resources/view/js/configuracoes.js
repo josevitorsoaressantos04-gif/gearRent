@@ -60,11 +60,19 @@
     return 'Não foi possível conectar à API. Verifique a conexão e tente novamente.';
   }
 
-  // Lê as informações públicas do token para identificar o usuário da sessão.
+  // Lê as informações públicas do token tratando Base64URL com padding e UTF-8.
   function tokenClaims() {
     try {
-      const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      return JSON.parse(window.atob(payload));
+      const parts = String(token || '').split('.');
+      if (parts.length !== 3) return {};
+      let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      while (base64.length % 4 !== 0) {
+        base64 += '=';
+      }
+      const binary = window.atob(base64);
+      const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+      const json = new TextDecoder('utf-8').decode(bytes);
+      return JSON.parse(json);
     } catch {
       return {};
     }
@@ -564,6 +572,11 @@
   document.getElementById('profileForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     const button = refs.saveProfileButton;
+    const cpfDigits = refs.profileCpf.value.replace(/\D/g, '');
+    if (cpfDigits && (cpfDigits.length !== 11 || /^(\d)\1{10}$/.test(cpfDigits))) {
+      setNotice(refs.profileNotice, 'Informe um CPF válido com 11 números.');
+      return;
+    }
     setBusy(button, true, 'Salvando…', 'Salvar perfil');
     setNotice(refs.profileNotice, '');
     try {
@@ -571,7 +584,7 @@
         nome: refs.profileFirstName.value.trim(),
         sobrenome: refs.profileLastName.value.trim(),
         email: refs.profileEmail.value.trim(),
-        cpf: refs.profileCpf.value.trim(),
+        cpf: cpfDigits || null,
       });
       await populateProfile(response.data);
       setMessage('Perfil atualizado com sucesso.');

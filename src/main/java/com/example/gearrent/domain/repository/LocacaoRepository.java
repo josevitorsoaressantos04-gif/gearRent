@@ -45,8 +45,6 @@ public interface LocacaoRepository
     List<ItemLocacaoProjecao> buscarItensDasLocacoes(@Param("locadoraId") Long locadoraId,
                                                      @Param("locacaoIds") Collection<Long> locacaoIds);
 
-    boolean existsByClienteIdAndLocadoraIdAndStatusIn(Long id, Long locadoraId, List<StatusLocacao> emAndamento);
-
     boolean existsByClienteIdAndLocadoraIdAndStatusIn(
             Long clienteId, Long locadoraId, Collection<StatusLocacao> status);
 

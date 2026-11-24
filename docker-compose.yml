@@ -1,21 +1,41 @@
 services:
-  # Back-end Java 17 / Spring Boot (Imagem do Docker Hub)
+  # 1. Back-end Java 17 / Spring Boot (com UptimeRobot interno a cada 30s)
   backend:
-    image: josevitorsoaressantos04/gearrent-backend:latest
+    image: ${DOCKERHUB_USERNAME:-gearrent}/gearrent-backend:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: gearrent-backend
     restart: always
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://dpg-dbv2b7c9v7es738f76sg-a.oregon-postgres.render.com:5432/gearrent_db_hdfx?sslmode=require
-      - SPRING_DATASOURCE_USERNAME=gearrent_db_hdfx_user
-      - SPRING_DATASOURCE_PASSWORD=ZW5gJSHI62HfDyis4Ye6m0nKpdMjni3L
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - JWT_SECRET=SuaChaveSecretaMuitoForteGearRent2026
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
+      - JWT_SECRET=${JWT_SECRET}
+      - MAIL_USERNAME=${MAIL_USERNAME:-}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
+      - MAIL_REMETENTE=${MAIL_REMETENTE:-}
+      - EMAIL_ENVIO_HABILITADO=${EMAIL_ENVIO_HABILITADO:-false}
+      - UPTIMEROBOT_HABILITADO=${UPTIMEROBOT_HABILITADO:-true}
+      - UPTIMEROBOT_INTERVALO_MS=30000
+      - UPTIMEROBOT_ATRASO_INICIAL_MS=5000
+      - UPTIMEROBOT_PING_URL=${UPTIMEROBOT_PING_URL:-http://localhost:8080/api/health}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/health | grep -q '\"status\":\"UP\"' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 25s
 
-  # Front-end Nginx com Vanilla JS (Imagem do Docker Hub)
+  # 2. Front-end Nginx com Vanilla JS (com Heartbeat UptimeRobot 30s em api.js)
   frontend:
-    image: josevitorsoaressantos04/gearrent-frontend:latest
+    image: ${DOCKERHUB_USERNAME:-gearrent}/gearrent-frontend:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile-frontend
     container_name: gearrent-frontend
     restart: always
     ports:
@@ -23,3 +43,38 @@ services:
       - "5500:80"
     depends_on:
       - backend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:80/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # 3. Serviço UptimeRobot (Keep-Alive dedicado a cada 30s)
+  uptimerobot:
+    image: curlimages/curl:8.10.1
+    container_name: gearrent-uptimerobot
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      - TARGET_LOCAL_URL=http://backend:8080/api/health
+      - TARGET_RENDER_URL=${UPTIMEROBOT_PING_URL:-https://gearrent-eo3x.onrender.com/api/health}
+      - INTERVAL_SECONDS=30
+    command:
+      - /bin/sh
+      - -c
+      - |
+        echo "[UPTIMEROBOT DOCKER] Iniciando monitoramento Keep-Alive a cada $${INTERVAL_SECONDS}s..."
+        while true; do
+          TS=$$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          if curl -fsS "$$TARGET_LOCAL_URL" | grep -q '"status":"UP"'; then
+            echo "[$$TS] [UPTIMEROBOT - TESTE DE CONEXÃO LOCAL] Status: UP ($$TARGET_LOCAL_URL)"
+          else
+            echo "[$$TS] [UPTIMEROBOT - TESTE DE CONEXÃO LOCAL] Status: AGUARDANDO BACKEND..."
+          fi
+          if [ -n "$$TARGET_RENDER_URL" ] && curl -fsS "$$TARGET_RENDER_URL" | grep -q '"status":"UP"'; then
+            echo "[$$TS] [UPTIMEROBOT - TESTE DE CONEXÃO RENDER] Status: UP ($$TARGET_RENDER_URL)"
+          fi
+          sleep "$$INTERVAL_SECONDS"
+        done
