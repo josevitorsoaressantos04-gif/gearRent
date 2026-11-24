@@ -14,18 +14,26 @@ import java.time.LocalDateTime;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "usuario",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_usuario_login",
+                        columnNames = {"login"}),
+                @UniqueConstraint(
+                        name = "uk_usuario_locadora_cpf",
+                        columnNames = {"locadora_id", "cpf"})
+        })
 public class Usuario {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
+    @Column(nullable = false)
     private String login;
-    private String senha; //TODO: adicionar uma criptografia para senha e um token para o gerenciamento de acesso
+    private String senha;
     private String nome;
     private String sobrenome;
 
-    @Column(unique = true)
     private String cpf;
     private LocalDateTime dataCadastro;
     private LocalDateTime dataAtualizacao;

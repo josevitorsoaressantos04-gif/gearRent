@@ -31,19 +31,12 @@ function mostrarMensagem(tipo, texto) {
 
 // Mantém o CPF formatado durante a digitação, limitando-o a onze números.
 function mascararCPF(input) {
-  let valor = input.value.replace(/\D/g, '').slice(0, 11);
+  const valor = input.value.replace(/\D/g, '').slice(0, 11);
 
-  if (valor.length <= 9) {
-    input.value = valor.replace(/(\d{3})(\d)/, '$1.$2');
-    return;
-  }
-
-  if (valor.length <= 11) {
-    input.value = valor.replace(/(\d{3})(\d{3})(\d{1,2})$/, '$1.$2-$3');
-    return;
-  }
-
-  input.value = valor.replace(/(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+  input.value = valor
+    .replace(/^(\d{3})(\d)/, '$1.$2')
+    .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
 }
 
 // Valida os campos obrigatórios, o CPF e a confirmação da senha.
@@ -60,8 +53,12 @@ function validarFormularioCadastro() {
     return 'Preencha todos os campos para concluir o cadastro.';
   }
 
-  if (cpf.length !== 11 || !/^\d+$/.test(cpf)) {
+  if (cpf.length !== 11 || !/^\d+$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) {
     return 'Informe um CPF válido com 11 números.';
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return 'O e-mail informado não parece correto. Exemplo: nome@email.com';
   }
 
   if (senha.length < 6) {
@@ -76,13 +73,22 @@ function validarFormularioCadastro() {
 }
 
 // Valida os dados e envia o cadastro do usuário para a API.
-function realizarCadastro() {
+async function realizarCadastro(event) {
+  if (event && typeof event.preventDefault === 'function') {
+    event.preventDefault();
+  }
   limparMensagens();
 
   const erroValidacao = validarFormularioCadastro();
   if (erroValidacao) {
     mostrarMensagem('erro', erroValidacao);
     return;
+  }
+
+  const btnCadastrar = document.getElementById('btnCadastrar') || document.querySelector('#cadastroForm button');
+  if (btnCadastrar) {
+    btnCadastrar.disabled = true;
+    btnCadastrar.textContent = 'Cadastrando...';
   }
 
   const payload = {
@@ -94,30 +100,35 @@ function realizarCadastro() {
     senha: document.getElementById('senha').value,
   };
 
-  apiClient
-    .post('/usuarios/cadastro', payload)
-    .then((response) => {
-      mostrarMensagem(
-        'sucesso',
-        'Cadastro realizado com sucesso! Sua base pessoal foi criada. Redirecionando para o login...'
-      );
+  try {
+    await apiClient.post('/usuarios/cadastro', payload);
+    mostrarMensagem(
+      'sucesso',
+      'Cadastro realizado com sucesso! Sua base pessoal foi criada. Redirecionando para o login...'
+    );
 
-      document.getElementById('cadastroForm').reset();
+    document.getElementById('cadastroForm').reset();
 
-      setTimeout(() => {
-        window.location.href = 'login.html';
-      }, 2000);
-    })
-    .catch((erro) => {
-      const mensagens = erro?.response?.data?.mensagens;
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 2000);
+  } catch (erro) {
+    if (btnCadastrar) {
+      btnCadastrar.disabled = false;
+      btnCadastrar.textContent = 'Cadastrar Minha Base';
+    }
+    const mensagens = erro?.response?.data?.mensagens;
 
-      if (Array.isArray(mensagens) && mensagens.length > 0) {
-        mostrarMensagem('erro', mensagens.join(' '));
-      } else {
-        mostrarMensagem('erro', 'Não foi possível concluir o cadastro. Tente novamente.');
-      }
-    });
+    if (Array.isArray(mensagens) && mensagens.length > 0) {
+      mostrarMensagem('erro', mensagens.join(' '));
+    } else {
+      mostrarMensagem('erro', 'Não foi possível concluir o cadastro. Tente novamente.');
+    }
+  }
 }
 
+document.getElementById('cadastroForm')?.addEventListener('submit', realizarCadastro);
+
 // Permite que o formulário HTML invoque a rotina de cadastro.
+window.mascararCPF = mascararCPF;
 window.realizarCadastro = realizarCadastro;

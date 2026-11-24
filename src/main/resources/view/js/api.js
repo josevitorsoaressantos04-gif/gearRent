@@ -1,6 +1,6 @@
 // Cria o cliente HTTP compartilhado para as rotas da API.
 const apiClient = axios.create({
-  baseURL: 'https://gearrent-eo3x.onrender.com/api',
+  baseURL: window.BASE_URL || 'https://gearrent-eo3x.onrender.com/api',
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
@@ -414,8 +414,49 @@ window.GR.nav = {
   },
 };
 
+// ============================================================================
+// UPTIMEROBOT / KEEP-ALIVE (HEARTBEAT A CADA 30 SEGUNDOS)
+// Mantém o servidor no Render ativo (evitando queda por inatividade aos 50s)
+// e registra "UP" no log interno do sistema como teste de conexão.
+// ============================================================================
+window.GR.uptime = {
+  intervaloId: null,
+  intervaloMs: 30000,
+
+  async testarConexao() {
+    try {
+      const resposta = await apiClient.get('/health');
+      const status = resposta?.data?.status || 'UP';
+      console.info(`[UptimeRobot 30s - Teste de Conexão] Status: ${status}`, resposta?.data || {});
+      return status;
+    } catch {
+      console.warn('[UptimeRobot 30s - Teste de Conexão] Servidor indisponível no momento.');
+      return 'DOWN';
+    }
+  },
+
+  iniciar() {
+    if (this.intervaloId) return;
+    this.testarConexao();
+    this.intervaloId = setInterval(() => {
+      this.testarConexao();
+    }, this.intervaloMs);
+  },
+
+  parar() {
+    if (this.intervaloId) {
+      clearInterval(this.intervaloId);
+      this.intervaloId = null;
+    }
+  },
+};
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => window.GR.nav.inicializar());
+  document.addEventListener('DOMContentLoaded', () => {
+    window.GR.nav.inicializar();
+    window.GR.uptime.iniciar();
+  });
 } else {
   window.GR.nav.inicializar();
+  window.GR.uptime.iniciar();
 }

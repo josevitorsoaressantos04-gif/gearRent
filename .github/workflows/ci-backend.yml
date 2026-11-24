@@ -1,17 +1,21 @@
-name: CI - Back-end Java Spring Boot
+name: CI - Back-end Java Spring Boot (Unit & E2E)
 
 on:
   push:
     branches: [ "main", "develop" ]
     paths:
       - 'src/main/java/**'
+      - 'src/test/java/**'
       - 'src/main/resources/application*.properties'
       - 'pom.xml'
+      - '.github/workflows/ci-backend.yml'
   pull_request:
     branches: [ "main", "develop" ]
+  workflow_dispatch:
 
 jobs:
-  test-and-build:
+  unit-and-e2e-tests:
+    name: Testes Unitários, E2E e Build JAR
     runs-on: ubuntu-latest
 
     steps:
@@ -25,8 +29,11 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Executar Testes Unitários
-        run: mvn clean test
+      - name: 1. Executar Testes Unitários (Domínio, Calculadora, JWT e UptimeRobot 30s)
+        run: mvn test -Dtest=LocacaoCancellationTest,DomainAndServicesUnitTest
 
-      - name: Compilar Pacote JAR
+      - name: 2. Executar Testes End-to-End (E2E Multi-Tenant Completo & Healthcheck UP)
+        run: mvn test -Dtest=GearRentE2ETest,GearRentApplicationTests
+
+      - name: 3. Compilar Pacote JAR de Produção
         run: mvn package -DskipTests

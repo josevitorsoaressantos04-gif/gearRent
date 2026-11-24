@@ -1,18 +1,49 @@
-name: CD - Build, Push e Run no Docker teste
+name: CD - Pipeline Full-Stack (Testes Unitários, E2E, Build, Push & UptimeRobot)
 
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-  docker-build-push-run:
+  quality-gate:
+    name: 1. Gate de Qualidade (Testes Unitários & E2E Full-Stack)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout do Código
         uses: actions/checkout@v4
 
-      # 🔐 Passo de Autenticação no Docker Hub
+      - name: Configurar JDK 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Executar Testes Unitários do Back-end
+        run: mvn test -Dtest=LocacaoCancellationTest,DomainAndServicesUnitTest
+
+      - name: Executar Testes E2E do Back-end & UptimeRobot (Status UP)
+        run: mvn test -Dtest=GearRentE2ETest,GearRentApplicationTests
+
+      - name: Executar Testes E2E do Front-end
+        run: node --test scripts/e2e-frontend.mjs
+
+  docker-build-push-run:
+    name: 2. Build, Push Docker Hub & Smoke Test UptimeRobot (30s)
+    needs: quality-gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do Código
+        uses: actions/checkout@v4
+
       - name: Autenticar no Docker Hub
         uses: docker/login-action@v3
         with:
@@ -40,10 +71,19 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-frontend:latest
 
-      # 3. Baixar Imagens e Subir Contêineres no Docker
-      - name: Subir Aplicação no Docker
+      # 3. Baixar Imagens, Subir Contêineres e Validar UptimeRobot (Status UP)
+      - name: Subir Aplicação no Docker e Executar Teste de Conexão UptimeRobot
         run: |
-          docker-compose down || true
-          docker-compose pull
-          docker-compose up -d
-          docker-compose ps
+          docker compose down || true
+          docker compose pull
+          docker compose up -d
+          docker compose ps
+          echo "Aguardando inicialização do Back-end para teste de conexão UptimeRobot..."
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/api/health | grep -q '"status":"UP"'; then
+              echo "[UPTIMEROBOT - TESTE DE CONEXÃO] Status: UP confirmado no container!"
+              break
+            fi
+            sleep 2
+          done
+          docker compose logs --tail=30 backend

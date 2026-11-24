@@ -1,25 +1,37 @@
-name: CI - Front-end Nginx & Vanilla JS
+name: CI - Front-end Nginx & Vanilla JS (Unit & E2E)
 
 on:
   push:
     branches: [ "main", "develop" ]
     paths:
       - 'src/main/resources/view/**'
+      - 'scripts/e2e-frontend.mjs'
       - 'Dockerfile-frontend'
       - 'nginx.conf'
+      - '.github/workflows/ci-frontend.yml'
   pull_request:
     branches: [ "main", "develop" ]
+  workflow_dispatch:
 
 jobs:
-  validate-frontend:
+  validate-and-e2e-frontend:
+    name: Validação Estática e Testes E2E Front-end
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout do Código
         uses: actions/checkout@v4
 
-      - name: Validar Estrutura do Front-end
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 1. Validar Estrutura de Arquivos Estáticos e Nginx
         run: |
           test -f src/main/resources/view/index.html || (echo "ERRO: index.html não encontrado" && exit 1)
           test -f nginx.conf || (echo "ERRO: nginx.conf não encontrado na raiz" && exit 1)
           echo "✓ Arquivos estáticos e Nginx validados!"
+
+      - name: 2. Executar Testes Unitários e E2E do Front-end (Contratos, Máscaras e UptimeRobot 30s)
+        run: node --test scripts/e2e-frontend.mjs

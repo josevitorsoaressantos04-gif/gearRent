@@ -512,8 +512,8 @@
     refs.confirmAction.textContent = 'Processando…';
     try {
       if (action === 'return') {
-        // O DTO do back-end (LocacaoDevolucaoRequest) usa o campo 'dataDevolucao'
-        const body = refs.returnDate.value ? { dataDevolucao: refs.returnDate.value } : {};
+        // Envia a propriedade dataReal (mapeada via @JsonAlias em LocacaoDevolucaoRequest)
+        const body = refs.returnDate.value ? { dataReal: refs.returnDate.value } : {};
         await window.apiClient.patch(`/locacoes/${encodeURIComponent(id)}/devolucao`, body);
       } else {
         // ✅ Cancela utilizando o método DELETE na rota padrão '/locacoes/{id}' (HTTP 200 OK)
@@ -756,10 +756,30 @@
     });
   });
 
+  // Abre automaticamente o modal de nova locação quando a página recebe ?clienteId= na URL.
+  async function handlePreselectedClientFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const clienteId = params.get('clienteId');
+    if (!clienteId) return;
+
+    params.delete('clienteId');
+    const novaQuery = params.toString();
+    const novaUrl = `${window.location.pathname}${novaQuery ? `?${novaQuery}` : ''}${window.location.hash}`;
+    window.history.replaceState(null, '', novaUrl);
+
+    document.getElementById('newRentalForm').reset();
+    refs.newError.hidden = true;
+    refs.newError.textContent = '';
+    refs.newDialog.showModal();
+    await loadNewRentalOptions();
+    refs.newClient.value = String(clienteId);
+  }
+
   const savedTheme = localStorage.getItem('gearRentTheme');
   if (savedTheme === 'dark') document.body.dataset.theme = 'dark';
   setupKpiVisibility('rentals');
   loadProfile();
   loadSummary();
   loadRentals();
+  handlePreselectedClientFromUrl();
 })();

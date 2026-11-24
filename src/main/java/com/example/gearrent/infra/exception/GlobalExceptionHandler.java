@@ -1,7 +1,6 @@
 package com.example.gearrent.infra.exception;
 
 import com.example.gearrent.domain.exception.*;
-import com.example.gearrent.domain.exception.CredenciaisInvalidasException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;

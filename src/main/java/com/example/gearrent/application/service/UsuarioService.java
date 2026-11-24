@@ -158,6 +158,17 @@ public class UsuarioService {
                     "Já existe outro usuário cadastrado com este e-mail. Use um e-mail diferente.");
         }
 
+        if (request.cpf() != null && !request.cpf().isBlank()) {
+            String cpfLimpo = request.cpf().replaceAll("\\D", "");
+            if (cpfLimpo.length() != 11) {
+                throw new RegraDeNegocioException("Informe um CPF válido com 11 números.");
+            }
+            if (usuarioRepository.existsByCpfAndLocadoraIdAndIdNot(cpfLimpo, locadoraId, idUsuario)) {
+                throw new RegraDeNegocioException("Este CPF já está cadastrado para outro usuário da sua base.");
+            }
+            usuario.setCpf(cpfLimpo);
+        }
+
         usuario.setNome(request.nome().trim());
         usuario.setSobrenome(request.sobrenome().trim());
         usuario.setLogin(email);

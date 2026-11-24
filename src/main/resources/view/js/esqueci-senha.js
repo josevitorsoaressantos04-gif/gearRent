@@ -98,7 +98,10 @@ function iniciarContagemRecuperacao(segundos) {
 }
 
 // Valida o e-mail e solicita à API o envio das instruções de recuperação.
-async function solicitarRecuperacao() {
+async function solicitarRecuperacao(event) {
+  if (event && typeof event.preventDefault === 'function') {
+    event.preventDefault();
+  }
   limparMensagens();
 
   const email = document.getElementById('email').value.trim();
@@ -108,10 +111,17 @@ async function solicitarRecuperacao() {
     return;
   }
 
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    mostrarErro('O e-mail informado não parece correto. Exemplo: nome@email.com');
+    return;
+  }
+
   setBotaoRecuperacao(false);
 
   try {
-    const resposta = await axios.post(`${API_URL}/api/auth/esqueci-senha`, { email });
+    const resposta = window.apiClient
+      ? await window.apiClient.post('/auth/esqueci-senha', { email })
+      : await axios.post(`${API_URL}/api/auth/esqueci-senha`, { email });
 
     const mensagem = resposta?.data?.mensagem || 'Instruções enviadas com sucesso.';
     mostrarSucesso(mensagem);
@@ -122,6 +132,8 @@ async function solicitarRecuperacao() {
     setBotaoRecuperacao(true);
   }
 }
+
+document.getElementById('formRecuperacao')?.addEventListener('submit', solicitarRecuperacao);
 
 // Expõe a ação para o formulário da página.
 window.solicitarRecuperacao = solicitarRecuperacao;

@@ -35,7 +35,7 @@ public class SecurityConfig {
                         // ÚNICO lugar com a lista de rotas públicas
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/**", "/api/usuarios/cadastro").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/cep/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/cep/**", "/api/health", "/api/health/**", "/api/ping").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
                                 "/webjars/**", "/swagger-resources/**").permitAll()
                         .anyRequest().authenticated())

@@ -30,46 +30,59 @@ function mostrarMensagem(tipo, texto) {
 }
 
 // Valida as credenciais, autentica o usuário e inicia a sessão local.
-function realizarLogin() {
+async function realizarLogin(event) {
+  if (event && typeof event.preventDefault === 'function') {
+    event.preventDefault();
+  }
   limparMensagens();
 
   const email = document.getElementById('email').value.trim();
   const senha = document.getElementById('senha').value.trim();
+  const btnLogin = document.getElementById('btnLogin') || document.querySelector('#loginForm button');
 
   if (!email || !senha) {
     mostrarMensagem('erro', 'Informe seu e-mail e sua senha para continuar.');
     return;
   }
 
-  const payload = {
-    email: email,
-    senha: senha,
-  };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    mostrarMensagem('erro', 'O e-mail informado não parece correto. Exemplo: nome@email.com');
+    return;
+  }
 
-  apiClient
-    .post('/auth/login', payload)
-    .then((response) => {
-      const token = response.data.token;
-      const mensagem = response.data.mensagem || 'Login efetuado com sucesso!';
+  if (btnLogin) {
+    btnLogin.disabled = true;
+    btnLogin.textContent = 'Entrando...';
+  }
 
-      sessionStorage.setItem('gearrent_token', token);
-      mostrarMensagem('sucesso', mensagem);
-      document.getElementById('loginForm').reset();
+  try {
+    const response = await apiClient.post('/auth/login', { email, senha });
+    const token = response.data.token;
+    const mensagem = response.data.mensagem || 'Login efetuado com sucesso!';
 
-      setTimeout(() => {
-        window.location.href = 'visao-geral.html';
-      }, 600);
-    })
-    .catch((erro) => {
-      const mensagens = erro?.response?.data?.mensagens;
+    sessionStorage.setItem('gearrent_token', token);
+    mostrarMensagem('sucesso', mensagem);
+    document.getElementById('loginForm').reset();
 
-      if (Array.isArray(mensagens) && mensagens.length > 0) {
-        mostrarMensagem('erro', mensagens.join(' '));
-      } else {
-        mostrarMensagem('erro', 'Não foi possível entrar no sistema. Tente novamente.');
-      }
-    });
+    setTimeout(() => {
+      window.location.href = 'visao-geral.html';
+    }, 600);
+  } catch (erro) {
+    if (btnLogin) {
+      btnLogin.disabled = false;
+      btnLogin.textContent = 'Entrar';
+    }
+    const mensagens = erro?.response?.data?.mensagens;
+
+    if (Array.isArray(mensagens) && mensagens.length > 0) {
+      mostrarMensagem('erro', mensagens.join(' '));
+    } else {
+      mostrarMensagem('erro', 'Não foi possível entrar no sistema. Tente novamente.');
+    }
+  }
 }
+
+document.getElementById('loginForm')?.addEventListener('submit', realizarLogin);
 
 // Disponibiliza a rotina para o manipulador declarado na página.
 window.realizarLogin = realizarLogin;

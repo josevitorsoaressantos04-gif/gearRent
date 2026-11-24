@@ -27,11 +27,11 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
     List<Cliente> findByLocadoraIdAndStatusNotAndNomeContainingIgnoreCaseOrderByNome(
             Long locadoraId, StatusCadastro status, String nome);
 
-    // ClienteRepository
     @Query("""
         SELECT new com.example.gearrent.application.DTO.ClienteDropdownDTO(c.id, c.codigoSequencial, c.nome)
         FROM Cliente c
         WHERE c.locadora.id = :locadoraId
+          AND c.status <> com.example.gearrent.domain.enums.StatusCadastro.CANCELADO
         ORDER BY c.nome
         """)
     List<ClienteDropdownDTO> listarParaDropdown(@Param("locadoraId") Long locadoraId);
