@@ -144,7 +144,11 @@ test('E2E Front-end 5: Formulários públicos suportam envio com Enter (type="su
 
 test('E2E Docker & Infra 6: Dockerfile, Dockerfile-frontend e docker-compose.yml configuram UptimeRobot (30s)', () => {
   const compose = fs.readFileSync(path.resolve('docker-compose.yml'), 'utf-8');
-  assert.match(compose, /UPTIMEROBOT_INTERVALO_MS=30000/, 'docker-compose.yml deve definir intervalo de 30000ms');
+  assert.match(
+    compose,
+    /UPTIMEROBOT_INTERVALO_MS=(\$\{UPTIMEROBOT_INTERVALO_MS:-30000\}|30000)/,
+    'docker-compose.yml deve definir intervalo de 30000ms',
+  );
   assert.match(compose, /interval:\s*30s/, 'docker-compose.yml deve ter healthcheck com interval: 30s');
   assert.match(compose, /container_name:\s*gearrent-uptimerobot/, 'docker-compose.yml deve ter o serviço gearrent-uptimerobot');
 
