@@ -37,4 +37,8 @@ build/
 .env.*
 !.env.example
 
+### Relatórios Locais ###
+code-review.html
+
+
 
