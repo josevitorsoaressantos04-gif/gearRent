@@ -141,3 +141,17 @@ test('E2E Front-end 5: Formulários públicos suportam envio com Enter (type="su
   assert.match(css, /--success-border:/, 'recuperacao-senha.css deve declarar --success-border');
   assert.match(css, /--error-border:/, 'recuperacao-senha.css deve declarar --error-border');
 });
+
+test('E2E Docker & Infra 6: Dockerfile, Dockerfile-frontend e docker-compose.yml configuram UptimeRobot (30s)', () => {
+  const compose = fs.readFileSync(path.resolve('docker-compose.yml'), 'utf-8');
+  assert.match(compose, /UPTIMEROBOT_INTERVALO_MS=30000/, 'docker-compose.yml deve definir intervalo de 30000ms');
+  assert.match(compose, /interval:\s*30s/, 'docker-compose.yml deve ter healthcheck com interval: 30s');
+  assert.match(compose, /container_name:\s*gearrent-uptimerobot/, 'docker-compose.yml deve ter o serviço gearrent-uptimerobot');
+
+  const dockerfileBackend = fs.readFileSync(path.resolve('Dockerfile'), 'utf-8');
+  assert.match(dockerfileBackend, /HEALTHCHECK --interval=30s/, 'Dockerfile deve ter HEALTHCHECK --interval=30s');
+  assert.match(dockerfileBackend, /\/api\/health/, 'Dockerfile deve testar /api/health');
+
+  const dockerfileFrontend = fs.readFileSync(path.resolve('Dockerfile-frontend'), 'utf-8');
+  assert.match(dockerfileFrontend, /HEALTHCHECK --interval=30s/, 'Dockerfile-frontend deve ter HEALTHCHECK --interval=30s');
+});

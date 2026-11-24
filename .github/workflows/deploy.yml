@@ -2,7 +2,9 @@ name: CD - Pipeline Full-Stack (Testes Unitários, E2E, Build, Push & UptimeRobo
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
   workflow_dispatch:
 
 jobs:
@@ -32,17 +34,27 @@ jobs:
       - name: Executar Testes E2E do Back-end & UptimeRobot (Status UP)
         run: mvn test -Dtest=GearRentE2ETest,GearRentApplicationTests
 
-      - name: Executar Testes E2E do Front-end
+      - name: Executar Testes E2E do Front-end & Docker
         run: node --test scripts/e2e-frontend.mjs
 
   docker-build-push-run:
-    name: 2. Build, Push Docker Hub & Smoke Test UptimeRobot (30s)
+    name: 2. Build, Push Imagem do Commit no Docker Hub & Smoke Test UptimeRobot (30s)
     needs: quality-gate
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout do Código
         uses: actions/checkout@v4
+
+      - name: Extrair Tag Curta do Commit (SHA) e Branch
+        id: vars
+        run: |
+          SHORT_SHA=$(git rev-parse --short ${{ github.sha }})
+          BRANCH_TAG=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "branch_tag=${BRANCH_TAG}" >> $GITHUB_OUTPUT
+          echo "Gerando imagens Docker para branch=${BRANCH_TAG} e commit=sha-${SHORT_SHA}"
 
       - name: Autenticar no Docker Hub
         uses: docker/login-action@v3
@@ -53,37 +65,48 @@ jobs:
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 1. Build & Push do Back-end Java Spring Boot
-      - name: Build & Push - Back-end
+      # 1. Build & Push do Back-end Java Spring Boot (tags: branch, sha do commit, test e latest)
+      - name: Build & Push - Back-end (Imagem do Commit para Teste)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-backend:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-backend:${{ steps.vars.outputs.branch_tag }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-backend:sha-${{ steps.vars.outputs.short_sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-backend:test
+            ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-backend:latest
 
-      # 2. Build & Push do Front-end Nginx
-      - name: Build & Push - Front-end
+      # 2. Build & Push do Front-end Nginx (tags: branch, sha do commit, test e latest)
+      - name: Build & Push - Front-end (Imagem do Commit para Teste)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile-frontend
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-frontend:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-frontend:${{ steps.vars.outputs.branch_tag }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-frontend:sha-${{ steps.vars.outputs.short_sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-frontend:test
+            ${{ secrets.DOCKERHUB_USERNAME }}/gearrent-frontend:latest
 
-      # 3. Baixar Imagens, Subir Contêineres e Validar UptimeRobot (Status UP)
-      - name: Subir Aplicação no Docker e Executar Teste de Conexão UptimeRobot
+      # 3. Baixar Imagens do Commit Atual, Subir Contêineres e Validar UptimeRobot (Status UP)
+      - name: Subir Imagem do Commit no Docker e Executar Teste de Conexão UptimeRobot (30s)
+        env:
+          IMAGE_TAG: sha-${{ steps.vars.outputs.short_sha }}
         run: |
           docker compose down || true
           docker compose pull
           docker compose up -d
           docker compose ps
-          echo "Aguardando inicialização do Back-end para teste de conexão UptimeRobot..."
+          echo "Aguardando inicialização do Back-end (tag: ${IMAGE_TAG}) para teste de conexão UptimeRobot..."
           for i in $(seq 1 30); do
             if curl -fsS http://localhost:8080/api/health | grep -q '"status":"UP"'; then
-              echo "[UPTIMEROBOT - TESTE DE CONEXÃO] Status: UP confirmado no container!"
+              echo "[UPTIMEROBOT - TESTE DE CONEXÃO] Status: UP confirmado no container (${IMAGE_TAG})!"
               break
             fi
             sleep 2
           done
           docker compose logs --tail=30 backend
+          docker compose logs --tail=20 uptimerobot
